@@ -118,6 +118,11 @@ export const AppProvider = ({ children }) => {
       // Lấy URL từ biến môi trường, fallback về link Render Production (dùng HTTPS cho SockJS)
       let wsUrl = import.meta.env.VITE_WS_URL || 'https://kpi-backend-4xex.onrender.com/ws';
 
+      // Ép buộc dùng backend production nếu đang chạy web trên mạng (không phải localhost)
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        wsUrl = 'https://kpi-backend-4xex.onrender.com/ws';
+      }
+
       // QUAN TRỌNG: SockJS yêu cầu truyền HTTP/HTTPS, tuyệt đối KHÔNG truyền ws:// hoặc wss:// 
       wsUrl = wsUrl.replace('wss://', 'https://').replace('ws://', 'http://');
 
