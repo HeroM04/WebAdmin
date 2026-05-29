@@ -1,4 +1,8 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8088/api/v1';
+let BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8088/api/v1';
+
+if (window.location.protocol === 'https:') {
+  BASE_URL = BASE_URL.replace('http://', 'https://');
+}
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('kpi_access_token');
