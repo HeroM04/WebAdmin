@@ -85,7 +85,7 @@ export const Personnel = () => {
     const { file, onSuccess, onError } = options;
     try {
       setUploadingAvatar(true);
-      const res = await apiClient.upload('/upload/file', file);
+      const res = await apiClient.upload('/upload/image', file);
       if (res && res.url) {
         setAvatarUrl(res.url);
         onSuccess("Ok");
@@ -351,11 +351,16 @@ export const Personnel = () => {
               customRequest={customUpload}
               accept="image/*"
             >
-              {avatarUrl ? (
+              {uploadingAvatar ? (
+                <div>
+                  <LoadingOutlined />
+                  <div style={{ marginTop: 8 }}>Đang tải...</div>
+                </div>
+              ) : avatarUrl ? (
                 <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
               ) : (
                 <div>
-                  {uploadingAvatar ? <LoadingOutlined /> : <PlusOutlined />}
+                  <PlusOutlined />
                   <div style={{ marginTop: 8 }}>Tải ảnh lên</div>
                 </div>
               )}
@@ -379,6 +384,15 @@ export const Personnel = () => {
           >
             <Input placeholder="Ví dụ: 0901234567" />
           </Form.Item>
+
+          {!editingUser && (
+            <Form.Item
+              name="password"
+              label="Mật khẩu"
+            >
+              <Input.Password placeholder="Mặc định: 123456 (nếu để trống)" />
+            </Form.Item>
+          )}
 
           <Row gutter={16}>
             <Col span={12}>

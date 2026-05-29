@@ -31,6 +31,7 @@ import {
 } from 'recharts';
 import { AppContext } from '../context/AppContext';
 import { calcSalary, formatVND } from '../utils/salaryUtils';
+import { useNavigate } from 'react-router-dom';
 
 // Premium gradient stat card component
 const StatCard = ({ label, value, subtext, color, icon, gradient, onClick, clickable }) => (
@@ -91,7 +92,8 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-export const Dashboard = ({ setActiveTab }) => {
+export const Dashboard = () => {
+  const navigate = useNavigate();
   const {
     departments,
     users,
@@ -271,7 +273,7 @@ export const Dashboard = ({ setActiveTab }) => {
             color={totalPending > 0 ? '#fbbf24' : '#10b981'}
             icon={<ClockCircleOutlined />}
             clickable={totalPending > 0}
-            onClick={() => totalPending > 0 && setActiveTab('manage_attendance')}
+            onClick={() => totalPending > 0 && navigate('/cham-cong')}
           />
         </Col>
         <Col xs={24} sm={12} lg={12} xl={6}>

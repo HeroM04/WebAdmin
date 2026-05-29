@@ -13,31 +13,31 @@ import { Feedback } from './components/Feedback';
 import { Departments } from './components/Departments';
 import { ManageKPI } from './components/ManageKPI';
 import { Login } from './components/Login';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
 const MainAppContent = () => {
   const { theme, isAuthenticated, currentUser, logout } = useContext(AppContext);
-  const [activeTab, setActiveTab] = useState(currentUser?.role === 'ADMIN' ? 'dashboard' : 'manage_attendance');
-  const hasInitializedTab = React.useRef(false);
-
   const { defaultAlgorithm, darkAlgorithm } = antdTheme;
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isAuthenticated && currentUser) {
       if (currentUser.role !== 'ADMIN' && currentUser.role !== 'VAN_PHONG') {
         logout();
         message.error('Bạn không có quyền truy cập vào trang Quản trị này!');
-      } else if (!hasInitializedTab.current) {
-        // Automatically switch to default tab based on role upon login (only once)
-        setActiveTab(currentUser.role === 'ADMIN' ? 'dashboard' : 'manage_attendance');
-        hasInitializedTab.current = true;
+      } else if (window.location.pathname === '/' || window.location.pathname === '/login') {
+        navigate(currentUser.role === 'ADMIN' ? '/dashboard' : '/cham-cong');
       }
-    } else {
-      hasInitializedTab.current = false;
     }
-  }, [isAuthenticated, currentUser, logout]);
+  }, [isAuthenticated, currentUser, logout, navigate]);
 
   if (!isAuthenticated) {
-    return <Login />;
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
   }
 
   return (
@@ -74,17 +74,20 @@ const MainAppContent = () => {
         }
       }}
     >
-      <AppLayout activeTab={activeTab} setActiveTab={setActiveTab}>
-        {activeTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
-        {activeTab === 'personnel' && currentUser?.role === 'ADMIN' && <Personnel />}
-        {activeTab === 'manage_attendance' && <ManageAttendance />}
-        {activeTab === 'manage_meetings' && <ManageMeetings />}
-        {activeTab === 'manage_posts' && <ManagePosts />}
-        {activeTab === 'manage_training' && <ManageTraining />}
-        {activeTab === 'manage_deals' && <ManageDeals />}
-        {activeTab === 'feedback' && <Feedback />}
-        {activeTab === 'departments' && currentUser?.role === 'ADMIN' && <Departments />}
-        {activeTab === 'manage_kpi' && <ManageKPI />}
+      <AppLayout>
+        <Routes>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/nhan-su" element={currentUser?.role === 'ADMIN' ? <Personnel /> : <Navigate to="/cham-cong" />} />
+          <Route path="/cham-cong" element={<ManageAttendance />} />
+          <Route path="/thuc-chien" element={<ManageMeetings />} />
+          <Route path="/lan-toa" element={<ManagePosts />} />
+          <Route path="/dao-tao" element={<ManageTraining />} />
+          <Route path="/chot-can" element={<ManageDeals />} />
+          <Route path="/gop-y" element={<Feedback />} />
+          <Route path="/phong-ban" element={currentUser?.role === 'ADMIN' ? <Departments /> : <Navigate to="/cham-cong" />} />
+          <Route path="/kpi" element={<ManageKPI />} />
+          <Route path="*" element={<Navigate to={currentUser?.role === 'ADMIN' ? "/dashboard" : "/cham-cong"} replace />} />
+        </Routes>
       </AppLayout>
     </ConfigProvider>
   );
@@ -92,9 +95,11 @@ const MainAppContent = () => {
 
 function App() {
   return (
-    <AppProvider>
-      <MainAppContent />
-    </AppProvider>
+    <BrowserRouter>
+      <AppProvider>
+        <MainAppContent />
+      </AppProvider>
+    </BrowserRouter>
   );
 }
 

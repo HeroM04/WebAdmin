@@ -114,11 +114,16 @@ export const AppProvider = ({ children }) => {
       fetchInitialData();
       
       const token = localStorage.getItem('kpi_access_token');
+      
+      // Lấy URL từ biến môi trường, fallback về link Render Production (dùng HTTPS cho SockJS)
+      const wsUrl = import.meta.env.VITE_WS_URL || 'https://kpi-backend-4xex.onrender.com/ws';
+
       client = new Client({
-        webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || 'http://localhost:8088/ws'),
+        webSocketFactory: () => new SockJS(wsUrl),
         connectHeaders: { Authorization: `Bearer ${token}` },
         reconnectDelay: 5000,
-        onConnect: () => {
+        onConnect: (frame) => {
+          console.log('✅ [STOMP] Connected to WebSocket successfully:', frame);
           client.subscribe('/topic/admin/requests', (msg) => {
             if (msg.body) {
               try {
@@ -169,6 +174,16 @@ export const AppProvider = ({ children }) => {
               }
             }
           });
+        },
+        onStompError: (frame) => {
+          console.error('❌ [STOMP] Broker reported error:', frame.headers['message']);
+          console.error('❌ [STOMP] Additional details:', frame.body);
+        },
+        onWebSocketError: (event) => {
+          console.error('❌ [STOMP] WebSocket connection error:', event);
+        },
+        onDisconnect: () => {
+          console.log('⚠️ [STOMP] Disconnected from WebSocket');
         }
       });
       client.activate();

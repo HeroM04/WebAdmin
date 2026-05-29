@@ -1,4 +1,5 @@
 import React, { useContext, useState } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Layout, Menu, Button, Select, Badge, Popover, List, Avatar, Space, Tooltip } from 'antd';
 import {
   DashboardOutlined,
@@ -24,11 +25,35 @@ import { AppContext } from '../context/AppContext';
 
 const { Header, Sider, Content, Footer } = Layout;
 
-export const AppLayout = ({ children, activeTab, setActiveTab }) => {
+export const AppLayout = ({ children }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { 
     deals, attendance, posts, meetings, feedbacks,
     theme, setTheme, currentUser, users, resetAllData, logout
   } = useContext(AppContext);
+
+  const routeMap = {
+    '/dashboard': 'dashboard',
+    '/nhan-su': 'personnel',
+    '/cham-cong': 'manage_attendance',
+    '/thuc-chien': 'manage_meetings',
+    '/lan-toa': 'manage_posts',
+    '/dao-tao': 'manage_training',
+    '/chot-can': 'manage_deals',
+    '/gop-y': 'feedback',
+    '/phong-ban': 'departments',
+    '/kpi': 'manage_kpi',
+  };
+
+  const activeTab = routeMap[location.pathname] || 'dashboard';
+
+  const handleMenuClick = ({ key }) => {
+    const pathToNavigate = Object.keys(routeMap).find(path => routeMap[path] === key);
+    if (pathToNavigate) {
+      navigate(pathToNavigate);
+    }
+  };
 
   const [notiVisible, setNotiVisible] = useState(false);
 
@@ -118,25 +143,25 @@ export const AppLayout = ({ children, activeTab, setActiveTab }) => {
     {
       key: 'dashboard',
       icon: <DashboardOutlined />,
-      label: 'Tổng quan Dashboard'
+      label: <Link to="/dashboard">Tổng quan Dashboard</Link>
     },
     ...(currentUser?.role === 'ADMIN' ? [
       {
         key: 'personnel',
         icon: <TeamOutlined />,
-        label: 'Quản lý Nhân sự'
+        label: <Link to="/nhan-su">Quản lý Nhân sự</Link>
       },
       {
         key: 'departments',
         icon: <BankOutlined />,
-        label: 'Quản lý Phòng ban'
+        label: <Link to="/phong-ban">Quản lý Phòng ban</Link>
       }
     ] : []),
     {
       type: 'group',
       label: (
-        <span style={{ fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(148,163,184,0.5)', fontWeight: 700 }}>
-          Quản lý Nghiệp vụ
+        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>
+          TÍNH NĂNG CHÍNH
         </span>
       ),
       children: [
@@ -209,7 +234,7 @@ export const AppLayout = ({ children, activeTab, setActiveTab }) => {
       <div style={{ padding: '8px 16px', fontWeight: 'bold', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between' }}>
         <span>Thông báo ({notifications.length})</span>
         {notifications.length > 0 && (
-          <span style={{ color: 'var(--primary-color)', fontSize: '12px', cursor: 'pointer' }} onClick={() => setActiveTab('manage_attendance')}>
+          <span style={{ color: 'var(--primary-color)', fontSize: '12px', cursor: 'pointer' }} onClick={() => navigate('/cham-cong')}>
             Xem ngay
           </span>
         )}
@@ -226,8 +251,8 @@ export const AppLayout = ({ children, activeTab, setActiveTab }) => {
             <List.Item 
               style={{ cursor: 'pointer', padding: '12px 16px', borderBottom: '1px solid var(--border-color)' }}
               onClick={() => {
-                const tabMap = { deal: 'manage_deals', att: 'manage_attendance', post: 'manage_posts', meet: 'manage_meetings' };
-                setActiveTab(tabMap[item.type] || 'dashboard');
+                const tabMap = { deal: '/chot-can', att: '/cham-cong', post: '/lan-toa', meet: '/thuc-chien' };
+                navigate(tabMap[item.type] || '/dashboard');
                 setNotiVisible(false);
               }}
             >
@@ -267,7 +292,7 @@ export const AppLayout = ({ children, activeTab, setActiveTab }) => {
           mode="inline"
           theme="dark"
           selectedKeys={[activeTab]}
-          onClick={({ key }) => setActiveTab(key)}
+          onClick={handleMenuClick}
           items={filteredMenuItems}
           style={{ marginTop: 8, paddingBottom: 80, background: 'transparent' }}
         />

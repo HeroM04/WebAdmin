@@ -10,9 +10,11 @@ import {
   MessageOutlined,
   CustomerServiceOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 
-export const MobileSimulator = ({ setActiveTab }) => {
+export const MobileSimulator = () => {
+  const navigate = useNavigate();
   const { users, addPendingDeal, addPendingAttendance, addPendingPost, addPendingMeeting } = useContext(AppContext);
   const [mobileAgentId, setMobileAgentId] = useState('user-02'); // Default Trần Thị B (Sale Agent)
   const [formAttendance] = Form.useForm();
@@ -128,7 +130,7 @@ export const MobileSimulator = ({ setActiveTab }) => {
               size="large"
               icon={<MobileOutlined />}
               style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)', height: 48, borderRadius: 10 }}
-              onClick={() => setActiveTab('approvals')}
+              onClick={() => navigate('/approvals')}
             >
               Đi Tới Trang HR Duyệt Yêu Cầu
             </Button>
