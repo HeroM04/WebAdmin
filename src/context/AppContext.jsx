@@ -118,9 +118,12 @@ export const AppProvider = ({ children }) => {
       // Lấy URL từ biến môi trường, fallback về link Render Production (dùng HTTPS cho SockJS)
       let wsUrl = import.meta.env.VITE_WS_URL || 'https://kpi-backend-4xex.onrender.com/ws';
 
-      // Tự động nâng cấp ws:// thành wss:// và http:// thành https:// nếu frontend chạy trên HTTPS
+      // QUAN TRỌNG: SockJS yêu cầu truyền HTTP/HTTPS, tuyệt đối KHÔNG truyền ws:// hoặc wss:// 
+      wsUrl = wsUrl.replace('wss://', 'https://').replace('ws://', 'http://');
+
+      // Tự động nâng cấp http:// thành https:// nếu frontend chạy trên HTTPS
       if (window.location.protocol === 'https:') {
-        wsUrl = wsUrl.replace('ws://', 'wss://').replace('http://', 'https://');
+        wsUrl = wsUrl.replace('http://', 'https://');
       }
 
       client = new Client({
