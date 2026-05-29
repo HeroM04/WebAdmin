@@ -115,7 +115,7 @@ export const AppProvider = ({ children }) => {
       
       const token = localStorage.getItem('kpi_access_token');
       client = new Client({
-        webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || 'http://localhost:8080/ws'),
+        webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || 'http://localhost:8088/ws'),
         connectHeaders: { Authorization: `Bearer ${token}` },
         reconnectDelay: 5000,
         onConnect: () => {
