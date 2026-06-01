@@ -52,6 +52,11 @@ export const AppProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [oneOnOneTrainings, setOneOnOneTrainings] = useState(() => {
+    const saved = localStorage.getItem('kpi_one_on_one');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('kpi_current_user');
     return saved ? JSON.parse(saved) : null;
@@ -101,6 +106,10 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('kpi_training_sessions', JSON.stringify(trainingSessions));
   }, [trainingSessions]);
+
+  useEffect(() => {
+    localStorage.setItem('kpi_one_on_one', JSON.stringify(oneOnOneTrainings));
+  }, [oneOnOneTrainings]);
 
   useEffect(() => {
     localStorage.setItem('kpi_current_user', JSON.stringify(currentUser));
@@ -220,6 +229,7 @@ export const AppProvider = ({ children }) => {
         meetingsData,
         feedbacksData,
         trainingData,
+        oneOnOneData,
         kpiScoresData
       ] = await Promise.all([
         apiClient.get('/departments').catch(() => []),
@@ -230,6 +240,7 @@ export const AppProvider = ({ children }) => {
         apiClient.get('/field-battle').catch(() => []),
         apiClient.get('/feedbacks').catch(() => []),
         apiClient.get('/training-sessions').catch(() => []),
+        apiClient.get('/training/1-on-1').catch(() => []),
         apiClient.get('/kpi-scores').catch(() => [])
       ]);
 
@@ -260,6 +271,7 @@ export const AppProvider = ({ children }) => {
       if (meetingsData !== undefined) setMeetings(sortByDateDesc(meetingsData));
       if (feedbacksData !== undefined) setFeedbacks(sortByDateDesc(feedbacksData));
       if (trainingData !== undefined) setTrainingSessions(sortByDateDesc(trainingData));
+      if (oneOnOneData !== undefined) setOneOnOneTrainings(sortByDateDesc(oneOnOneData));
       if (kpiScoresData !== undefined) setKpiScores(kpiScoresData);
     } catch (err) {
       console.error('Error fetching initial data:', err);
@@ -575,16 +587,18 @@ export const AppProvider = ({ children }) => {
     localStorage.removeItem('kpi_feedback');
     localStorage.removeItem('kpi_feedback_v2');
     localStorage.removeItem('kpi_training_sessions');
+    localStorage.removeItem('kpi_one_on_one');
     
-    setDepartments(DEPARTMENTS);
-    setUsers(INITIAL_USERS);
-    setKpiScores(INITIAL_KPI_SCORES);
-    setDeals(INITIAL_DEALS);
-    setAttendance(INITIAL_ATTENDANCE);
-    setPosts(INITIAL_POSTS);
-    setMeetings(INITIAL_MEETINGS);
-    setFeedbacks(INITIAL_FEEDBACK);
-    setTrainingSessions(INITIAL_TRAINING_SESSIONS);
+    setDepartments([]);
+    setUsers([]);
+    setKpiScores([]);
+    setDeals([]);
+    setAttendance([]);
+    setPosts([]);
+    setMeetings([]);
+    setFeedbacks([]);
+    setTrainingSessions([]);
+    setOneOnOneTrainings([]);
   };
 
   return (
@@ -599,6 +613,7 @@ export const AppProvider = ({ children }) => {
         meetings,
         feedbacks,
         trainingSessions,
+        oneOnOneTrainings,
         currentUser,
         setCurrentUser,
         isAuthenticated,

@@ -35,8 +35,7 @@ export const ManageMeetings = () => {
 
   const filtered = meetings.filter(item => {
     const user = getUserById(item.userId);
-    const matchName = !search || (user?.name || '').toLowerCase().includes(search.toLowerCase())
-      || (item.customerName || '').toLowerCase().includes(search.toLowerCase());
+    const matchName = !search || (user?.name || '').toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'ALL' || item.status === statusFilter;
     const matchDept = deptFilter === 'ALL' || (user && user.deptId === deptFilter);
     let matchDate = true;
@@ -65,7 +64,7 @@ export const ManageMeetings = () => {
 
   const openEdit = (record) => {
     setEditingRecord(record);
-    form.setFieldsValue({ userId: record.userId, customerName: record.customerName, customerPhone: record.customerPhone, submittedAt: record.submittedAt?.slice(0, 16), project: record.project, content: record.content, status: record.status });
+    form.setFieldsValue({ userId: record.userId, submittedAt: record.submittedAt?.slice(0, 16), project: record.project, content: record.content, status: record.status });
     setModalOpen(true);
   };
 
@@ -74,8 +73,6 @@ export const ManageMeetings = () => {
       try {
         const dto = {
           ...values,
-          customerName: values.customerName,
-          customerPhone: values.customerPhone,
           project: values.project,
           content: values.content,
         };
@@ -139,17 +136,7 @@ export const ManageMeetings = () => {
         );
       }
     },
-    {
-      title: 'Khách hàng',
-      key: 'client',
-      width: 160,
-      render: (_, record) => (
-        <div>
-          <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13 }}>{record.customerName}</div>
-          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}><PhoneOutlined style={{ marginRight: 4 }} />{record.customerPhone}</div>
-        </div>
-      )
-    },
+
     {
       title: 'Thời gian & Địa điểm',
       key: 'submittedAt',
@@ -157,7 +144,7 @@ export const ManageMeetings = () => {
       render: (_, record) => (
         <div>
           <div style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>{new Date(record.submittedAt).toLocaleString('vi-VN')}</div>
-          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}><EnvironmentOutlined style={{ color: '#ef4444', marginRight: 4 }} />{record.project}</div>
+          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}><EnvironmentOutlined style={{ color: '#ef4444', marginRight: 4 }} />{record.location || record.project}</div>
         </div>
       )
     },
@@ -256,32 +243,14 @@ export const ManageMeetings = () => {
                 <Avatar src={detailUser.avatar} size={60} style={{ border: '3px solid rgba(255,255,255,0.5)' }} />
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>{detailUser.name}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>Báo cáo cuộc gặp: <strong>{detailRecord.customerName}</strong></div>
+                  <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>Báo cáo thực chiến</div>
                   <div style={{ marginTop: 8 }}><StatusTag status={detailRecord.status} /></div>
                 </div>
               </Space>
             </div>
 
             <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div className="premium-card" style={{ padding: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1, marginBottom: 12 }}>THÔNG TIN KHÁCH HÀNG</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    <UserOutlined style={{ color: 'var(--primary-color)' }} />
-                    <div>
-                      <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Tên khách hàng</div>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{detailRecord.customerName}</div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    <PhoneOutlined style={{ color: 'var(--primary-color)' }} />
-                    <div>
-                      <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Điện thoại</div>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{detailRecord.customerPhone}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+
 
               <div className="premium-card" style={{ padding: 16 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1, marginBottom: 12 }}>THÔNG TIN CUỘC GẶP</div>
@@ -297,7 +266,7 @@ export const ManageMeetings = () => {
                     <EnvironmentOutlined style={{ color: '#ef4444' }} />
                     <div>
                       <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Địa điểm</div>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{detailRecord.project}</div>
+                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{detailRecord.location || detailRecord.project}</div>
                     </div>
                   </div>
                 </div>
@@ -309,6 +278,30 @@ export const ManageMeetings = () => {
                   {detailRecord.content}
                 </div>
               </div>
+
+              {/* ẢNH MINH CHỨNG */}
+              {detailRecord.photoUrl && (
+                <div className="premium-card" style={{ padding: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1, marginBottom: 10 }}>
+                    📷 ẢNH MINH CHỨNG THỰC ĐỊA
+                  </div>
+                  <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', border: '2px solid var(--border-color)' }}>
+                    <img
+                      src={detailRecord.photoUrl}
+                      alt="Ảnh minh chứng thực chiến"
+                      style={{ width: '100%', maxHeight: 320, objectFit: 'cover', display: 'block', cursor: 'pointer' }}
+                      onClick={() => window.open(detailRecord.photoUrl, '_blank')}
+                      onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                    />
+                    <div style={{ display: 'none', alignItems: 'center', justifyContent: 'center', height: 120, color: 'var(--text-secondary)', fontSize: 13, background: 'var(--bg-secondary)', borderRadius: 10 }}>
+                      ⚠️ Không thể tải ảnh
+                    </div>
+                    <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 10, padding: '3px 8px', borderRadius: 6 }}>
+                      Nhấn để xem đầy đủ
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {detailRecord.approvedBy && (
                 <div className="premium-card" style={{ padding: 16, background: 'rgba(16,185,129,0.06)', borderColor: 'rgba(16,185,129,0.2)' }}>
@@ -336,18 +329,7 @@ export const ManageMeetings = () => {
           <Form.Item name="userId" label="Nhân sự thực hiện" rules={[{ required: true }]}>
             <Select options={users.map(u => ({ value: u.id, label: `${u.name} (${u.role})` }))} />
           </Form.Item>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="customerName" label="Tên khách hàng" rules={[{ required: true }]}>
-                <Input placeholder="Anh/Chị..." />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="customerPhone" label="Số điện thoại">
-                <Input placeholder="09xx..." />
-              </Form.Item>
-            </Col>
-          </Row>
+
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="submittedAt" label="Thời gian cuộc gặp" rules={[{ required: true }]}>

@@ -54,7 +54,7 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.5;
@@ -65,7 +65,7 @@ body {
 
 /* Custom Typography classes */
 h1, h2, h3, h4, .outfit-font {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 /* Premium Glassmorphism Card Style */

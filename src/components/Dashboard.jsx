@@ -1,5 +1,6 @@
-import React, { useContext } from 'react';
-import { Row, Col, Table, Avatar, Space, Progress, Tag } from 'antd';
+import React, { useContext, useState } from 'react';
+import { Row, Col, Table, Avatar, Space, Progress, Tag, DatePicker, Button } from 'antd';
+import dayjs from 'dayjs';
 import {
   FireOutlined,
   CheckCircleOutlined,
@@ -8,10 +9,13 @@ import {
   TrophyOutlined,
   ThunderboltOutlined,
   RiseOutlined,
-  ClockCircleOutlined
+  ClockCircleOutlined,
+  DownloadOutlined
 } from '@ant-design/icons';
 import {
   ResponsiveContainer,
+  ComposedChart,
+  Line,
   BarChart,
   Bar,
   XAxis,
@@ -32,40 +36,45 @@ import {
 import { AppContext } from '../context/AppContext';
 import { calcSalary, formatVND } from '../utils/salaryUtils';
 import { useNavigate } from 'react-router-dom';
+import { exportToCSV } from '../utils/exportCsv';
 
-// Premium gradient stat card component
-const StatCard = ({ label, value, subtext, color, icon, gradient, onClick, clickable }) => (
+// Premium CRM Stat Card
+const StatCard = ({ label, value, trend, trendColor, color, icon, onClick, clickable }) => (
   <div
     className="premium-card"
     onClick={onClick}
     style={{
-      padding: '20px 24px',
+      padding: '16px',
       cursor: clickable ? 'pointer' : 'default',
-      background: gradient || 'var(--glass-bg)',
-      position: 'relative',
-      overflow: 'hidden'
+      background: 'var(--glass-bg)',
+      border: '1px solid var(--border-color)',
+      borderRadius: '12px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12
     }}
   >
-    <div style={{
-      position: 'absolute', top: -20, right: -20, width: 80, height: 80,
-      borderRadius: '50%', background: color, opacity: 0.08, filter: 'blur(20px)'
-    }} />
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-      <div>
-        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 8, fontWeight: 500 }}>{label}</div>
-        <div className="outfit-font" style={{ fontSize: 32, fontWeight: 900, color, lineHeight: 1 }}>
-          {value}
-        </div>
-        {subtext && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 8 }}>{subtext}</div>}
-      </div>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div style={{
-        width: 48, height: 48, borderRadius: 14,
-        background: color, opacity: 0.15,
+        width: 36, height: 36, borderRadius: '50%',
+        background: `${color}15`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 22, color
+        fontSize: 16, color
       }}>
         {icon}
       </div>
+      {trend && (
+        <div style={{ fontSize: 12, fontWeight: 600, color: trendColor }}>
+          {trend.startsWith('+') ? <RiseOutlined style={{ marginRight: 2 }} /> : <RiseOutlined style={{ marginRight: 2, transform: 'rotate(180deg)' }} />}
+          {trend}
+        </div>
+      )}
+    </div>
+    <div>
+      <div className="outfit-font" style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1, marginBottom: 4 }}>
+        {value}
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>{label}</div>
     </div>
   </div>
 );
@@ -104,12 +113,41 @@ export const Dashboard = () => {
     meetings
   } = useContext(AppContext);
 
-  const currentMonth = '2026-05';
-  const scoresMay = kpiScores.filter(s => s.month === currentMonth);
-  const totalKpiPoints = scoresMay.reduce((sum, s) => sum + (s.total || 0), 0);
+  const [selectedMonth, setSelectedMonth] = useState(() => dayjs());
+  const currentMonthStr = selectedMonth.format('YYYY-MM');
+  const previousMonthStr = selectedMonth.subtract(1, 'month').format('YYYY-MM');
+  
+  const currentMonthLabel = `Tháng ${selectedMonth.format('M/YYYY')}`;
+  const prevMonthLabel = `Tháng ${selectedMonth.subtract(1, 'month').format('M')}`;
+  const currMonthLabel = `Tháng ${selectedMonth.format('M')}`;
 
-  const approvedDeals = deals.filter(d => d.status === 'APPROVED');
-  const totalRevenue = approvedDeals.reduce((sum, d) => sum + d.price, 0);
+  // Stat Calculations with Trends
+  const filterByMonth = (arr, monthStr) => arr.filter(item => item.submittedAt && item.submittedAt.startsWith(monthStr));
+
+  const scoresCurr = kpiScores.filter(s => s.month === currentMonthStr);
+  const scoresPrev = kpiScores.filter(s => s.month === previousMonthStr);
+  const kpiCurr = scoresCurr.reduce((sum, s) => sum + (s.total || 0), 0);
+  const kpiPrev = scoresPrev.reduce((sum, s) => sum + (s.total || 0), 0);
+
+  const dealsCurr = filterByMonth(deals.filter(d => d.status === 'APPROVED'), currentMonthStr);
+  const dealsPrev = filterByMonth(deals.filter(d => d.status === 'APPROVED'), previousMonthStr);
+  
+  const postsCurr = filterByMonth(posts.filter(p => p.status === 'APPROVED'), currentMonthStr);
+  const postsPrev = filterByMonth(posts.filter(p => p.status === 'APPROVED'), previousMonthStr);
+
+  const meetingsCurr = filterByMonth(meetings, currentMonthStr);
+  const meetingsPrev = filterByMonth(meetings, previousMonthStr);
+
+  const attCurr = filterByMonth(attendance, currentMonthStr);
+  const attPrev = filterByMonth(attendance, previousMonthStr);
+
+  const calcTrend = (curr, prev) => {
+    if (prev === 0) return curr > 0 ? '+100%' : '0%';
+    const pct = ((curr - prev) / prev) * 100;
+    return `${pct > 0 ? '+' : ''}${pct.toFixed(1)}%`;
+  };
+  
+  const getTrendColor = (curr, prev) => curr >= prev ? 'var(--success-color)' : 'var(--danger-color)';
 
   const totalPending = 
     attendance.filter(a => a.status === 'PENDING').length +
@@ -117,62 +155,90 @@ export const Dashboard = () => {
     posts.filter(p => p.status === 'PENDING').length +
     meetings.filter(m => m.status === 'PENDING').length;
 
-  const activeStaff = users.filter(u => u.status?.toUpperCase() === 'ACTIVE').length;
-
-  const totalCompanySalary = users.reduce((sum, user) => {
-    const userDeals = deals.filter(d => d.userId === user.id && d.status === 'APPROVED').length;
-    const userScore = kpiScores.find(s => s.userId === user.id && s.month === currentMonth)?.total || 0;
-    const salaryData = calcSalary({ staffType: 'OLD', monthType: '4WEEKS', workDays: 26, standardDays: 26, deals: userDeals, kpiPoints: userScore });
-    return sum + salaryData.total;
-  }, 0);
-
-  // KPI breakdown data by department
-  const deptKpiData = departments.map(dept => {
-    const deptUsers = users.filter(u => u.deptId === dept.id);
-    const userIds = deptUsers.map(u => u.id);
-    const scores = kpiScores.filter(s => s.month === currentMonth && userIds.includes(s.userId));
-    const att = scores.reduce((sum, s) => sum + (s.attendance || 0), 0);
-    const meet = scores.reduce((sum, s) => sum + (s.meeting || 0), 0);
-    const post = scores.reduce((sum, s) => sum + (s.post || 0), 0);
-    const deal = scores.reduce((sum, s) => sum + (s.deal || 0), 0);
-    return {
-      name: dept.name.replace('Phòng ', ''),
-      'Chấm công': att, 'Thực chiến': meet, 'Bài post': post, 'Chốt căn': deal
-    };
-  });
-
-  // Pie chart data
-  const sumAtt = scoresMay.reduce((sum, s) => sum + (s.attendance || 0), 0);
-  const sumMeet = scoresMay.reduce((sum, s) => sum + (s.meeting || 0), 0);
-  const sumPost = scoresMay.reduce((sum, s) => sum + (s.post || 0), 0);
-  const sumDeal = scoresMay.reduce((sum, s) => sum + (s.deal || 0), 0);
+  // Pie chart data (Cơ cấu KPI)
+  const sumAtt = scoresCurr.reduce((sum, s) => sum + (s.attendance || 0), 0);
+  const sumMeet = scoresCurr.reduce((sum, s) => sum + (s.meeting || 0), 0);
+  const sumPost = scoresCurr.reduce((sum, s) => sum + (s.post || 0), 0);
+  const sumDeal = scoresCurr.reduce((sum, s) => sum + (s.deal || 0), 0);
 
   const pieData = [
-    { name: 'Chấm công', value: sumAtt || 10, color: '#1e293b' },
-    { name: 'Thực chiến', value: sumMeet || 10, color: '#3b82f6' },
-    { name: 'Bài post', value: sumPost || 10, color: '#0ea5e9' },
-    { name: 'Chốt căn', value: sumDeal || 10, color: '#14b8a6' }
+    { name: 'Chấm công', value: sumAtt || 10, color: '#64748b' },
+    { name: 'Thực chiến', value: sumMeet || 10, color: '#f59e0b' },
+    { name: 'Bài post', value: sumPost || 10, color: '#3b82f6' },
+    { name: 'Chốt căn', value: sumDeal || 10, color: '#ef4444' } // Red to match design
   ];
 
-  // Trend data
-  const trendData = departments.map(dept => {
+  // Combo Chart Data (Doanh số & hoạt động)
+  const comboChartData = departments.map(dept => {
     const deptUsers = users.filter(u => u.deptId === dept.id);
     const userIds = deptUsers.map(u => u.id);
-    const scoresApril = kpiScores.filter(s => s.month === '2026-04' && userIds.includes(s.userId));
-    const scoresMayArr = kpiScores.filter(s => s.month === '2026-05' && userIds.includes(s.userId));
+    const scoresCurrDept = kpiScores.filter(s => s.month === currentMonthStr && userIds.includes(s.userId));
     return {
       name: dept.name.replace('Phòng ', ''),
-      'Tháng 4': scoresApril.reduce((sum, s) => sum + (s.total || 0), 0),
-      'Tháng 5': scoresMayArr.reduce((sum, s) => sum + (s.total || 0), 0)
+      'Chấm công': scoresCurrDept.reduce((sum, s) => sum + (s.attendance || 0), 0),
+      'Thực chiến': scoresCurrDept.reduce((sum, s) => sum + (s.meeting || 0), 0),
+      'Bài post': scoresCurrDept.reduce((sum, s) => sum + (s.post || 0), 0),
+      'Tổng KPI (Line)': scoresCurrDept.reduce((sum, s) => sum + (s.total || 0), 0)
     };
   });
+
+  // Pending Tasks List
+  const pendingTasks = [
+    ...deals.filter(d => d.status === 'PENDING').map(d => ({ ...d, type: 'Chốt căn', time: d.submittedAt, desc: `Mã: ${d.propertyCode}` })),
+    ...attendance.filter(a => a.status === 'PENDING').map(a => ({ ...a, type: 'Chấm công', time: a.submittedAt, desc: a.location })),
+    ...posts.filter(p => p.status === 'PENDING').map(p => ({ ...p, type: 'Bài post', time: p.submittedAt, desc: p.caption?.substring(0, 20) })),
+    ...meetings.filter(m => m.status === 'PENDING').map(m => ({ ...m, type: 'Thực chiến', time: m.submittedAt, desc: m.meetingType }))
+  ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 8);
+
+  const taskColumns = [
+    {
+      title: 'Nhân sự',
+      key: 'user',
+      render: (record) => {
+        const u = users.find(user => user.id === record.userId);
+        return (
+          <Space>
+            <Avatar src={u?.avatar} size="small" />
+            <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13 }}>{u?.name || record.userId}</span>
+          </Space>
+        );
+      }
+    },
+    {
+      title: 'Loại việc',
+      dataIndex: 'type',
+      key: 'type',
+      render: (type) => (
+        <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{type}</span>
+      )
+    },
+    {
+      title: 'Chi tiết',
+      dataIndex: 'desc',
+      key: 'desc',
+      render: (text) => <span style={{ color: 'var(--text-primary)', fontSize: 13 }}>{text || '—'}</span>
+    },
+    {
+      title: 'Trạng thái',
+      key: 'status',
+      render: () => <Tag color="warning" style={{ borderRadius: 12 }}>Chờ xử lý</Tag>
+    },
+    {
+      title: 'Hành động',
+      key: 'action',
+      align: 'right',
+      render: () => (
+        <Button size="small" style={{ borderColor: '#ef4444', color: '#ef4444' }} onClick={() => navigate('/cham-cong')}>Chi tiết</Button>
+      )
+    }
+  ];
 
   // Leaderboard
   const leaderboardData = users
     .map(user => {
-      const score = kpiScores.find(s => s.userId === user.id && s.month === currentMonth) || { attendance: 0, meeting: 0, post: 0, deal: 0, total: 0 };
+      const score = kpiScores.find(s => s.userId === user.id && s.month === currentMonthStr) || { attendance: 0, meeting: 0, post: 0, deal: 0, total: 0 };
       const dept = departments.find(d => d.id === user.deptId);
-      const agentDeals = deals.filter(d => d.userId === user.id && d.status === 'APPROVED');
+      const agentDeals = deals.filter(d => d.userId === user.id && d.status === 'APPROVED' && d.submittedAt && d.submittedAt.startsWith(currentMonthStr));
       const agentDealsValue = agentDeals.reduce((sum, d) => sum + d.price, 0);
       return {
         key: user.id, user, deptName: dept ? dept.name : 'Chưa phân phòng',
@@ -219,7 +285,7 @@ export const Dashboard = () => {
       )
     },
     {
-      title: 'KPI Tháng 5',
+      title: `KPI ${currMonthLabel}`,
       key: 'kpi',
       render: (_, record) => {
         const percent = Math.min(100, (record.kpi / 500) * 100);
@@ -245,44 +311,90 @@ export const Dashboard = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       
-      {/* 1. Metric Summary Cards */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} lg={12} xl={6}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)' }}>Tổng quan {currentMonthLabel}</h2>
+        <Space>
+          <DatePicker.MonthPicker 
+            value={selectedMonth} 
+            onChange={(date) => date && setSelectedMonth(date)} 
+            allowClear={false} 
+            format="MM/YYYY" 
+            size="middle"
+            style={{ width: 140 }}
+          />
+          <Button type="primary" danger icon={<DownloadOutlined />} onClick={() => {
+            const exportData = [
+              { metric: 'Tổng Điểm KPI', value: kpiCurr, trend: calcTrend(kpiCurr, kpiPrev) },
+              { metric: 'Bài viết PR', value: postsCurr.length, trend: calcTrend(postsCurr.length, postsPrev.length) },
+              { metric: 'Thực chiến', value: meetingsCurr.length, trend: calcTrend(meetingsCurr.length, meetingsPrev.length) },
+              { metric: 'Deal thành công', value: dealsCurr.length, trend: calcTrend(dealsCurr.length, dealsPrev.length) },
+              { metric: 'Lượt chấm công', value: attCurr.length, trend: calcTrend(attCurr.length, attPrev.length) }
+            ];
+            exportToCSV(exportData, [{ title: 'Chỉ số', key: 'metric' }, { title: 'Giá trị', key: 'value' }, { title: 'Tăng trưởng (%)', key: 'trend' }], `Bao_Cao_Tong_Quan_${currentMonthStr}.csv`);
+          }}>Xuất báo cáo</Button>
+        </Space>
+      </div>
+
+      {/* 1. Metric Summary Cards (6 Cards) */}
+      <Row gutter={[12, 12]}>
+        <Col xs={12} md={8} lg={4}>
           <StatCard
-            label="Tổng Điểm KPI Tháng 5"
-            value={totalKpiPoints.toLocaleString()}
-            subtext="Từ toàn bộ nhân sự"
+            label="Tổng Điểm KPI"
+            value={kpiCurr.toLocaleString()}
+            trend={calcTrend(kpiCurr, kpiPrev)}
+            trendColor={getTrendColor(kpiCurr, kpiPrev)}
             color="#10b981"
             icon={<FireOutlined />}
           />
         </Col>
-        <Col xs={24} sm={12} lg={12} xl={6}>
+        <Col xs={12} md={8} lg={4}>
           <StatCard
-            label="Doanh số Chốt căn"
-            value={`${(totalRevenue / 1e9).toFixed(1)} Tỷ`}
-            subtext={`${approvedDeals.length} giao dịch`}
+            label="Bài viết PR"
+            value={postsCurr.length}
+            trend={calcTrend(postsCurr.length, postsPrev.length)}
+            trendColor={getTrendColor(postsCurr.length, postsPrev.length)}
+            color="#3b82f6"
+            icon={<CheckCircleOutlined />}
+          />
+        </Col>
+        <Col xs={12} md={8} lg={4}>
+          <StatCard
+            label="Thực chiến"
+            value={meetingsCurr.length}
+            trend={calcTrend(meetingsCurr.length, meetingsPrev.length)}
+            trendColor={getTrendColor(meetingsCurr.length, meetingsPrev.length)}
+            color="#f59e0b"
+            icon={<TeamOutlined />}
+          />
+        </Col>
+        <Col xs={12} md={8} lg={4}>
+          <StatCard
+            label="Deal thành công"
+            value={dealsCurr.length}
+            trend={calcTrend(dealsCurr.length, dealsPrev.length)}
+            trendColor={getTrendColor(dealsCurr.length, dealsPrev.length)}
             color="#ec4899"
             icon={<DollarOutlined />}
           />
         </Col>
-        <Col xs={24} sm={12} lg={12} xl={6}>
+        <Col xs={12} md={8} lg={4}>
           <StatCard
-            label="Yêu cầu chờ duyệt"
-            value={totalPending}
-            subtext={totalPending > 0 ? 'Click để xử lý ngay' : 'Tất cả đã duyệt ✓'}
-            color={totalPending > 0 ? '#fbbf24' : '#10b981'}
+            label="Lượt chấm công"
+            value={attCurr.length}
+            trend={calcTrend(attCurr.length, attPrev.length)}
+            trendColor={getTrendColor(attCurr.length, attPrev.length)}
+            color="#8b5cf6"
             icon={<ClockCircleOutlined />}
-            clickable={totalPending > 0}
-            onClick={() => totalPending > 0 && navigate('/cham-cong')}
           />
         </Col>
-        <Col xs={24} sm={12} lg={12} xl={6}>
+        <Col xs={12} md={8} lg={4}>
           <StatCard
-            label="Nhân sự"
-            value={activeStaff}
-            subtext={`Hoạt động`}
-            color="#3b82f6"
-            icon={<TeamOutlined />}
+            label="Việc cần xử lý"
+            value={totalPending}
+            color={totalPending > 0 ? '#ef4444' : '#10b981'}
+            icon={<ThunderboltOutlined />}
+            clickable={totalPending > 0}
+            onClick={() => totalPending > 0 && navigate('/cham-cong')}
           />
         </Col>
       </Row>
@@ -290,36 +402,34 @@ export const Dashboard = () => {
       {/* 2. Charts Row */}
       <Row gutter={[16, 16]}>
         
-        {/* KPI composition by Department - Stacked Bar */}
-        <Col xs={24} lg={16}>
-          <div className="premium-card" style={{ height: 380 }}>
-            <h3 style={{ marginBottom: 20, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
-              <ThunderboltOutlined style={{ color: 'var(--primary-color)' }} /> 
-              Cơ cấu Điểm KPI theo Phòng ban
-              <Tag color="blue" style={{ marginLeft: 'auto', fontSize: 11 }}>Tháng 5/2026</Tag>
+        {/* Combo Chart (Doanh số & hoạt động) */}
+        <Col xs={24} lg={10}>
+          <div className="premium-card" style={{ height: 380, padding: 20 }}>
+            <h3 style={{ marginBottom: 20, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 16 }}>
+              Doanh số & hoạt động tư vấn
             </h3>
             <div style={{ height: 290 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={deptKpiData} margin={{ top: 5, right: 10, left: -15, bottom: 0 }} barSize={36}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                  <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} />
-                  <YAxis stroke="var(--text-secondary)" fontSize={12} />
+                <ComposedChart data={comboChartData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
+                  <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={11} axisLine={false} tickLine={false} />
+                  <YAxis stroke="var(--text-secondary)" fontSize={11} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Legend wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
-                  <Bar dataKey="Chấm công" stackId="a" fill="#1e293b" radius={[0,0,0,0]} />
-                  <Bar dataKey="Thực chiến" stackId="a" fill="#3b82f6" />
-                  <Bar dataKey="Bài post" stackId="a" fill="#0ea5e9" />
-                  <Bar dataKey="Chốt căn" stackId="a" fill="#14b8a6" radius={[4,4,0,0]} />
-                </BarChart>
+                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
+                  <Bar dataKey="Chấm công" stackId="a" fill="#64748b" barSize={12} />
+                  <Bar dataKey="Thực chiến" stackId="a" fill="#f59e0b" barSize={12} />
+                  <Bar dataKey="Bài post" stackId="a" fill="#ef4444" barSize={12} radius={[4,4,0,0]} />
+                  <Line type="monotone" dataKey="Tổng KPI (Line)" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
           </div>
         </Col>
 
         {/* KPI Category Donut */}
-        <Col xs={24} lg={8}>
-          <div className="premium-card" style={{ height: 380 }}>
-            <h3 style={{ marginBottom: 16, color: 'var(--text-primary)', fontWeight: 700 }}>Phân bổ Trọng số KPI</h3>
+        <Col xs={24} lg={6}>
+          <div className="premium-card" style={{ height: 380, padding: 20 }}>
+            <h3 style={{ marginBottom: 16, color: 'var(--text-primary)', fontWeight: 700, fontSize: 16 }}>Cơ cấu Lead (KPI)</h3>
             <div style={{ height: 220, position: 'relative' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -344,7 +454,7 @@ export const Dashboard = () => {
               </ResponsiveContainer>
               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
                 <span className="outfit-font" style={{ fontSize: 13, fontWeight: 800, color: 'var(--primary-color)', display: 'block' }}>KPI</span>
-                <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>T5/2026</span>
+                <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>{currentMonthLabel}</span>
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -360,59 +470,45 @@ export const Dashboard = () => {
             </div>
           </div>
         </Col>
-      </Row>
-
-      {/* 3. Trend + Leaderboard */}
-      <Row gutter={[16, 16]}>
-        
-        {/* Trend Area Chart */}
-        <Col xs={24} md={10}>
-          <div className="premium-card" style={{ height: 400 }}>
-            <h3 style={{ marginBottom: 16, color: 'var(--text-primary)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <RiseOutlined style={{ color: '#10b981' }} /> Tăng trưởng KPI theo Tháng
-            </h3>
-            <div style={{ height: 320 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorApril" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.5}/>
-                      <stop offset="95%" stopColor="#94a3b8" stopOpacity={0.0}/>
-                    </linearGradient>
-                    <linearGradient id="colorMay" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.5}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                  <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={11} />
-                  <YAxis stroke="var(--text-secondary)" fontSize={11} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-                  <Area type="monotone" dataKey="Tháng 4" stroke="#94a3b8" fill="url(#colorApril)" strokeWidth={2} dot={{ r: 4, fill: '#94a3b8' }} />
-                  <Area type="monotone" dataKey="Tháng 5" stroke="#10b981" fill="url(#colorMay)" strokeWidth={2.5} dot={{ r: 4, fill: '#10b981' }} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </Col>
-
         {/* Leaderboard */}
-        <Col xs={24} md={14}>
-          <div className="premium-card" style={{ height: 400, display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ marginBottom: 16, color: 'var(--text-primary)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <TrophyOutlined style={{ color: '#fbbf24' }} /> Bảng Xếp hạng KPI Nhân sự
-            </h3>
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+        <Col xs={24} lg={8}>
+          <div className="premium-card" style={{ height: 380, display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
+            <div style={{ background: '#ef4444', padding: '12px 20px', color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <FireOutlined /> Khách nóng / Top nhân sự hôm nay
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '10px 0' }}>
               <Table
                 dataSource={leaderboardData}
                 columns={leaderboardColumns}
-                pagination={{ pageSize: 5 }}
+                pagination={false}
                 size="small"
                 scroll={{ x: 'max-content' }}
-                rowClassName={(record, index) => index === 0 ? 'leaderboard-top-row' : ''}
+                showHeader={false}
+                rowClassName="hoverable-row"
               />
             </div>
+          </div>
+        </Col>
+      </Row>
+
+      {/* 3. Tasks Table Row */}
+      <Row gutter={[16, 16]}>
+        <Col span={24}>
+          <div className="premium-card" style={{ padding: '20px 24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: 16, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ClockCircleOutlined style={{ color: 'var(--text-secondary)' }} /> Việc cần xử lý 
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 400 }}>(Mới nhất)</span>
+              </h3>
+            </div>
+            <Table
+              dataSource={pendingTasks}
+              columns={taskColumns}
+              pagination={false}
+              size="small"
+              rowKey="id"
+              scroll={{ x: 'max-content' }}
+            />
           </div>
         </Col>
       </Row>

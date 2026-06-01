@@ -3,9 +3,10 @@ import { Table, Button, Space, Avatar, Tag, Input, Select, Popconfirm, message, 
 import {
   SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined,
   ClockCircleOutlined, EnvironmentOutlined, FilterOutlined, PlusOutlined,
-  EditOutlined, EyeOutlined, ClockCircleFilled, CameraOutlined, UserOutlined
+  EditOutlined, EyeOutlined, ClockCircleFilled, CameraOutlined, UserOutlined, DownloadOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
+import { exportToCSV } from '../utils/exportCsv';
 
 const { Search } = Input;
 
@@ -34,7 +35,7 @@ export const ManageAttendance = () => {
     return dept ? dept.name : 'Chưa phân phòng';
   };
 
-  const filtered = attendance.filter(item => {
+  const baseFiltered = attendance.filter(item => {
     const user = getUserById(item.userId);
     const matchName = !search || (user?.name || '').toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'ALL' || item.status === statusFilter;
@@ -46,6 +47,42 @@ export const ManageAttendance = () => {
     }
     return matchName && matchStatus && matchDept && matchDate;
   });
+
+  const filtered = Object.values(baseFiltered.reduce((acc, curr) => {
+    const dateStr = curr.checkinTime ? curr.checkinTime.substring(0, 10) : '';
+    const key = `${curr.userId}_${dateStr}`;
+    if (!acc[key]) {
+      acc[key] = {
+        id: key,
+        userId: curr.userId,
+        date: dateStr,
+        checkinRecord: null,
+        checkoutRecord: null,
+        status: curr.status,
+        note: curr.note,
+        approvedBy: curr.approvedBy
+      };
+    }
+    if (curr.actionType === 'CHECK_OUT') {
+      acc[key].checkoutRecord = curr;
+      if (curr.note) acc[key].note = curr.note;
+    } else {
+      acc[key].checkinRecord = curr;
+      if (curr.note) acc[key].note = curr.note;
+    }
+    
+    const cIn = acc[key].checkinRecord;
+    const cOut = acc[key].checkoutRecord;
+    if ((cIn && cIn.status === 'PENDING') || (cOut && cOut.status === 'PENDING')) {
+      acc[key].status = 'PENDING';
+    } else if ((cIn && cIn.status === 'REJECTED') || (cOut && cOut.status === 'REJECTED')) {
+      acc[key].status = 'REJECTED';
+    } else {
+      acc[key].status = 'APPROVED';
+    }
+    
+    return acc;
+  }, {})).sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const stats = {
     total: attendance.length,
@@ -111,18 +148,46 @@ export const ManageAttendance = () => {
     });
   };
 
-  const handleDelete = async (id) => {
+  const handleExport = () => {
+    const exportData = filtered.map(r => {
+      const user = getUserById(r.userId);
+      const cIn = r.checkinRecord;
+      const cOut = r.checkoutRecord;
+      return {
+        name: user?.name || 'Ẩn danh',
+        dept: getDeptName(user?.deptId),
+        checkInTime: cIn ? new Date(cIn.checkinTime).toLocaleString('vi-VN') : '',
+        checkInLocation: cIn?.gpsLocation || cIn?.address || '',
+        checkOutTime: cOut ? new Date(cOut.checkinTime).toLocaleString('vi-VN') : '',
+        checkOutLocation: cOut?.gpsLocation || cOut?.address || '',
+        status: (cIn && cIn.status === 'APPROVED') ? 'Hợp lệ (+10 KPI)' : ((cIn && cIn.status === 'REJECTED') ? 'Từ chối' : 'Chờ duyệt')
+      };
+    });
+    exportToCSV(exportData, [
+      { title: 'Nhân sự', key: 'name' },
+      { title: 'Phòng ban', key: 'dept' },
+      { title: 'Thời gian Check-in', key: 'checkInTime' },
+      { title: 'Vị trí Check-in', key: 'checkInLocation' },
+      { title: 'Thời gian Check-out', key: 'checkOutTime' },
+      { title: 'Vị trí Check-out', key: 'checkOutLocation' },
+      { title: 'Trạng thái', key: 'status' }
+    ], 'Bao_Cao_Cham_Cong.csv');
+  };
+
+  const handleDelete = async (record) => {
     try {
-      await deleteAttendance(id);
+      if (record.checkinRecord) await deleteAttendance(record.checkinRecord.id);
+      if (record.checkoutRecord) await deleteAttendance(record.checkoutRecord.id);
       message.success('Đã xóa.');
     } catch (e) {
       message.error(e.message || 'Lỗi hệ thống');
     }
   };
 
-  const handleApprove = async (id) => {
+  const handleApprove = async (record) => {
     try {
-      await approveAttendance(id, currentUser.name);
+      if (record.checkinRecord && record.checkinRecord.status === 'PENDING') await approveAttendance(record.checkinRecord.id, currentUser.name);
+      if (record.checkoutRecord && record.checkoutRecord.status === 'PENDING') await approveAttendance(record.checkoutRecord.id, currentUser.name);
       message.success('Đã duyệt. (+10 KPI)');
       setDrawerOpen(false);
     } catch (e) {
@@ -130,9 +195,10 @@ export const ManageAttendance = () => {
     }
   };
 
-  const handleReject = async (id) => {
+  const handleReject = async (record) => {
     try {
-      await rejectAttendance(id, currentUser.name);
+      if (record.checkinRecord && record.checkinRecord.status === 'PENDING') await rejectAttendance(record.checkinRecord.id, currentUser.name);
+      if (record.checkoutRecord && record.checkoutRecord.status === 'PENDING') await rejectAttendance(record.checkoutRecord.id, currentUser.name);
       message.warning('Đã từ chối.');
       setDrawerOpen(false);
     } catch (e) {
@@ -160,27 +226,50 @@ export const ManageAttendance = () => {
     {
       title: 'Thời gian Check-in',
       key: 'checkinTime',
-      render: (_, record) => (
-        <div>
-          <div style={{ color: 'var(--text-primary)', fontSize: 13, fontWeight: 500 }}>
-            {new Date(record.checkinTime).toLocaleString('vi-VN')}
+      render: (_, record) => {
+        const cIn = record.checkinRecord;
+        return cIn ? (
+          <div>
+            <div style={{ color: 'var(--success-color)', fontSize: 13, fontWeight: 600 }}>
+              {new Date(cIn.checkinTime).toLocaleString('vi-VN')}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
+              <EnvironmentOutlined style={{ color: '#ef4444', marginRight: 4 }} />{cIn.gpsLocation || cIn.address || 'Không xác định'}
+            </div>
           </div>
-          <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
-            <EnvironmentOutlined style={{ color: '#ef4444', marginRight: 4 }} />{record.gpsLocation}
-          </div>
-        </div>
-      )
+        ) : <span style={{ color: '#cbd5e1' }}>—</span>;
+      }
     },
     {
-      title: 'Ảnh so sánh',
+      title: 'Thời gian Check-out',
+      key: 'checkoutTime',
+      render: (_, record) => {
+        const cOut = record.checkoutRecord;
+        return cOut ? (
+          <div>
+            <div style={{ color: 'var(--info-color)', fontSize: 13, fontWeight: 600 }}>
+              {new Date(cOut.checkinTime).toLocaleString('vi-VN')}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
+              <EnvironmentOutlined style={{ color: '#ef4444', marginRight: 4 }} />{cOut.gpsLocation || cOut.address || 'Không xác định'}
+            </div>
+          </div>
+        ) : <span style={{ color: '#cbd5e1' }}>—</span>;
+      }
+    },
+    {
+      title: 'Ảnh Check-in',
       key: 'photo',
       width: 100,
       render: (_, record) => {
         const user = getUserById(record.userId);
+        const cIn = record.checkinRecord;
         return (
           <Space size={4}>
             <img src={user?.avatar} alt="profile" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', border: '2px solid var(--border-color)', cursor: 'pointer' }} title="Ảnh hồ sơ" onClick={() => setPreviewImg(user?.avatar)} onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100?text=No+Avatar'; }} />
-            <img src={record.photoUrl} alt="checkin" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', border: '2px solid var(--primary-color)', cursor: 'pointer' }} onClick={() => setPreviewImg(record.photoUrl)} title="Ảnh check-in (click xem)" onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100?text=No+Photo'; }} />
+            {cIn && cIn.photoUrl ? (
+              <img src={cIn.photoUrl} alt="checkin" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', border: '2px solid var(--primary-color)', cursor: 'pointer' }} onClick={() => setPreviewImg(cIn.photoUrl)} title="Ảnh check-in (click xem)" onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100?text=No+Photo'; }} />
+            ) : <span style={{fontSize: 10, color: '#ccc'}}>—</span>}
           </Space>
         );
       }
@@ -190,7 +279,7 @@ export const ManageAttendance = () => {
       dataIndex: 'note',
       key: 'note',
       ellipsis: true,
-      render: (text) => <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{text || '—'}</span>
+      render: (text) => <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{text || 'Không có'}</span>
     },
     {
       title: 'Trạng thái',
@@ -211,14 +300,14 @@ export const ManageAttendance = () => {
       render: (_, record) => (
         <Space size={4}>
           <Button size="small" type="text" icon={<EyeOutlined style={{ color: 'var(--info-color)' }} />} onClick={() => openDetail(record)}>Chi tiết</Button>
-          <Button size="small" type="text" icon={<EditOutlined style={{ color: 'var(--primary-color)' }} />} onClick={() => openEdit(record)}>Sửa</Button>
+          <Button size="small" type="text" icon={<EditOutlined style={{ color: 'var(--primary-color)' }} />} onClick={() => openEdit(record.checkinRecord || record.checkoutRecord)}>Sửa</Button>
           {record.status === 'PENDING' && (
             <>
-              <Button size="small" danger ghost icon={<CloseCircleOutlined />} onClick={() => handleReject(record.id)} />
-              <Button size="small" type="primary" icon={<CheckCircleOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={() => handleApprove(record.id)} />
+              <Button size="small" danger ghost icon={<CloseCircleOutlined />} onClick={() => handleReject(record)} />
+              <Button size="small" type="primary" icon={<CheckCircleOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={() => handleApprove(record)} />
             </>
           )}
-          <Popconfirm title="Xóa bản ghi này?" onConfirm={() => handleDelete(record.id)} okText="Xóa" cancelText="Hủy" okButtonProps={{ danger: true }}>
+          <Popconfirm title="Xóa bản ghi này?" onConfirm={() => handleDelete(record)} okText="Xóa" cancelText="Hủy" okButtonProps={{ danger: true }}>
             <Button size="small" type="text" icon={<DeleteOutlined style={{ color: 'var(--danger-color)' }} />} />
           </Popconfirm>
         </Space>
@@ -256,6 +345,7 @@ export const ManageAttendance = () => {
             <Select value={deptFilter} onChange={setDeptFilter} style={{ width: 160 }} options={[{ value: 'ALL', label: 'Tất cả phòng ban' }, ...departments.map(d => ({ value: d.id, label: d.name }))]} />
             <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 150 }} options={[{ value: 'ALL', label: 'Tất cả trạng thái' }, { value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }]} />
             <DatePicker.RangePicker placeholder={['Từ ngày', 'Đến ngày']} onChange={(dates, dateStrings) => setDateRange(dateStrings)} style={{ width: 220 }} />
+            <Button type="primary" danger icon={<DownloadOutlined />} onClick={handleExport}>Xuất báo cáo</Button>
             <span style={{ fontSize: 13, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
               Hiển thị <strong style={{ color: 'var(--text-primary)', margin: '0 4px' }}>{filtered.length}</strong> / {attendance.length}
             </span>
@@ -292,72 +382,89 @@ export const ManageAttendance = () => {
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>{detailUser.name}</div>
                   <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>{detailUser.role} • {getDeptName(detailUser.deptId)}</div>
-                  <div style={{ marginTop: 8 }}>
-                    <StatusTag status={detailRecord.status} />
-                  </div>
                 </div>
               </Space>
             </div>
 
             <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {/* Time info */}
-              <div className="premium-card" style={{ padding: 16 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1, marginBottom: 12 }}>THÔNG TIN CHECK-IN</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <ClockCircleOutlined style={{ color: 'var(--primary-color)', marginTop: 2 }} />
-                    <div>
-                      <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Thời gian</div>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{new Date(detailRecord.checkinTime).toLocaleString('vi-VN')}</div>
+                {detailRecord.checkinRecord && (
+                  <div className="premium-card" style={{ padding: 16 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--success-color)', letterSpacing: 1, marginBottom: 12 }}>THÔNG TIN CHECK-IN</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                        <ClockCircleOutlined style={{ color: 'var(--primary-color)', marginTop: 2 }} />
+                        <div>
+                          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Thời gian</div>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{new Date(detailRecord.checkinRecord.checkinTime).toLocaleString('vi-VN')}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                        <EnvironmentOutlined style={{ color: '#ef4444', marginTop: 2 }} />
+                        <div>
+                          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Vị trí GPS</div>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{detailRecord.checkinRecord.gpsLocation || detailRecord.checkinRecord.address || 'Không xác định'}</div>
+                        </div>
+                      </div>
+                      {detailRecord.checkinRecord.note && (
+                        <div style={{ padding: '10px 14px', background: 'var(--bg-secondary)', borderRadius: 8, borderLeft: '3px solid var(--primary-color)', fontSize: 13, color: 'var(--text-primary)' }}>
+                          {detailRecord.checkinRecord.note}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <EnvironmentOutlined style={{ color: '#ef4444', marginTop: 2 }} />
-                    <div>
-                      <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Vị trí GPS</div>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{detailRecord.gpsLocation}</div>
+                )}
+
+                {detailRecord.checkoutRecord && (
+                  <div className="premium-card" style={{ padding: 16 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--info-color)', letterSpacing: 1, marginBottom: 12 }}>THÔNG TIN CHECK-OUT</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                        <ClockCircleOutlined style={{ color: 'var(--primary-color)', marginTop: 2 }} />
+                        <div>
+                          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Thời gian</div>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{new Date(detailRecord.checkoutRecord.checkinTime).toLocaleString('vi-VN')}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                        <EnvironmentOutlined style={{ color: '#ef4444', marginTop: 2 }} />
+                        <div>
+                          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Vị trí GPS</div>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{detailRecord.checkoutRecord.gpsLocation || detailRecord.checkoutRecord.address || 'Không xác định'}</div>
+                        </div>
+                      </div>
+                      {detailRecord.checkoutRecord.note && (
+                        <div style={{ padding: '10px 14px', background: 'var(--bg-secondary)', borderRadius: 8, borderLeft: '3px solid var(--primary-color)', fontSize: 13, color: 'var(--text-primary)' }}>
+                          {detailRecord.checkoutRecord.note}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  {detailRecord.note && (
-                    <div style={{ padding: '10px 14px', background: 'var(--bg-secondary)', borderRadius: 8, borderLeft: '3px solid var(--primary-color)', fontSize: 13, color: 'var(--text-primary)' }}>
-                      {detailRecord.note}
-                    </div>
-                  )}
-                </div>
-              </div>
+                )}
 
-              {/* Photo comparison */}
-              <div className="premium-card" style={{ padding: 16 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1, marginBottom: 12 }}>SO SÁNH NHẬN DẠNG</div>
-                <Row gutter={12}>
-                  <Col span={12}>
-                    <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 8 }}>Ảnh hồ sơ</div>
-                    <img src={detailUser.avatar} alt="profile" style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 10, border: '2px solid var(--border-color)', cursor: 'zoom-in' }} onClick={() => setPreviewImg(detailUser.avatar)} onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x400?text=No+Avatar'; }} />
-                  </Col>
-                  <Col span={12}>
-                    <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--primary-color)', marginBottom: 8, fontWeight: 600 }}>Ảnh Check-in</div>
-                    <img src={detailRecord.photoUrl} alt="checkin" style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 10, border: '3px solid var(--primary-color)', cursor: 'zoom-in' }} onClick={() => setPreviewImg(detailRecord.photoUrl)} onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x400?text=No+Photo'; }} />
-                  </Col>
-                </Row>
-              </div>
+                {/* Photo comparison */}
+                {(detailRecord.checkinRecord?.photoUrl || detailRecord.checkoutRecord?.photoUrl) && (
+                  <div className="premium-card" style={{ padding: 16 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1, marginBottom: 12 }}>SO SÁNH NHẬN DẠNG</div>
+                    <Row gutter={12}>
+                      <Col span={12}>
+                        <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 8 }}>Ảnh hồ sơ</div>
+                        <img src={detailUser.avatar} alt="profile" style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 10, border: '2px solid var(--border-color)', cursor: 'zoom-in' }} onClick={() => setPreviewImg(detailUser.avatar)} />
+                      </Col>
+                      <Col span={12}>
+                        <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--primary-color)', marginBottom: 8, fontWeight: 600 }}>Ảnh Chấm công</div>
+                        <img src={detailRecord.checkinRecord?.photoUrl || detailRecord.checkoutRecord?.photoUrl} alt="checkin" style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 10, border: '2px solid var(--primary-color)', cursor: 'zoom-in' }} onClick={() => setPreviewImg(detailRecord.checkinRecord?.photoUrl || detailRecord.checkoutRecord?.photoUrl)} />
+                      </Col>
+                    </Row>
+                  </div>
+                )}
 
-              {/* Approval info */}
-              {detailRecord.approvedBy && (
-                <div className="premium-card" style={{ padding: 16, background: 'rgba(16,185,129,0.06)', borderColor: 'rgba(16,185,129,0.2)' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--success-color)', letterSpacing: 1, marginBottom: 8 }}>THÔNG TIN PHÊ DUYỆT</div>
-                  <div style={{ fontSize: 13, color: 'var(--text-primary)' }}>Duyệt bởi: <strong>{detailRecord.approvedBy}</strong></div>
-                  {detailRecord.approvedAt && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>{new Date(detailRecord.approvedAt).toLocaleString('vi-VN')}</div>}
-                </div>
-              )}
-
-              {/* Actions */}
-              {detailRecord.status === 'PENDING' && (
-                <Space style={{ width: '100%' }}>
-                  <Button danger ghost icon={<CloseCircleOutlined />} style={{ flex: 1 }} onClick={() => handleReject(detailRecord.id)}>Từ chối</Button>
-                  <Button type="primary" icon={<CheckCircleOutlined />} style={{ flex: 1, backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={() => handleApprove(detailRecord.id)}>Phê duyệt</Button>
-                </Space>
-              )}
-              <Button icon={<EditOutlined />} block onClick={() => { setDrawerOpen(false); openEdit(detailRecord); }}>Chỉnh sửa thông tin</Button>
+                {/* Actions */}
+                {(detailRecord.checkinRecord?.status === 'PENDING' || detailRecord.checkoutRecord?.status === 'PENDING') && (
+                  <Space style={{ width: '100%' }}>
+                    <Button danger ghost icon={<CloseCircleOutlined />} style={{ flex: 1 }} onClick={() => handleReject(detailRecord)}>Từ chối</Button>
+                    <Button type="primary" icon={<CheckCircleOutlined />} style={{ flex: 1, backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={() => handleApprove(detailRecord)}>Phê duyệt</Button>
+                  </Space>
+                )}
             </div>
           </div>
         )}
@@ -377,6 +484,9 @@ export const ManageAttendance = () => {
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item name="userId" label="Nhân sự" rules={[{ required: true }]}>
             <Select options={users.map(u => ({ value: u.id, label: `${u.name} (${u.role})` }))} />
+          </Form.Item>
+          <Form.Item name="actionType" label="Loại chấm công" initialValue="CHECK_IN">
+            <Select options={[{ value: 'CHECK_IN', label: 'Check-in' }, { value: 'CHECK_OUT', label: 'Check-out' }]} />
           </Form.Item>
           <Form.Item name="gpsLocation" label="Vị trí GPS">
             <Input placeholder="Ví dụ: 10.7769, 106.7009 (Văn phòng Quận 1)" />

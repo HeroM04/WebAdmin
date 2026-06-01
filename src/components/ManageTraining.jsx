@@ -1,12 +1,13 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
-import { Table, Button, Space, Avatar, Tag, Input, Select, Popconfirm, message, Row, Col, Drawer, Modal, Form, DatePicker, TimePicker, Progress } from 'antd';
+import { Table, Button, Space, Avatar, Tag, Input, Select, Popconfirm, message, Row, Col, Drawer, Modal, Form, DatePicker, TimePicker, Progress, Tabs, Image } from 'antd';
 import {
   SearchOutlined, DeleteOutlined, ClockCircleOutlined, QrcodeOutlined,
   PlusOutlined, EditOutlined, EyeOutlined, BookOutlined, TeamOutlined,
   CalendarOutlined, EnvironmentOutlined, UserAddOutlined, UserDeleteOutlined,
-  CheckCircleOutlined, CloseCircleOutlined
+  CheckCircleOutlined, CloseCircleOutlined, DownloadOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
+import { exportToCSV } from '../utils/exportCsv';
 
 const { Search } = Input;
 
@@ -23,7 +24,7 @@ const STATUS_CONFIG = {
 
 export const ManageTraining = () => {
   const {
-    trainingSessions, users,
+    trainingSessions, oneOnOneTrainings, users,
     addTrainingSession, updateTrainingSession, deleteTrainingSession,
     addAttendeeToSession, removeAttendeeFromSession
   } = useContext(AppContext);
@@ -217,6 +218,82 @@ export const ManageTraining = () => {
     }
   ];
 
+  const oneOnOneColumns = [
+    {
+      title: 'Nhân sự',
+      key: 'user',
+      render: (_, record) => {
+        const u = getUserById(record.userId);
+        return (
+          <Space>
+            <Avatar src={u?.avatar || record.userAvatar} />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{u?.name || record.userName}</span>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{u?.phone}</span>
+            </div>
+          </Space>
+        );
+      }
+    },
+    {
+      title: 'Nội dung Đào tạo',
+      dataIndex: 'content',
+      key: 'content',
+    },
+    {
+      title: 'Hình ảnh',
+      dataIndex: 'photoUrl',
+      key: 'photoUrl',
+      render: (url) => url ? <Image src={url} width={60} style={{ borderRadius: 6 }} /> : 'Không có ảnh'
+    },
+    {
+      title: 'Thời gian',
+      dataIndex: 'submittedAt',
+      key: 'submittedAt',
+      render: (text) => new Date(text).toLocaleString()
+    },
+    {
+      title: 'Trạng thái',
+      key: 'status',
+      render: (_, record) => <Tag color="success">Đã duyệt (+5 KPI)</Tag>
+    }
+  ];
+
+  const handleExportSession = () => {
+    const exportData = filteredSessions.map(s => ({
+      title: s.title,
+      presenter: s.presenter,
+      attendees: `${s.attendees?.length || 0}/${s.maxSlots}`,
+      status: STATUS_CONFIG[s.status]?.label || s.status,
+      startTime: new Date(s.startTime).toLocaleString(),
+      location: s.location
+    }));
+    exportToCSV(exportData, [
+      { title: 'Tên buổi đào tạo', key: 'title' },
+      { title: 'Giảng viên', key: 'presenter' },
+      { title: 'Sĩ số', key: 'attendees' },
+      { title: 'Trạng thái', key: 'status' },
+      { title: 'Thời gian', key: 'startTime' },
+      { title: 'Địa điểm', key: 'location' }
+    ], 'Bao_Cao_Lop_Dao_Tao.csv');
+  };
+
+
+  const handleExportOneOnOne = () => {
+    const exportData = oneOnOneTrainings.map(o => ({
+      userName: o.userName,
+      content: o.content,
+      submittedAt: new Date(o.submittedAt).toLocaleString(),
+      status: 'Đã duyệt (+5 KPI)'
+    }));
+    exportToCSV(exportData, [
+      { title: 'Nhân sự', key: 'userName' },
+      { title: 'Nội dung', key: 'content' },
+      { title: 'Thời gian', key: 'submittedAt' },
+      { title: 'Trạng thái', key: 'status' }
+    ], 'Bao_Cao_Dao_Tao_1_1.csv');
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <Row gutter={[16, 16]}>
@@ -248,7 +325,7 @@ export const ManageTraining = () => {
                 </h3>
                 <div style={{ display: 'inline-block', background: '#fff', borderRadius: 16, padding: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', border: '4px solid var(--primary-color)' }}>
                   <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=KPI-DIEMDANH-${qrSessionId}-${qrToken}&bgcolor=ffffff&color=0b0f19&qzone=1&margin=0&format=png`}
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${session.roomCode}:${qrToken}&bgcolor=ffffff&color=0b0f19&qzone=1&margin=0&format=png`}
                     alt="QR Code điểm danh"
                     style={{ width: 180, height: 180, display: 'block', borderRadius: 8 }}
                   />
@@ -284,24 +361,67 @@ export const ManageTraining = () => {
         );
       })()}
 
-      <div className="premium-card" style={{ padding: '16px 20px' }}>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <Search placeholder="Tìm theo tên buổi học, diễn giả..." allowClear style={{ width: 260 }} onChange={e => setSearch(e.target.value)} prefix={<SearchOutlined style={{ color: 'var(--text-secondary)' }} />} />
-            <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 150 }} options={[{ value: 'ALL', label: 'Tất cả trạng thái' }, { value: 'UPCOMING', label: 'Sắp diễn ra' }, { value: 'ONGOING', label: 'Đang diễn ra' }, { value: 'COMPLETED', label: 'Đã hoàn thành' }]} />
-            <DatePicker.RangePicker placeholder={['Từ ngày', 'Đến ngày']} onChange={(dates, dateStrings) => setDateRange(dateStrings)} style={{ width: 240 }} />
-          </div>
-          <Button type="primary" icon={<PlusOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={() => setIsAddModalOpen(true)}>Thêm buổi đào tạo</Button>
-        </div>
-      </div>
-
-      <div className="premium-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <BookOutlined style={{ color: 'var(--primary-color)', fontSize: 16 }} />
-          <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Danh sách Buổi Đào tạo</h3>
-        </div>
-        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" pagination={{ pageSize: 6 }} scroll={{ x: 'max-content' }} style={{ padding: '8px' }} />
-      </div>
+      <Tabs
+        type="card"
+        style={{ marginTop: 20 }}
+        items={[
+          {
+            key: 'class',
+            label: <><BookOutlined /> Lớp Đào tạo Tập trung</>,
+            children: (
+              <div className="premium-card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)' }}>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <BookOutlined style={{ fontSize: 20, color: 'var(--primary-color)' }} />
+                    <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Danh sách Buổi Đào tạo</span>
+                  </div>
+                  <Space wrap>
+                    <Search placeholder="Tìm theo tên buổi học, diễn giả..." allowClear onSearch={setSearch} style={{ width: 280 }} />
+                    <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 140 }}>
+                      <Select.Option value="ALL">Tất cả trạng thái</Select.Option>
+                      <Select.Option value="UPCOMING">Sắp diễn ra</Select.Option>
+                      <Select.Option value="ONGOING">Đang diễn ra</Select.Option>
+                      <Select.Option value="COMPLETED">Đã hoàn thành</Select.Option>
+                    </Select>
+                    <DatePicker.RangePicker onChange={setDateRange} format="DD/MM/YYYY" style={{ width: 240 }} />
+                    <Button type="primary" danger icon={<DownloadOutlined />} onClick={handleExportSession}>Xuất báo cáo</Button>
+                    <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddModalOpen(true)}>Thêm buổi đào tạo</Button>
+                  </Space>
+                </div>
+                <Table
+                  columns={columns}
+                  dataSource={filtered}
+                  rowKey="id"
+                  pagination={{ pageSize: 10 }}
+                  scroll={{ x: 'max-content' }}
+                />
+              </div>
+            )
+          },
+          {
+            key: 'oneOnOne',
+            label: <><TeamOutlined /> Đào tạo 1-1</>,
+            children: (
+              <div className="premium-card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)' }}>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <TeamOutlined style={{ fontSize: 20, color: '#ec4899' }} />
+                    <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Báo cáo Đào tạo 1-1</span>
+                  </div>
+                  <Button type="primary" danger icon={<DownloadOutlined />} onClick={handleExportOneOnOne}>Xuất báo cáo</Button>
+                </div>
+                <Table
+                  columns={oneOnOneColumns}
+                  dataSource={oneOnOneTrainings}
+                  rowKey="id"
+                  pagination={{ pageSize: 10 }}
+                  scroll={{ x: 'max-content' }}
+                />
+              </div>
+            )
+          }
+        ]}
+      />
 
       {/* Detail Drawer */}
       <Drawer title={null} placement="right" width={520} open={drawerOpen} onClose={() => setDrawerOpen(false)} styles={{ body: { padding: 0 } }}>

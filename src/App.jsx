@@ -13,6 +13,7 @@ import { Feedback } from './components/Feedback';
 import { Departments } from './components/Departments';
 import { ManageKPI } from './components/ManageKPI';
 import { Login } from './components/Login';
+import Leaderboard from './components/Leaderboard';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
 const MainAppContent = () => {
@@ -84,6 +85,7 @@ const MainAppContent = () => {
           <Route path="/dao-tao" element={<ManageTraining />} />
           <Route path="/chot-can" element={<ManageDeals />} />
           <Route path="/gop-y" element={<Feedback />} />
+          <Route path="/vinh-danh" element={<Leaderboard />} />
           <Route path="/phong-ban" element={currentUser?.role === 'ADMIN' ? <Departments /> : <Navigate to="/cham-cong" />} />
           <Route path="/kpi" element={<ManageKPI />} />
           <Route path="*" element={<Navigate to={currentUser?.role === 'ADMIN' ? "/dashboard" : "/cham-cong"} replace />} />

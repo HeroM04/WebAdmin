@@ -141,7 +141,7 @@ export const ManageDeals = () => {
     {
       title: 'Nhân sự',
       key: 'user',
-      width: 150,
+      width: 250,
       render: (_, record) => {
         const user = getUserById(record.userId);
         return (

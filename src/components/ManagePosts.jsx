@@ -30,6 +30,9 @@ export const ManagePosts = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
+  const [previewImg, setPreviewImg] = useState(null);
+  const [detailAI, setDetailAI] = useState(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const [form] = Form.useForm();
 
   const getUserById = (id) => users.find(u => u.id === id);
@@ -60,7 +63,21 @@ export const ManagePosts = () => {
     rejected: posts.filter(p => p.status === 'REJECTED').length,
   };
 
-  const openDetail = (record) => { setDetailRecord(record); setDrawerOpen(true); };
+  const openDetail = async (record) => {
+    setDetailRecord(record);
+    setDrawerOpen(true);
+    setDetailAI(null);
+    setIsAiLoading(true);
+    try {
+      const result = await scanPostContent(record.caption, record.screenshotUrl);
+      setDetailAI(result);
+    } catch (e) {
+      console.error(e);
+      setDetailAI({ score: 0, suggestion: 'REVIEW', reason: 'Lỗi gọi AI.' });
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   const openAdd = () => {
     setEditingRecord(null);
@@ -154,17 +171,24 @@ export const ManagePosts = () => {
       )
     },
     {
+      title: 'Ảnh chụp',
+      key: 'screenshotUrl',
+      width: 80,
+      render: (_, record) => (
+        record.screenshotUrl ? (
+          <img src={record.screenshotUrl} alt="screenshot" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', border: '1px solid var(--border-color)', cursor: 'zoom-in' }} title="Ảnh chụp màn hình (click xem)" onClick={() => setPreviewImg(record.screenshotUrl)} onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100?text=L%E1%BB%97i+%E1%BA%A3nh'; }} />
+        ) : <span style={{fontSize: 10, color: 'var(--text-secondary)'}}>Không có</span>
+      )
+    },
+    {
       title: 'AI Scan',
       key: 'ai',
       width: 150,
       render: (_, record) => {
-        const result = scanPostContent(record.caption);
         return (
-          <div style={{ minWidth: 130 }}>
-            <Tag color={result.suggestion === 'RECOMMEND' ? 'success' : 'error'} icon={result.suggestion === 'RECOMMEND' ? <CheckCircleOutlined /> : <CloseCircleOutlined />} style={{ fontSize: 10, marginBottom: 4, display: 'block' }}>
-              {result.suggestion === 'RECOMMEND' ? 'KHUYÊN DUYỆT' : 'CẦN XEM XÉT'}
-            </Tag>
-            <Progress percent={result.score} size="small" showInfo={false} strokeColor={result.suggestion === 'RECOMMEND' ? '#10b981' : '#f87171'} railColor="var(--border-color)" />
+          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+            <RobotOutlined style={{ marginRight: 4 }} />
+            Mở chi tiết để quét
           </div>
         );
       }
@@ -204,7 +228,6 @@ export const ManagePosts = () => {
   ];
 
   const detailUser = detailRecord ? getUserById(detailRecord.userId) : null;
-  const detailAI = detailRecord ? scanPostContent(detailRecord.caption) : null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -248,7 +271,7 @@ export const ManagePosts = () => {
 
       {/* Detail Drawer */}
       <Drawer title={null} placement="right" width={520} open={drawerOpen} onClose={() => setDrawerOpen(false)} styles={{ body: { padding: 0 } }}>
-        {detailRecord && detailUser && detailAI && (
+        {detailRecord && detailUser && (
           <div>
             {/* Header with platform color */}
             <div style={{ background: `linear-gradient(135deg, ${PLATFORM_COLORS[detailRecord.platform] || '#3b82f6'} 0%, #8b5cf6 100%)`, padding: '28px', position: 'relative', overflow: 'hidden' }}>
@@ -278,23 +301,38 @@ export const ManagePosts = () => {
                 </div>
               </div>
 
+              {detailRecord.screenshotUrl && (
+                <div className="premium-card" style={{ padding: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1, marginBottom: 10 }}>ẢNH CHỤP MÀN HÌNH</div>
+                  <img src={detailRecord.screenshotUrl} alt="screenshot" style={{ width: '100%', borderRadius: 8, cursor: 'zoom-in', border: '1px solid var(--border-color)' }} onClick={() => setPreviewImg(detailRecord.screenshotUrl)} onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x300?text=L%E1%BB%97i+%E1%BA%A3nh'; }} />
+                </div>
+              )}
+
               {/* AI Result */}
-              <div className="premium-card" style={{ padding: 16, background: detailAI.suggestion === 'RECOMMEND' ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)', borderColor: detailAI.suggestion === 'RECOMMEND' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                  <RobotOutlined style={{ color: detailAI.suggestion === 'RECOMMEND' ? 'var(--success-color)' : 'var(--danger-color)', fontSize: 18 }} />
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Kết quả AI Mock Scanner</div>
+              {isAiLoading ? (
+                <div className="premium-card" style={{ padding: 24, textAlign: 'center' }}>
+                  <div style={{ color: 'var(--primary-color)', marginBottom: 8 }}><RobotOutlined style={{ fontSize: 24 }} spin /></div>
+                  <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600 }}>Gemini AI đang phân tích bài đăng...</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 6 }}>(Quá trình đọc chữ và hình ảnh thực tế có thể mất 5-10 giây)</div>
                 </div>
-                <Tag color={detailAI.suggestion === 'RECOMMEND' ? 'success' : 'error'} icon={detailAI.suggestion === 'RECOMMEND' ? <CheckCircleOutlined /> : <CloseCircleOutlined />} style={{ fontSize: 13, padding: '4px 12px', fontWeight: 700, marginBottom: 10, display: 'inline-flex' }}>
-                  {detailAI.suggestion === 'RECOMMEND' ? '✅ KHUYÊN DUYỆT' : '❌ CẦN XEM XÉT'}
-                </Tag>
-                <div style={{ marginBottom: 6 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>
-                    <span>Độ tương quan từ khóa BĐS:</span><strong style={{ color: 'var(--text-primary)' }}>{detailAI.score}%</strong>
+              ) : detailAI && (
+                <div className="premium-card" style={{ padding: 16, background: detailAI.suggestion === 'RECOMMEND' ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)', borderColor: detailAI.suggestion === 'RECOMMEND' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <RobotOutlined style={{ color: detailAI.suggestion === 'RECOMMEND' ? 'var(--success-color)' : 'var(--danger-color)', fontSize: 18 }} />
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Kết quả Gemini AI (Thực tế)</div>
                   </div>
-                  <Progress percent={detailAI.score} strokeColor={detailAI.suggestion === 'RECOMMEND' ? '#10b981' : '#f87171'} railColor="var(--border-color)" size="small" showInfo={false} />
+                  <Tag color={detailAI.suggestion === 'RECOMMEND' ? 'success' : 'error'} icon={detailAI.suggestion === 'RECOMMEND' ? <CheckCircleOutlined /> : <CloseCircleOutlined />} style={{ fontSize: 13, padding: '4px 12px', fontWeight: 700, marginBottom: 10, display: 'inline-flex' }}>
+                    {detailAI.suggestion === 'RECOMMEND' ? '✅ KHUYÊN DUYỆT' : '❌ CẦN XEM XÉT'}
+                  </Tag>
+                  <div style={{ marginBottom: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>
+                      <span>Điểm đánh giá truyền thông BĐS:</span><strong style={{ color: 'var(--text-primary)' }}>{detailAI.score}/100</strong>
+                    </div>
+                    <Progress percent={detailAI.score} strokeColor={detailAI.suggestion === 'RECOMMEND' ? '#10b981' : '#f87171'} railColor="var(--border-color)" size="small" showInfo={false} />
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontStyle: 'italic', background: 'rgba(255,255,255,0.5)', padding: 8, borderRadius: 6, marginTop: 8 }}>{detailAI.reason}</div>
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontStyle: 'italic' }}>{detailAI.reason}</div>
-              </div>
+              )}
 
               {detailRecord.approvedBy && (
                 <div className="premium-card" style={{ padding: 14, background: 'rgba(16,185,129,0.06)', borderColor: 'rgba(16,185,129,0.2)' }}>
@@ -343,6 +381,11 @@ export const ManagePosts = () => {
             <Input.TextArea rows={5} placeholder="Nhập nội dung bài đăng về BĐS..." showCount maxLength={1000} />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Image Preview Modal */}
+      <Modal open={!!previewImg} footer={null} onCancel={() => setPreviewImg(null)} centered>
+        <img src={previewImg} alt="preview" style={{ width: '100%' }} />
       </Modal>
     </div>
   );

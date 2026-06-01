@@ -1,12 +1,10 @@
-let BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8088/api/v1';
+// Vite tự động nạp từ .env.development (khi chạy dev) hoặc .env.production (khi build)
+let BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// Ép buộc dùng backend production nếu đang chạy web trên mạng (không phải localhost)
-if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-  BASE_URL = 'https://kpi-backend-4xex.onrender.com/api/v1';
-} else if (window.location.protocol === 'https:') {
-  BASE_URL = BASE_URL.replace('http://', 'https://');
+if (!BASE_URL) {
+  console.warn("Chưa cấu hình VITE_API_BASE_URL trong file .env!");
+  BASE_URL = 'http://localhost:8088/api/v1'; // Fallback
 }
-
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('kpi_access_token');
