@@ -17,108 +17,75 @@ export const ManageKPI = () => {
 
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('ALL');
-  const [monthFilter, setMonthFilter] = useState('2026-05'); // Default to mockup current month
+  const [monthFilter, setMonthFilter] = useState(() => dayjs().format('YYYY-MM'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [detailUser, setDetailUser] = useState(null);
+
+  const getMaxKpiForMonth = (monthStr) => {
+    try {
+      const year = parseInt(monthStr.split('-')[0]);
+      const month = parseInt(monthStr.split('-')[1]) - 1; // 0-indexed
+      let mondays = 0;
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      for (let i = 1; i <= daysInMonth; i++) {
+        if (new Date(year, month, i).getDay() === 1) { // 1 is Monday
+          mondays++;
+        }
+      }
+      return mondays * 100;
+    } catch (e) {
+      return 400; // fallback
+    }
+  };
 
   const getDeptName = (deptId) => {
     const dept = departments.find(d => d.id === deptId);
     return dept ? dept.name : 'Chưa phân phòng';
   };
 
-  // Tính toán KPI Tuần cuối cùng của tháng được chọn (hoặc 7 ngày gần nhất nếu là tháng hiện tại)
-  const calculateWeeklyKPI = (userId) => {
-    const isCurrentMonth = dayjs(monthFilter, 'YYYY-MM').isSame(dayjs(), 'month');
-    let endDate, startDate;
-    if (isCurrentMonth) {
-      endDate = new Date();
-    } else {
-      endDate = dayjs(monthFilter, 'YYYY-MM').endOf('month').toDate();
+  // Lấy KPI từ API Backend trả về (được lưu trong kpiScores)
+  const getKpiRecord = (userId, month) => {
+    // API trả về kpiScores chứa { attendance, meeting, post, deal, total, weeklyTotal, isFlagged }
+    const record = kpiScores.find(s => s.userId === userId && s.month === month);
+    if (record) {
+      return {
+        ...record,
+        displayTotal: record.total,
+        hasDeal: record.deal > 0,
+        weeklyTotal: record.weeklyTotal,
+        components: {
+          att: record.attendance,
+          meet: record.meeting,
+          post: record.post,
+          train: 0 // Đào tạo được tính chung vào attendance hoặc meeting từ backend
+        }
+      };
     }
-    startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    // Tính điểm thành phần tuần
-    const userAtt = attendance.filter(a => a.userId === userId && a.status === 'APPROVED' && new Date(a.checkinTime) >= startDate && new Date(a.checkinTime) <= endDate);
-    const userMeets = meetings.filter(m => m.userId === userId && m.status === 'APPROVED' && new Date(m.submittedAt || m.dateTime) >= startDate && new Date(m.submittedAt || m.dateTime) <= endDate);
-    const userPosts = posts.filter(p => p.userId === userId && p.status === 'APPROVED' && new Date(p.submittedAt) >= startDate && new Date(p.submittedAt) <= endDate);
-    const userDeals = deals.filter(d => d.userId === userId && d.status === 'APPROVED' && new Date(d.submittedAt) >= startDate && new Date(d.submittedAt) <= endDate);
-    const userTraining = trainingSessions ? trainingSessions.filter(t => (t.attendees || []).some(att => (att.userId || att) === userId) && new Date(t.startTime || t.date) >= startDate && new Date(t.startTime || t.date) <= endDate) : [];
-
-    let weeklyTotal = 0;
-    weeklyTotal += userAtt.length * 5;
-    weeklyTotal += userMeets.length * 10;
-    weeklyTotal += userPosts.length * 5;
-    weeklyTotal += userTraining.length * 5;
-    
-    // Đặc quyền chốt căn
-    const hasDealThisWeek = userDeals.length > 0;
-    if (hasDealThisWeek) {
-      weeklyTotal = 100; // Nhận luôn 100% KPI tuần
-    }
-
     return {
-      total: weeklyTotal > 100 ? 100 : weeklyTotal, // Max 100
-      hasDeal: hasDealThisWeek,
-      components: {
-        att: userAtt.length * 5,
-        meet: userMeets.length * 10,
-        post: userPosts.length * 5,
-        train: userTraining.length * 5
-      }
+      attendance: 0,
+      meeting: 0,
+      post: 0,
+      deal: 0,
+      total: 0,
+      weeklyTotal: 0,
+      displayTotal: 0,
+      isFlagged: false,
+      hasDeal: false,
+      components: { att: 0, meet: 0, post: 0, train: 0 }
     };
   };
 
-  // Tính toán KPI Tháng
-  const getMonthlyKPI = (userId, month) => {
-    let record = kpiScores.find(s => s.userId === userId && s.month === month);
-    
-    // Tự động tính toán từ raw data để làm mốc tối thiểu (fallback cho mock data bị miss trigger)
-    const monthStart = dayjs(month, 'YYYY-MM').startOf('month').toDate();
-    const monthEnd = dayjs(month, 'YYYY-MM').endOf('month').toDate();
-    
-    const userAtt = attendance.filter(a => a.userId === userId && a.status === 'APPROVED' && new Date(a.checkinTime) >= monthStart && new Date(a.checkinTime) <= monthEnd);
-    const userMeets = meetings.filter(m => m.userId === userId && m.status === 'APPROVED' && new Date(m.submittedAt || m.dateTime) >= monthStart && new Date(m.submittedAt || m.dateTime) <= monthEnd);
-    const userPosts = posts.filter(p => p.userId === userId && p.status === 'APPROVED' && new Date(p.submittedAt) >= monthStart && new Date(p.submittedAt) <= monthEnd);
-    
-    const rawAtt = userAtt.length * 5;
-    const rawMeet = userMeets.length * 10;
-    const rawPost = userPosts.length * 5;
-    const rawTotal = Math.min(rawAtt + rawMeet + rawPost, 400);
-    
-    if (!record) {
-      record = {
-        attendance: rawAtt,
-        meeting: rawMeet,
-        post: rawPost,
-        deal: 0,
-        total: rawTotal,
-        isFlagged: false
-      };
-    } else {
-      // Đảm bảo dữ liệu tháng không bao giờ nhỏ hơn dữ liệu raw thực tế đang có
-      record = {
-        ...record,
-        attendance: Math.max(record.attendance, rawAtt),
-        meeting: Math.max(record.meeting, rawMeet),
-        post: Math.max(record.post, rawPost),
-        total: Math.max(record.total, rawTotal)
-      };
-    }
-    
-    // Kiểm tra đặc quyền chốt căn trong tháng
-    const userDeals = deals.filter(d => d.userId === userId && d.status === 'APPROVED' && d.submittedAt.startsWith(month));
-    const hasDealThisMonth = userDeals.length > 0;
-    
-    let displayTotal = record.total;
-    if (hasDealThisMonth) {
-      displayTotal = 400; // Giả sử tháng có 4 tuần = 400 điểm, tự động đạt max
-    }
-
+  const calculateWeeklyKPI = (userId) => {
+    const record = getKpiRecord(userId, monthFilter);
     return {
-      ...record,
-      displayTotal: displayTotal > 400 ? 400 : displayTotal,
-      hasDeal: hasDealThisMonth
+      total: record.weeklyTotal,
+      hasDeal: record.hasDeal,
+      components: record.components
     };
+  };
+
+  const getMonthlyKPI = (userId, month) => {
+    return getKpiRecord(userId, month);
   };
 
   const handleFlag = (userId) => {
@@ -188,13 +155,14 @@ export const ManageKPI = () => {
       width: 250,
       render: (_, record) => {
         const monthData = getMonthlyKPI(record.id, monthFilter);
-        const percent = Math.min(100, Math.round((monthData.displayTotal / 400) * 100));
+        const maxKpi = getMaxKpiForMonth(monthFilter);
+        const percent = Math.min(100, Math.round((monthData.displayTotal / maxKpi) * 100));
         
         return (
           <div style={{ paddingRight: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
               <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                {monthData.hasDeal ? 'Hoàn thành 100%' : `${monthData.displayTotal} / 400 pts`}
+                {monthData.hasDeal ? 'Hoàn thành 100%' : `${monthData.displayTotal} / ${maxKpi} pts`}
               </span>
               <span style={{ color: 'var(--text-secondary)' }}>{percent}%</span>
             </div>

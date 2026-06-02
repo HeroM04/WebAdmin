@@ -44,6 +44,7 @@ export const AppLayout = ({ children }) => {
     '/gop-y': 'feedback',
     '/phong-ban': 'departments',
     '/kpi': 'manage_kpi',
+    '/vinh-danh': 'leaderboard',
   };
 
   const activeTab = routeMap[location.pathname] || 'dashboard';
@@ -138,6 +139,7 @@ export const AppLayout = ({ children }) => {
     salary_estimator: 'Dự toán Lương',
     departments: 'Quản lý Phòng ban',
     manage_kpi: 'Chấm KPI & Hậu kiểm',
+    leaderboard: 'Bảng Vinh Danh',
   };
 
   const menuItems = [
@@ -221,7 +223,12 @@ export const AppLayout = ({ children }) => {
           <MessageOutlined style={{ color: pendingFeedbacks > 0 ? '#fbbf24' : 'inherit' }} />
         </Badge>
       ),
-      label: 'Góp ý Nhân sự'
+      label: <Link to="/gop-y">Góp ý Nhân sự</Link>
+    },
+    {
+      key: 'leaderboard',
+      icon: <TrophyOutlined style={{ color: '#fbbf24' }} />,
+      label: <Link to="/vinh-danh">Bảng vinh danh</Link>
     }
   ];
 
