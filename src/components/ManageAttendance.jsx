@@ -446,14 +446,22 @@ export const ManageAttendance = () => {
                   <div className="premium-card" style={{ padding: 16 }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1, marginBottom: 12 }}>SO SÁNH NHẬN DẠNG</div>
                     <Row gutter={12}>
-                      <Col span={12}>
+                      <Col span={detailRecord.checkinRecord?.photoUrl && detailRecord.checkoutRecord?.photoUrl ? 8 : 12}>
                         <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 8 }}>Ảnh hồ sơ</div>
                         <img src={detailUser.avatar} alt="profile" style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 10, border: '2px solid var(--border-color)', cursor: 'zoom-in' }} onClick={() => setPreviewImg(detailUser.avatar)} />
                       </Col>
-                      <Col span={12}>
-                        <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--primary-color)', marginBottom: 8, fontWeight: 600 }}>Ảnh Chấm công</div>
-                        <img src={detailRecord.checkinRecord?.photoUrl || detailRecord.checkoutRecord?.photoUrl} alt="checkin" style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 10, border: '2px solid var(--primary-color)', cursor: 'zoom-in' }} onClick={() => setPreviewImg(detailRecord.checkinRecord?.photoUrl || detailRecord.checkoutRecord?.photoUrl)} />
-                      </Col>
+                      {detailRecord.checkinRecord?.photoUrl && (
+                        <Col span={detailRecord.checkinRecord?.photoUrl && detailRecord.checkoutRecord?.photoUrl ? 8 : 12}>
+                          <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--primary-color)', marginBottom: 8, fontWeight: 600 }}>Ảnh Check-in</div>
+                          <img src={detailRecord.checkinRecord.photoUrl} alt="checkin" style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 10, border: '2px solid var(--primary-color)', cursor: 'zoom-in' }} onClick={() => setPreviewImg(detailRecord.checkinRecord.photoUrl)} />
+                        </Col>
+                      )}
+                      {detailRecord.checkoutRecord?.photoUrl && (
+                        <Col span={detailRecord.checkinRecord?.photoUrl && detailRecord.checkoutRecord?.photoUrl ? 8 : 12}>
+                          <div style={{ textAlign: 'center', fontSize: 11, color: '#ef4444', marginBottom: 8, fontWeight: 600 }}>Ảnh Check-out</div>
+                          <img src={detailRecord.checkoutRecord.photoUrl} alt="checkout" style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 10, border: '2px solid #ef4444', cursor: 'zoom-in' }} onClick={() => setPreviewImg(detailRecord.checkoutRecord.photoUrl)} />
+                        </Col>
+                      )}
                     </Row>
                   </div>
                 )}
