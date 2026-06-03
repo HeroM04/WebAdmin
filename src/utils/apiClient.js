@@ -1,7 +1,8 @@
-// Vite tự động nạp từ .env.development (khi chạy dev) hoặc .env.production (khi build)
 let BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-if (!BASE_URL) {
+if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+  BASE_URL = 'https://kpi-backend-4xex.onrender.com/api/v1';
+} else if (!BASE_URL) {
   console.warn("Chưa cấu hình VITE_API_BASE_URL trong file .env!");
   BASE_URL = 'http://localhost:8088/api/v1'; // Fallback
 }
