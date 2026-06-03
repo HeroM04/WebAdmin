@@ -148,7 +148,7 @@ export const ManageAttendance = () => {
     });
   };
 
-  const handleExport = () => {
+  const handleExportCSV = () => {
     const exportData = filtered.map(r => {
       const user = getUserById(r.userId);
       const cIn = r.checkinRecord;
@@ -172,6 +172,48 @@ export const ManageAttendance = () => {
       { title: 'Vị trí Check-out', key: 'checkOutLocation' },
       { title: 'Trạng thái', key: 'status' }
     ], 'Bao_Cao_Cham_Cong.csv');
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      const token = localStorage.getItem('kpi_access_token');
+      // Lấy URL từ backend, thay đổi tuỳ vào đang chạy local hay production
+      let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8088/api';
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        baseUrl = 'https://kpi-backend-4xex.onrender.com/api';
+      }
+      
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+
+      message.loading({ content: 'Đang tạo báo cáo Excel...', key: 'export_excel' });
+
+      const response = await fetch(`${baseUrl}/reports/attendance?year=${currentYear}&month=${currentMonth}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Không thể tải báo cáo từ máy chủ');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `BaoCaoChamCong_${currentMonth}_${currentYear}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      
+      message.success({ content: 'Tải xuống thành công!', key: 'export_excel' });
+    } catch (e) {
+      message.error({ content: e.message || 'Lỗi khi xuất Excel', key: 'export_excel' });
+    }
   };
 
   const handleDelete = async (record) => {
@@ -345,7 +387,7 @@ export const ManageAttendance = () => {
             <Select value={deptFilter} onChange={setDeptFilter} style={{ width: 160 }} options={[{ value: 'ALL', label: 'Tất cả phòng ban' }, ...departments.map(d => ({ value: d.id, label: d.name }))]} />
             <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 150 }} options={[{ value: 'ALL', label: 'Tất cả trạng thái' }, { value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }]} />
             <DatePicker.RangePicker placeholder={['Từ ngày', 'Đến ngày']} onChange={(dates, dateStrings) => setDateRange(dateStrings)} style={{ width: 220 }} />
-            <Button type="primary" danger icon={<DownloadOutlined />} onClick={handleExport}>Xuất báo cáo</Button>
+            <Button type="primary" danger icon={<DownloadOutlined />} onClick={handleExportExcel}>Xuất báo cáo (Excel)</Button>
             <span style={{ fontSize: 13, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
               Hiển thị <strong style={{ color: 'var(--text-primary)', margin: '0 4px' }}>{filtered.length}</strong> / {attendance.length}
             </span>
