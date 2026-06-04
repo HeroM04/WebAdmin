@@ -32,7 +32,14 @@ const MainAppContent = () => {
     }
   }, [isAuthenticated, currentUser, logout, navigate]);
 
-  if (!isAuthenticated) {
+  // Guard: nếu đang "authenticated" nhưng currentUser bị null (dữ liệu localStorage bị hỏng)
+  // → Xóa token hỏng và ép về trang Login, tránh crash toàn trang
+  if (!isAuthenticated || !currentUser) {
+    // Dọn dẹp localStorage hỏng nếu cần
+    if (isAuthenticated && !currentUser) {
+      localStorage.removeItem('kpi_is_auth');
+      localStorage.removeItem('kpi_current_user');
+    }
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
