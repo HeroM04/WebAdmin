@@ -72,6 +72,14 @@ export const AppProvider = ({ children }) => {
 
   // Sync state to localStorage on changes
   useEffect(() => {
+    if (isAuthenticated && !currentUser) {
+      // Bị hỏng state lưu trong localStorage -> Ép đăng nhập lại
+      localStorage.removeItem('kpi_is_auth');
+      setIsAuthenticated(false);
+    }
+  }, [isAuthenticated, currentUser]);
+
+  useEffect(() => {
     localStorage.setItem('kpi_departments', JSON.stringify(departments));
   }, [departments]);
 
