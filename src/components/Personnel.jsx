@@ -115,6 +115,15 @@ export const Personnel = () => {
     }
   };
 
+  const handleResetPassword = async (id) => {
+    try {
+      await apiClient.put(`/users/${id}/reset-password`, { newPassword: '123456' });
+      message.success('Đã đặt lại mật khẩu thành 123456 thành công!');
+    } catch (e) {
+      message.error(e.message || 'Lỗi hệ thống khi đặt lại mật khẩu');
+    }
+  };
+
   const filteredUsers = [...users]
     .filter(u => {
       const matchName = !search || 
@@ -531,23 +540,40 @@ export const Personnel = () => {
                   <code style={{ fontSize: 12, color: 'var(--primary-color)', background: 'rgba(16,185,129,0.1)', padding: '4px 8px', borderRadius: 4 }}>{detailUser.id}</code>
                 </div>
 
-                <Space style={{ width: '100%' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
+                  <Space style={{ width: '100%' }}>
+                    <Button
+                      type="primary"
+                      icon={<EditOutlined />}
+                      style={{ flex: 1, backgroundColor: roleColor, borderColor: roleColor }}
+                      onClick={() => { setDrawerOpen(false); showEditModal(detailUser); }}
+                    >
+                      Chỉnh sửa
+                    </Button>
+                    <Popconfirm
+                      title="Xóa nhân viên này?"
+                      onConfirm={() => { handleDelete(detailUser.id); setDrawerOpen(false); }}
+                      okText="Xóa" cancelText="Hủy" okButtonProps={{ danger: true }}
+                    >
+                      <Button danger icon={<DeleteOutlined />} style={{ flex: 1 }}>Xóa</Button>
+                    </Popconfirm>
+                  </Space>
                   <Button
-                    type="primary"
-                    icon={<EditOutlined />}
-                    style={{ flex: 1, backgroundColor: roleColor, borderColor: roleColor }}
-                    onClick={() => { setDrawerOpen(false); showEditModal(detailUser); }}
+                    icon={<KeyOutlined />}
+                    block
+                    onClick={() => {
+                      Modal.confirm({
+                        title: 'Đặt lại mật khẩu',
+                        content: 'Bạn có chắc chắn muốn đặt lại mật khẩu của nhân viên này về mặc định (123456)?',
+                        onOk: () => handleResetPassword(detailUser.id),
+                        okText: 'Đặt lại',
+                        cancelText: 'Hủy'
+                      });
+                    }}
                   >
-                    Chỉnh sửa
+                    Khôi phục mật khẩu mặc định (123456)
                   </Button>
-                  <Popconfirm
-                    title="Xóa nhân viên này?"
-                    onConfirm={() => { handleDelete(detailUser.id); setDrawerOpen(false); }}
-                    okText="Xóa" cancelText="Hủy" okButtonProps={{ danger: true }}
-                  >
-                    <Button danger icon={<DeleteOutlined />} style={{ flex: 1 }}>Xóa tài khoản</Button>
-                  </Popconfirm>
-                </Space>
+                </div>
               </div>
             </div>
           );
