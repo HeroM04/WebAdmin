@@ -262,12 +262,12 @@ export const Dashboard = () => {
     {
       title: 'Nhân sự',
       key: 'user',
-      render: (user) => (
+      render: (record) => (
         <Space>
-          <Avatar src={user.user.avatar} size="default" />
+          <Avatar src={record?.user?.avatar || record?.user?.avatarUrl} size="default" />
           <div>
-            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13 }}>{user.user.name}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{user.user.role} · {user.deptName.replace('Phòng ', '')}</div>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13 }}>{record?.user?.name || record?.user?.fullName || '—'}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{record?.user?.role} · {record?.deptName?.replace('Phòng ', '')}</div>
           </div>
         </Space>
       )
