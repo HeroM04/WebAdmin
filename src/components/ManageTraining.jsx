@@ -165,6 +165,15 @@ export const ManageTraining = () => {
         };
 
         await updateTrainingSession(editingSession.id, dto);
+
+        // Optimistic update cho detailSession (nếu đang mở Drawer)
+        if (detailSession && detailSession.id === editingSession.id) {
+          setDetailSession({
+            ...detailSession,
+            ...dto
+          });
+        }
+
         message.success('Đã cập nhật buổi đào tạo!');
         setIsEditModalOpen(false);
         setEditingSession(null);
