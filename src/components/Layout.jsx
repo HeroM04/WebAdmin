@@ -45,6 +45,7 @@ export const AppLayout = ({ children }) => {
     '/phong-ban': 'departments',
     '/kpi': 'manage_kpi',
     '/vinh-danh': 'leaderboard',
+    '/salepro': 'salepro',
   };
 
   const activeTab = routeMap[location.pathname] || 'dashboard';
@@ -140,6 +141,7 @@ export const AppLayout = ({ children }) => {
     departments: 'Quản lý Phòng ban',
     manage_kpi: 'Chấm KPI & Hậu kiểm',
     leaderboard: 'Bảng Vinh Danh',
+    salepro: 'Quản lý Quỹ hàng (SalePro)',
   };
 
   const menuItems = [
@@ -213,6 +215,11 @@ export const AppLayout = ({ children }) => {
           key: 'manage_kpi',
           icon: <TrophyOutlined />,
           label: 'Chấm KPI'
+        },
+        {
+          key: 'salepro',
+          icon: <BankOutlined />,
+          label: <Link to="/salepro">Quỹ hàng (SalePro)</Link>
         }
       ]
     },
