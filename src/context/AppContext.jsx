@@ -564,7 +564,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const addAttendeeToSession = async (sessionId, userId) => {
-    try { await apiClient.post('/training-sessions/attend', { sessionId, userId }); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.post(`/training-sessions/${sessionId}/attendees/${userId}`); await fetchInitialData(); } catch (e) { throw e; }
   };
 
   const removeAttendeeFromSession = async (sessionId, userId) => {

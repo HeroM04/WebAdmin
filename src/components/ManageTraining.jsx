@@ -161,8 +161,29 @@ export const ManageTraining = () => {
           maxSlots: values.maxSlots || 50,
           status: values.status || editingSession.status,
           photoUrl: editingSession.photoUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80',
-          videoUrl: values.videoUrl ? values.videoUrl.trim() : null
+          videoUrl: values.videoUrl ? values.videoUrl.trim() : ""
         };
+
+        // Gọi thêm API cập nhật status riêng biệt để đảm bảo luôn thành công
+        // (Do backend trên Render chưa update code mới nhất có chứa status trong DTO)
+        if (dto.status && dto.status !== editingSession.status) {
+          try {
+            const token = localStorage.getItem('kpi_access_token');
+            let wsUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8088/api/v1';
+            if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+              wsUrl = 'https://kpi-backend-4xex.onrender.com/api/v1';
+            }
+            await fetch(`${wsUrl}/training-sessions/${editingSession.id}/status?status=${dto.status}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              }
+            });
+          } catch (err) {
+            console.error("Lỗi update status", err);
+          }
+        }
 
         await updateTrainingSession(editingSession.id, dto);
 
