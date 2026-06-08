@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { Table, Button, Space, Avatar, Tag, Input, Select, Popconfirm, message, Row, Col, Drawer, Modal, Form, DatePicker, TimePicker, Progress, Tabs, Image } from 'antd';
+import dayjs from 'dayjs';
 import {
   SearchOutlined, DeleteOutlined, ClockCircleOutlined, QrcodeOutlined,
   PlusOutlined, EditOutlined, EyeOutlined, BookOutlined, TeamOutlined,
@@ -89,6 +90,16 @@ export const ManageTraining = () => {
 
   const openEdit = (session) => {
     setEditingSession(session);
+    // Parse startTime từ server (ISO string) thành dayjs objects
+    let dateVal = null;
+    let startTimeVal = null;
+    if (session.startTime) {
+      const dt = dayjs(session.startTime);
+      if (dt.isValid()) {
+        dateVal = dt;
+        startTimeVal = dt;
+      }
+    }
     editForm.setFieldsValue({
       title: session.title,
       trainer: session.presenter,
@@ -96,7 +107,9 @@ export const ManageTraining = () => {
       topic: session.description,
       maxSlots: session.maxSlots,
       status: session.status,
-      videoUrl: session.videoUrl || ''
+      videoUrl: session.videoUrl || '',
+      date: dateVal,
+      startTime: startTimeVal,
     });
     setIsEditModalOpen(true);
   };
@@ -133,8 +146,9 @@ export const ManageTraining = () => {
   const handleEditSession = () => {
     editForm.validateFields().then(async values => {
       try {
-        const dateStr = typeof values.date === 'string' ? values.date : values.date?.format?.('YYYY-MM-DD') || new Date().toISOString().split('T')[0];
-        const timeStr = typeof values.startTime === 'string' ? values.startTime : values.startTime?.format?.('HH:mm') || '00:00';
+        // values.date và values.startTime luôn là dayjs objects từ DatePicker/TimePicker
+        const dateStr = values.date ? dayjs(values.date).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD');
+        const timeStr = values.startTime ? dayjs(values.startTime).format('HH:mm') : '00:00';
         const combinedStartTime = `${dateStr}T${timeStr}:00Z`;
 
         const dto = {
@@ -145,8 +159,9 @@ export const ManageTraining = () => {
           startTime: combinedStartTime,
           location: values.location || '',
           maxSlots: values.maxSlots || 50,
+          status: values.status || editingSession.status,
           photoUrl: editingSession.photoUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80',
-          videoUrl: values.videoUrl || null
+          videoUrl: values.videoUrl ? values.videoUrl.trim() : null
         };
 
         await updateTrainingSession(editingSession.id, dto);
@@ -642,9 +657,9 @@ export const ManageTraining = () => {
             <Input />
           </Form.Item>
           <Row gutter={16}>
-            <Col span={8}><Form.Item name="date" label="Ngày"><Input /></Form.Item></Col>
-            <Col span={8}><Form.Item name="startTime" label="Bắt đầu"><Input /></Form.Item></Col>
-            <Col span={8}><Form.Item name="endTime" label="Kết thúc"><Input /></Form.Item></Col>
+            <Col span={8}><Form.Item name="date" label="Ngày" rules={[{ required: true, message: 'Vui lòng chọn ngày' }]}><DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" /></Form.Item></Col>
+            <Col span={8}><Form.Item name="startTime" label="Bắt đầu"><TimePicker style={{ width: '100%' }} format="HH:mm" /></Form.Item></Col>
+            <Col span={8}><Form.Item name="endTime" label="Kết thúc"><TimePicker style={{ width: '100%' }} format="HH:mm" /></Form.Item></Col>
           </Row>
           <Form.Item name="location" label="Địa điểm" rules={[{ required: true }]}>
             <Input />
