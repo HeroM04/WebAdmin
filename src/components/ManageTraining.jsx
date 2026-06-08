@@ -4,12 +4,16 @@ import {
   SearchOutlined, DeleteOutlined, ClockCircleOutlined, QrcodeOutlined,
   PlusOutlined, EditOutlined, EyeOutlined, BookOutlined, TeamOutlined,
   CalendarOutlined, EnvironmentOutlined, UserAddOutlined, UserDeleteOutlined,
-  CheckCircleOutlined, CloseCircleOutlined, DownloadOutlined
+  CheckCircleOutlined, CloseCircleOutlined, DownloadOutlined,
+  YoutubeOutlined, LinkOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import { exportToCSV } from '../utils/exportCsv';
 
 const { Search } = Input;
+
+// Regex validate URL YouTube hợp lệ (youtube.com hoặc youtu.be)
+const YOUTUBE_URL_REGEX = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([\w\-]{11})(.*)?$/;
 
 const generateQRToken = () => {
   const now = Math.floor(Date.now() / 10000);
@@ -85,7 +89,15 @@ export const ManageTraining = () => {
 
   const openEdit = (session) => {
     setEditingSession(session);
-    editForm.setFieldsValue({ title: session.title, trainer: session.presenter, location: session.location, topic: session.description, maxSlots: session.maxSlots, status: session.status });
+    editForm.setFieldsValue({
+      title: session.title,
+      trainer: session.presenter,
+      location: session.location,
+      topic: session.description,
+      maxSlots: session.maxSlots,
+      status: session.status,
+      videoUrl: session.videoUrl || ''
+    });
     setIsEditModalOpen(true);
   };
 
@@ -104,7 +116,8 @@ export const ManageTraining = () => {
           startTime: combinedStartTime,
           location: values.location || '',
           maxSlots: values.maxSlots || 50,
-          photoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80'
+          photoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80',
+          videoUrl: values.videoUrl || null
         };
 
         await addTrainingSession(dto);
@@ -132,7 +145,8 @@ export const ManageTraining = () => {
           startTime: combinedStartTime,
           location: values.location || '',
           maxSlots: values.maxSlots || 50,
-          photoUrl: editingSession.photoUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80'
+          photoUrl: editingSession.photoUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80',
+          videoUrl: values.videoUrl || null
         };
 
         await updateTrainingSession(editingSession.id, dto);
@@ -193,6 +207,32 @@ export const ManageTraining = () => {
           </div>
         );
       }
+    },
+    {
+      title: 'Video Bài Giảng',
+      key: 'videoUrl',
+      width: 160,
+      render: (_, record) => record.videoUrl ? (
+        <a href={record.videoUrl} target="_blank" rel="noopener noreferrer">
+          <Button
+            size="small"
+            style={{
+              backgroundColor: '#ff0000',
+              borderColor: '#cc0000',
+              color: '#fff',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4
+            }}
+            icon={<YoutubeOutlined style={{ fontSize: 14 }} />}
+          >
+            Xem Video
+          </Button>
+        </a>
+      ) : (
+        <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontStyle: 'italic' }}>Chưa cập nhật video</span>
+      )
     },
     {
       title: 'Trạng thái',
@@ -466,6 +506,41 @@ export const ManageTraining = () => {
                 </div>
               )}
 
+              {/* Video Section */}
+              <div className="premium-card" style={{ padding: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1, marginBottom: 12 }}>VIDEO BÀI GIẢNG</div>
+                {detailSession.videoUrl ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid rgba(255,0,0,0.2)' }}>
+                      <YoutubeOutlined style={{ fontSize: 20, color: '#ff0000', flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, color: 'var(--text-secondary)', wordBreak: 'break-all', flex: 1 }}>{detailSession.videoUrl}</span>
+                    </div>
+                    <a href={detailSession.videoUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
+                      <Button
+                        type="primary"
+                        icon={<YoutubeOutlined />}
+                        style={{
+                          width: '100%',
+                          backgroundColor: '#ff0000',
+                          borderColor: '#cc0000',
+                          fontWeight: 700,
+                          height: 40,
+                          fontSize: 14,
+                          boxShadow: '0 4px 15px rgba(255,0,0,0.3)'
+                        }}
+                      >
+                        Xem Video trên YouTube
+                      </Button>
+                    </a>
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '16px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                    <YoutubeOutlined style={{ fontSize: 32, color: 'var(--border-color)' }} />
+                    <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontStyle: 'italic' }}>Chưa cập nhật video cho buổi đào tạo này</span>
+                  </div>
+                )}
+              </div>
+
               <div className="premium-card" style={{ padding: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1 }}>
@@ -526,6 +601,30 @@ export const ManageTraining = () => {
           <Form.Item name="topic" label="Nội dung chủ đề">
             <Input.TextArea rows={2} placeholder="Mô tả nội dung..." />
           </Form.Item>
+          <Form.Item
+            name="videoUrl"
+            label={
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <YoutubeOutlined style={{ color: '#ff0000', fontSize: 16 }} />
+                Link Video Bài Giảng (YouTube)
+              </span>
+            }
+            rules={[
+              {
+                validator: (_, value) => {
+                  if (!value || value.trim() === '') return Promise.resolve();
+                  if (YOUTUBE_URL_REGEX.test(value.trim())) return Promise.resolve();
+                  return Promise.reject(new Error('Link không hợp lệ. Vui lòng nhập URL YouTube (youtube.com hoặc youtu.be).'));
+                }
+              }
+            ]}
+          >
+            <Input
+              placeholder="https://www.youtube.com/watch?v=... hoặc https://youtu.be/..."
+              prefix={<LinkOutlined style={{ color: 'var(--text-secondary)' }} />}
+              allowClear
+            />
+          </Form.Item>
           <Row gutter={16}>
             <Col span={12}><Form.Item name="maxSlots" label="Số slot tối đa" initialValue={20}><Input type="number" min={1} /></Form.Item></Col>
             <Col span={12}><Form.Item name="status" label="Trạng thái" initialValue="UPCOMING"><Select options={[{ value: 'UPCOMING', label: 'Sắp diễn ra' }, { value: 'ONGOING', label: 'Đang diễn ra' }, { value: 'COMPLETED', label: 'Đã hoàn thành' }]} /></Form.Item></Col>
@@ -552,6 +651,30 @@ export const ManageTraining = () => {
           </Form.Item>
           <Form.Item name="topic" label="Nội dung chủ đề">
             <Input.TextArea rows={2} />
+          </Form.Item>
+          <Form.Item
+            name="videoUrl"
+            label={
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <YoutubeOutlined style={{ color: '#ff0000', fontSize: 16 }} />
+                Link Video Bài Giảng (YouTube)
+              </span>
+            }
+            rules={[
+              {
+                validator: (_, value) => {
+                  if (!value || value.trim() === '') return Promise.resolve();
+                  if (YOUTUBE_URL_REGEX.test(value.trim())) return Promise.resolve();
+                  return Promise.reject(new Error('Link không hợp lệ. Vui lòng nhập URL YouTube (youtube.com hoặc youtu.be).'));
+                }
+              }
+            ]}
+          >
+            <Input
+              placeholder="https://www.youtube.com/watch?v=..."
+              prefix={<LinkOutlined style={{ color: 'var(--text-secondary)' }} />}
+              allowClear
+            />
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}><Form.Item name="maxSlots" label="Số slot tối đa"><Input type="number" min={1} /></Form.Item></Col>
