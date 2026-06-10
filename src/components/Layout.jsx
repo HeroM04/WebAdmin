@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link, Outlet } from 'react-router-dom';
 import { Layout, Menu, Button, Select, Badge, Popover, List, Avatar, Space, Tooltip } from 'antd';
 import {
   DashboardOutlined,
@@ -25,7 +25,7 @@ import { AppContext } from '../context/AppContext';
 
 const { Header, Sider, Content, Footer } = Layout;
 
-export const AppLayout = ({ children }) => {
+export const AppLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { 
@@ -409,7 +409,7 @@ export const AppLayout = ({ children }) => {
 
         <Content style={{ padding: 24, minHeight: 'calc(100vh - 64px - 62px)', overflowY: 'auto' }}>
           <div className="animate-fade-in-up">
-            {children}
+            <Outlet />
           </div>
         </Content>
         <Footer style={{ textAlign: 'center', background: 'var(--bg-container)', color: 'var(--text-secondary)', borderTop: '1px solid var(--border-color)' }}>
