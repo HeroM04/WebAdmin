@@ -121,9 +121,6 @@ export const LandingPage = () => {
           <div className="lp-orb lp-orb-1"></div>
           <div className="lp-orb lp-orb-2"></div>
           <div className="lp-orb lp-orb-3"></div>
-          
-          {/* Watermark */}
-          <div className="lp-watermark">SALEPRO.COM</div>
 
           <div className="lp-hero-inner animate-fade-in-up">
             <div className="lp-hero-badge">
