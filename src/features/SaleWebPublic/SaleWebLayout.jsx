@@ -3,8 +3,11 @@ import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import { CompareContext } from '../../context/CompareContext';
 import '../../SaleWeb.css';
-import { Modal, Form, Input, Button, message, Badge } from 'antd';
-import { MailOutlined, PhoneOutlined, EnvironmentOutlined, FacebookFilled, YoutubeFilled, TikTokOutlined, ArrowUpOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, Button, message, Badge, Dropdown, Avatar } from 'antd';
+import { 
+  MailOutlined, PhoneOutlined, EnvironmentOutlined, FacebookFilled, YoutubeFilled, TikTokOutlined, ArrowUpOutlined,
+  MessageOutlined, BellOutlined, UserOutlined, ShoppingCartOutlined, UnorderedListOutlined, HeartOutlined, CommentOutlined, LogoutOutlined
+} from '@ant-design/icons';
 
 export const SaleWebLayout = () => {
   const { currentUser, isAuthenticated, loginPublic, logout } = useContext(AppContext);
@@ -12,6 +15,25 @@ export const SaleWebLayout = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const userMenuItems = [
+    { key: 'profile', icon: <UserOutlined />, label: 'Thông tin cá nhân' },
+    { key: 'orders', icon: <ShoppingCartOutlined />, label: 'Đơn hàng của tôi' },
+    { key: 'booking', icon: <UnorderedListOutlined />, label: 'Danh sách booking' },
+    { key: 'favorites', icon: <HeartOutlined />, label: 'Căn hộ đang quan tâm' },
+    { key: 'comments', icon: <CommentOutlined />, label: 'Bình luận của tôi' },
+    { type: 'divider' },
+    { 
+      key: 'logout', 
+      icon: <LogoutOutlined />, 
+      label: 'Đăng xuất',
+      danger: true,
+      onClick: () => {
+        logout();
+        message.success('Đã đăng xuất');
+      }
+    },
+  ];
 
   const handleLogin = async (values) => {
     setLoading(true);
@@ -81,17 +103,19 @@ export const SaleWebLayout = () => {
             )}
             
             {isAuthenticated ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontWeight: 600 }}>{currentUser.username}</span>
-                <button 
-                  onClick={() => {
-                    logout();
-                    message.success('Đã đăng xuất');
-                  }} 
-                  style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600 }}
-                >
-                  Đăng xuất
-                </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <Badge count={2} size="small" offset={[2, -2]}>
+                  <MessageOutlined style={{ fontSize: '20px', color: '#475569', cursor: 'pointer' }} />
+                </Badge>
+                <Badge count={5} size="small" offset={[2, -2]}>
+                  <BellOutlined style={{ fontSize: '20px', color: '#475569', cursor: 'pointer' }} />
+                </Badge>
+                <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={['click', 'hover']}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#d4af37' }} />
+                    <span style={{ fontWeight: 600, color: '#1e293b' }}>{currentUser.username}</span>
+                  </div>
+                </Dropdown>
               </div>
             ) : (
               <button 

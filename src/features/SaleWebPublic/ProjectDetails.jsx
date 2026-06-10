@@ -151,8 +151,8 @@ export const ProjectDetails = () => {
               <h3 style={{ color: '#0f172a', marginBottom: '32px' }}>LUMIÈRE HANOI SEASONS GARDEN</h3>
             </div>
             
-            <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
-              <div style={{ flex: 1, lineHeight: '1.8', fontSize: '1rem', color: '#334155' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+              <div style={{ lineHeight: '1.8', fontSize: '1rem', color: '#334155' }}>
                 <p>
                   Tọa lạc tại 233 – 235 Nguyễn Trãi, Masteri Cao Xà Lá sở hữu vị trí kim cương ngay trong khu vực nội đô Hà Nội. Dự án nằm trên trục Nguyễn Trãi – tuyến giao thông huyết mạch kết nối Thanh Xuân, Đống Đa và Hà Đông, nhờ đó vừa thuận tiện cho nhu cầu di chuyển hàng ngày, vừa hưởng lợi trực tiếp từ mạng lưới hạ tầng và giao thông công cộng đang ngày càng hoàn thiện. Đây là một trong những yếu tố quan trọng tạo nên giá trị an cư bền vững và tiềm năng tăng giá dài hạn cho dự án.
                 </p>
@@ -168,11 +168,11 @@ export const ProjectDetails = () => {
                   <li>Hưởng lợi từ quy hoạch các tuyến metro tương lai, góp phần gia tăng giá trị bất động sản theo thời gian.</li>
                 </ul>
               </div>
-              <div style={{ flex: 1, borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+              <div style={{ width: '100%', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
                 <iframe 
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1m2!1s0x3135ac90c642fc01%3A0x6aab5a22f55b8220!2zMjMzIE5ndXnhu4VuIFRyw6NpLCBUaMaw4bujbmcgxJDDrG5oLCBUaGFuaCBYdcOibiwgSMOgIE7hu5lpLCBWaWV0bmFt!5e0!3m2!1sen!2s!4v1700000000000!5m2!1sen!2s" 
                   width="100%" 
-                  height="450" 
+                  height="500" 
                   style={{ border: 0, display: 'block' }} 
                   allowFullScreen="" 
                   loading="lazy" 

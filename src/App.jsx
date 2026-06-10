@@ -21,6 +21,10 @@ import { ProjectDetails } from './features/SaleWebPublic/ProjectDetails';
 import { ComparePage } from './features/SaleWebPublic/ComparePage';
 import { CompareProvider } from './context/CompareContext';
 import { LandingPage } from './features/LandingPage/LandingPage';
+import { NewsList } from './features/SaleWebPublic/NewsList';
+import { NewsDetail } from './features/SaleWebPublic/NewsDetail';
+import { EventList } from './features/SaleWebPublic/EventList';
+import { EventDetail } from './features/SaleWebPublic/EventDetail';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -81,6 +85,10 @@ const MainAppContent = () => {
           <Route path="projects" element={<SaleWebHome />} />
           <Route path="projects/:id" element={<ProjectDetails />} />
           <Route path="compare" element={<ComparePage />} />
+          <Route path="news" element={<NewsList />} />
+          <Route path="news/:id" element={<NewsDetail />} />
+          <Route path="events" element={<EventList />} />
+          <Route path="events/:id" element={<EventDetail />} />
         </Route>
 
         {/* PRIVATE ROUTES - WEBADMIN */}
