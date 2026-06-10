@@ -24,6 +24,12 @@ export const CompareProvider = ({ children }) => {
   }, [compareList]);
 
   const addToCompare = (apartment, projectInfo) => {
+    // Check limit
+    if (compareList.length >= 5 && !compareList.some(item => item.id === apartment.id)) {
+      message.error('Bạn chỉ có thể so sánh tối đa 5 căn hộ cùng lúc.');
+      return;
+    }
+
     // Check if already in cart
     if (compareList.some(item => item.id === apartment.id)) {
       message.warning(`Căn hộ ${apartment.apartmentCode} đã có trong giỏ so sánh.`);

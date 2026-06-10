@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useContext } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Breadcrumb, Button, Table, Timeline, Checkbox, List } from 'antd';
 import { 
   HomeOutlined, 
@@ -13,8 +13,10 @@ import {
   FileDoneOutlined,
   FieldTimeOutlined,
   FileTextOutlined,
-  CloudDownloadOutlined
+  CloudDownloadOutlined,
+  CloseOutlined
 } from '@ant-design/icons';
+import { CompareContext } from '../../context/CompareContext';
 import '../../SaleWeb.css';
 
 const TABS = [
@@ -34,30 +36,65 @@ const TABS = [
 
 export const ProjectDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const { compareList, addToCompare, removeFromCompare, clearCompare } = useContext(CompareContext);
+
+  const handleCheckboxChange = (record, checked) => {
+    if (checked) {
+      // Map table data to apartment structure for CompareContext
+      const apartment = {
+        id: record.key,
+        apartmentCode: record.code,
+        price: record.price,
+        type: record.type,
+        direction: record.direction,
+        floor: record.floor,
+        area: record.area,
+        image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=400', // Mock image
+        // Add fake details
+        landArea: record.area,
+        buildArea: record.area,
+        status: 'Còn hàng',
+        zone: record.zone,
+        axis: record.axis
+      };
+      addToCompare(apartment, { name: 'LUMIÈRE HANOI SEASONS GARDEN' });
+    } else {
+      removeFromCompare(record.key);
+    }
+  };
 
   // MOCK DATA TABLE QUỸ CĂN
   const columns = [
     { title: 'Mã căn', dataIndex: 'code', key: 'code', render: text => <span style={{color: '#ef4444', fontWeight: 'bold'}}>{text}</span> },
-    { title: 'Giá nhà', dataIndex: 'price', key: 'price' },
-    { title: 'Loại căn', dataIndex: 'type', key: 'type' },
+    { title: 'Giá bán', dataIndex: 'price', key: 'price' },
+    { title: 'Loại hình', dataIndex: 'type', key: 'type' },
     { title: 'Hướng', dataIndex: 'direction', key: 'direction' },
     { title: 'Tầng', dataIndex: 'floor', key: 'floor' },
     { title: 'Trục', dataIndex: 'axis', key: 'axis' },
-    { title: 'Diện tích', dataIndex: 'area', key: 'area' },
+    { title: 'DT xây dựng', dataIndex: 'area', key: 'area' },
     { title: 'Phân khu', dataIndex: 'zone', key: 'zone' },
-    { title: 'Tòa nhà', dataIndex: 'building', key: 'building' },
-    { title: 'Tình trạng', dataIndex: 'status', key: 'status', render: () => <span style={{color: '#10b981', border: '1px solid #10b981', padding: '2px 8px', borderRadius: '4px'}}>Còn hàng</span> },
-    { title: 'Chọn căn', dataIndex: 'action', key: 'action', render: () => <Checkbox /> },
+    { title: 'Tình trạng', dataIndex: 'status', key: 'status', render: () => <span style={{color: '#10b981', border: '1px solid #10b981', background: '#d1fae5', padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold'}}>Còn hàng</span> },
+    { 
+      title: 'Chọn căn', 
+      dataIndex: 'action', 
+      key: 'action', 
+      render: (_, record) => {
+        const isChecked = compareList.some(item => item.id === record.key);
+        return <Checkbox checked={isChecked} onChange={(e) => handleCheckboxChange(record, e.target.checked)} />
+      } 
+    },
   ];
 
   const dataInventory = [
-    { key: '1', code: 'HH-B-10-02', price: '7.88 tỷ', type: '1 PHÒNG NGỦ', direction: 'ĐÔNG BẮC', floor: 10, axis: '02', area: '49.2 m²', zone: 'THE BLOOM', building: 'L2' },
-    { key: '2', code: 'HH-B-17-08A', price: '7.93 tỷ', type: '1 PHÒNG NGỦ', direction: 'ĐÔNG BẮC', floor: 17, axis: '08A', area: '47.9 m²', zone: 'THE BLOOM', building: 'L2' },
-    { key: '3', code: 'HH-B-16-05', price: '8.01 tỷ', type: '1 PHÒNG NGỦ', direction: 'ĐÔNG BẮC', floor: 16, axis: '05', area: '47.7 m²', zone: 'THE BLOOM', building: 'L2' },
-    { key: '4', code: 'HH-B-14-25', price: '8.05 tỷ', type: '1 PHÒNG NGỦ', direction: 'TÂY NAM', floor: 14, axis: '25', area: '48.5 m²', zone: 'THE BLOOM', building: 'L2' },
-    { key: '5', code: 'HH-B-12-23', price: '8.29 tỷ', type: '1 PHÒNG NGỦ', direction: 'TÂY NAM', floor: 12, axis: '23', area: '47.9 m²', zone: 'THE BLOOM', building: 'L2' },
-    { key: '6', code: 'HH-B-20-06', price: '8.34 tỷ', type: '1 PHÒNG NGỦ', direction: 'ĐÔNG BẮC', floor: 20, axis: '06', area: '48 m²', zone: 'THE BLOOM', building: 'L2' },
+    { key: 'AS85-24', code: 'AS85-24', price: '6.21 tỷ', type: 'LIỀN KỀ', direction: 'ĐÔNG BẮC', floor: 1, axis: '24', area: '144.2 m²', zone: 'IVY PARK', building: 'L1' },
+    { key: 'AS84-36', code: 'AS84-36', price: '6.25 tỷ', type: 'LIỀN KỀ', direction: 'ĐÔNG BẮC', floor: 1, axis: '36', area: '144.2 m²', zone: 'IVY PARK', building: 'L1' },
+    { key: 'AS82-18', code: 'AS82-18', price: '6.35 tỷ', type: 'LIỀN KỀ', direction: 'ĐÔNG BẮC', floor: 1, axis: '18', area: '150.1 m²', zone: 'IVY PARK', building: 'L1' },
+    { key: 'AS83-05', code: 'AS83-05', price: '7.13 tỷ', type: 'LIỀN KỀ', direction: 'TÂY NAM', floor: 1, axis: '05', area: '184.1 m²', zone: 'IVY PARK', building: 'L1' },
+    { key: 'AS82-11', code: 'AS82-11', price: '7.19 tỷ', type: 'LIỀN KỀ', direction: 'TÂY NAM', floor: 1, axis: '11', area: '184.2 m²', zone: 'IVY PARK', building: 'L1' },
+    { key: 'AS81-16', code: 'AS81-16', price: '7.26 tỷ', type: 'LIỀN KỀ', direction: 'ĐÔNG BẮC', floor: 1, axis: '16', area: '150.1 m²', zone: 'IVY PARK', building: 'L1' },
+    { key: 'AS81-31', code: 'AS81-31', price: '8.40 tỷ', type: 'LIỀN KỀ', direction: 'TÂY NAM', floor: 1, axis: '31', area: '185.4 m²', zone: 'IVY PARK', building: 'L1' },
   ];
 
   return (
@@ -386,9 +423,66 @@ export const ProjectDetails = () => {
                   </div>
                 </div>
              </div>
-          </div>
+           </div>
         )}
       </div>
+
+      {/* Floating Compare Bar */}
+      {compareList.length > 0 && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: '#fff',
+          boxShadow: '0 -4px 12px rgba(0,0,0,0.1)',
+          padding: '16px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          zIndex: 1000,
+          borderTopLeftRadius: '16px',
+          borderTopRightRadius: '16px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <div style={{ fontWeight: 'bold', fontSize: '1rem', color: '#0f172a' }}>
+              <span style={{ marginRight: '8px' }}>🏢</span>
+              So sánh căn hộ <span style={{ background: '#3b82f6', color: '#fff', borderRadius: '50%', width: '24px', height: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>{compareList.length}</span>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '12px' }}>
+              {compareList.map((item, index) => (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', background: '#f1f5f9', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', minWidth: '120px', position: 'relative' }}>
+                  <div style={{ background: '#1e293b', color: '#fff', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', marginRight: '12px' }}>
+                    {index + 1}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#0f172a' }}>{item.apartmentCode}</div>
+                    <div style={{ color: '#ef4444', fontSize: '0.85rem', fontWeight: 'bold' }}>{item.price}</div>
+                  </div>
+                  <CloseOutlined 
+                    onClick={() => removeFromCompare(item.id)}
+                    style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '10px', color: '#94a3b8', cursor: 'pointer' }} 
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <span style={{ color: '#64748b', fontSize: '0.9rem' }}>Chọn 2 căn hộ trở lên để bắt đầu so sánh</span>
+            <Button onClick={clearCompare}>Hủy</Button>
+            <Button 
+              type="primary" 
+              disabled={compareList.length < 2}
+              onClick={() => navigate('/compare')}
+              style={{ background: compareList.length >= 2 ? '#3b82f6' : '#cbd5e1', fontWeight: 'bold' }}
+            >
+              Đi đến so sánh ({compareList.length})
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
