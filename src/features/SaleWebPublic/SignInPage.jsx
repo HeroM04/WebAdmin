@@ -11,12 +11,22 @@ export const SignInPage = () => {
 
   const handleLogin = async (values) => {
     setLoading(true);
+    let isSlow = false;
+    const slowTimer = setTimeout(() => {
+      isSlow = true;
+      message.info('Hệ thống đang khởi động (mất khoảng 30-50s), vui lòng không tắt trang...');
+    }, 4000);
+
     try {
       await loginPublic(values.username, values.password);
+      clearTimeout(slowTimer);
+      if (isSlow) message.success('Khởi động thành công!');
       message.success('Đăng nhập thành công!');
       navigate('/');
     } catch (err) {
-      message.error(err.message || 'Đăng nhập thất bại!');
+      clearTimeout(slowTimer);
+      const errorMsg = typeof err === 'string' ? err : (err?.message || err?.error || 'Tài khoản hoặc mật khẩu không chính xác!');
+      message.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -104,7 +114,7 @@ export const SignInPage = () => {
               size="large" 
               block 
               loading={loading} 
-              style={{ background: '#1B2C6B', borderColor: '#1B2C6B', fontWeight: 'bold', borderRadius: '8px' }}
+              style={{ background: '#d4af37', borderColor: '#d4af37', color: '#fff', fontWeight: 'bold', borderRadius: '8px' }}
             >
               Đăng nhập
             </Button>
