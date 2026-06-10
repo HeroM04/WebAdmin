@@ -176,3 +176,237 @@
     gap: 20px;
   }
 }
+
+/* ========================================================
+   SALEWEB PROJECT LIST & DETAILS
+   ======================================================== */
+.sw-project-card {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f1f5f9;
+  transition: all 0.3s ease;
+}
+.sw-project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+.sw-card-img-wrap {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+.sw-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+.sw-project-card:hover .sw-card-img {
+  transform: scale(1.05);
+}
+.sw-card-badges {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+}
+.sw-badge {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: bold;
+  border-radius: 4px;
+  color: #fff;
+}
+.sw-badge-blue { background: #1e40af; }
+.sw-badge-orange { background: #f59e0b; }
+.sw-card-fav {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 20px;
+  color: #fff;
+  cursor: pointer;
+}
+.sw-badge-hot {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+.sw-card-body {
+  padding: 20px;
+}
+.sw-card-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #0f172a;
+  text-decoration: none;
+  margin-bottom: 8px;
+  display: block;
+}
+.sw-card-title:hover {
+  color: #d4af37;
+}
+.sw-card-desc {
+  font-size: 0.9rem;
+  color: #475569;
+  margin-bottom: 16px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sw-card-loc {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Sidebar */
+.sw-sidebar-group {
+  padding: 0 16px;
+}
+.sw-sidebar-title {
+  color: #d4af37;
+  font-weight: bold;
+  padding: 16px 0 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 8px;
+}
+.sw-sidebar-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+}
+.sw-sidebar-list li {
+  padding: 8px 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  border-bottom: 1px dashed #f1f5f9;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.sw-sidebar-list li:hover {
+  color: #1e40af;
+}
+
+/* Tab Navigation */
+.sw-detail-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+.sw-detail-tab {
+  padding: 12px 0;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sw-detail-tab:hover {
+  color: #1e40af;
+}
+.sw-detail-tab.active {
+  color: #d4af37;
+  border-bottom: 2px solid #d4af37;
+}
+
+/* Info Cards */
+.sw-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 32px;
+}
+.sw-info-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+}
+.sw-info-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #b45309;
+}
+.sw-info-label {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.sw-info-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #7f1d1d;
+}
+
+/* Overview Green Card */
+.sw-overview-card {
+  background: #064e3b;
+  color: #fff;
+  border-radius: 16px;
+  display: flex;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+.sw-overview-content {
+  flex: 1;
+  padding: 32px;
+}
+.sw-overview-title {
+  color: #fbbf24;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+.sw-overview-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+}
+.sw-overview-list li {
+  margin-bottom: 8px;
+  display: flex;
+  gap: 8px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+.sw-overview-list li::before {
+  content: '•';
+  color: #fbbf24;
+  font-weight: bold;
+}
+.sw-overview-img {
+  width: 40%;
+  object-fit: cover;
+}

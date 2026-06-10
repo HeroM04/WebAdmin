@@ -1,89 +1,171 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Spin, message } from 'antd';
-import { apiClient } from '../../utils/apiClient';
+import { Input, Select } from 'antd';
+import { SearchOutlined, HeartOutlined, HeartFilled, EnvironmentOutlined } from '@ant-design/icons';
+import '../../SaleWeb.css';
+
+const MOCK_PROJECTS = [
+  {
+    id: 1,
+    name: 'VINHOMES SÀI GÒN PARK',
+    type: 'DỰ ÁN THẤP TẦNG',
+    isHot: true,
+    location: 'Xã Tân Thới Nhì và Xã Xuân Thới Sơn, Huyện Hóc Môn, TP. Hồ Chí Minh',
+    desc: 'Vinhomes Hóc Môn - Thành phố công viên tri thức hàng đầu Châu Á',
+    img: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800',
+  },
+  {
+    id: 2,
+    name: 'LUMIÈRE HANOI SEASONS GARDEN',
+    type: 'DỰ ÁN CAO TẦNG',
+    isHot: true,
+    location: 'Đường Nguyễn Trãi, Thanh Xuân, Hà Nội',
+    desc: 'MASTERISE CAO XÀ LÁ - Mảnh vườn nuôi dưỡng giá trị thời gian trân quý',
+    img: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=800',
+  },
+  {
+    id: 3,
+    name: 'VINHOMES OCEAN PARK 2',
+    type: 'DỰ ÁN THẤP TẦNG',
+    isHot: false,
+    location: 'Văn Giang, Hưng Yên',
+    desc: 'Vinhomes Ocean Park 2 - "Quận ăn, quận chơi" của Thành phố điểm đến Ocean City',
+    img: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?q=80&w=800',
+  },
+  {
+    id: 4,
+    name: 'VINHOMES OCEAN PARK 3',
+    type: 'DỰ ÁN THẤP TẦNG',
+    isHot: false,
+    location: 'Văn Lâm & Văn Giang, Hưng Yên',
+    desc: 'Vinhomes Ocean Park 3 - "Quận nghỉ dưỡng" của Thành phố điểm đến Ocean City',
+    img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800',
+  },
+  {
+    id: 5,
+    name: 'VINHOMES GLOBAL GATE HẠ LONG',
+    type: 'DỰ ÁN THẤP TẦNG',
+    isHot: false,
+    location: 'Đông Anh, Hà Nội',
+    desc: 'Thành phố giao thương toàn cầu',
+    img: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=800',
+  },
+  {
+    id: 6,
+    name: 'VINHOMES GREEN PARADISE',
+    type: 'DỰ ÁN THẤP TẦNG',
+    isHot: false,
+    location: 'Mễ Trì, Nam Từ Liêm, Hà Nội',
+    desc: 'Thiên đường xanh giữa lòng phố thị',
+    img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800',
+  }
+];
 
 export const SaleWebHome = () => {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [favorites, setFavorites] = useState([1, 2]);
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
-    try {
-      const data = await apiClient.get('/salepro/projects');
-      setProjects(data || []);
-    } catch (error) {
-      console.warn('Failed to fetch projects, might be unauthorized if backend not open');
-    } finally {
-      setLoading(false);
+  const toggleFav = (id) => {
+    if (favorites.includes(id)) {
+      setFavorites(favorites.filter(x => x !== id));
+    } else {
+      setFavorites([...favorites, id]);
     }
   };
 
   return (
-    <div className="saleweb-container animate-fade-in-up">
+    <div className="saleweb-container animate-fade-in-up" style={{ padding: '40px 24px' }}>
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <h2 className="text-gradient-gold" style={{ fontSize: '3rem', marginBottom: '16px', fontWeight: 800 }}>Dự Án Nổi Bật</h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto' }}>
-          Khám phá những dự án bất động sản đẳng cấp với khả năng sinh lời vượt trội, được phân phối độc quyền bởi Trí Long Land.
-        </p>
+        <h2 style={{ fontSize: '2rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '24px' }}>Danh sách dự án</h2>
+        
+        {/* Filters */}
+        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Input 
+            placeholder="Tìm kiếm dự án..." 
+            prefix={<SearchOutlined />} 
+            style={{ width: 250, borderRadius: '8px' }}
+            size="large"
+          />
+          <Select placeholder="Chọn chủ đầu tư" size="large" style={{ width: 200 }} />
+          <Select placeholder="Chọn khu vực" size="large" style={{ width: 160 }} />
+          <Select placeholder="Chọn loại hình" size="large" style={{ width: 160 }} />
+          <Select placeholder="Chọn trạng thái" size="large" style={{ width: 160 }} />
+        </div>
       </div>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px' }}>
-          <Spin size="large" />
-        </div>
-      ) : projects.length === 0 ? (
-        <div className="saleweb-glass" style={{ padding: '60px', textAlign: 'center' }}>
-          <h3 style={{ color: 'var(--text-secondary)' }}>Hiện chưa có dự án nào đang mở bán.</h3>
-        </div>
-      ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-          gap: '32px'
-        }}>
-          {projects.map(project => (
-            <div key={project.id} className="saleweb-glass" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <div style={{
-                height: '220px',
-                background: 'linear-gradient(135deg, #d4af37, #eab308)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontSize: '1.5rem',
-                fontWeight: 700,
-                textAlign: 'center',
-                padding: '20px'
-              }}>
-                {project.name}
-              </div>
-              <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                  <span className="glass-badge glass-badge-approved">
-                    {project.status === 'DANG_BAN' ? 'Đang Mở Bán' : project.status}
-                  </span>
-                  <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
-                    {project.projectType}
-                  </span>
+      <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+        {/* Left Column - Grid */}
+        <div style={{ flex: 1 }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gap: '24px'
+          }}>
+            {MOCK_PROJECTS.map(p => (
+              <div key={p.id} className="sw-project-card">
+                <div className="sw-card-img-wrap">
+                  <img src={p.img} alt={p.name} className="sw-card-img" />
+                  <div className="sw-card-badges">
+                    <span className={`sw-badge ${p.type.includes('CAO') ? 'sw-badge-blue' : 'sw-badge-orange'}`}>{p.type}</span>
+                  </div>
+                  <div className="sw-card-fav" onClick={() => toggleFav(p.id)}>
+                    {favorites.includes(p.id) ? <HeartFilled style={{ color: '#ef4444' }} /> : <HeartOutlined />}
+                  </div>
+                  {p.isHot && <div className="sw-badge-hot">🔥 HOT</div>}
                 </div>
-                <h3 style={{ fontSize: '1.5rem', marginBottom: '12px', fontWeight: 700 }}>{project.name}</h3>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', flex: 1 }}>
-                  {project.details?.locationMap || 'Vị trí đắc địa, tiềm năng sinh lời cao.'}
-                </p>
-                <Link to={`/projects/${project.id}`} style={{ width: '100%' }}>
-                  <button className="saleweb-btn saleweb-btn-primary" style={{ width: '100%' }}>
-                    Xem Bảng Hàng Chi Tiết
-                  </button>
-                </Link>
+                
+                <div className="sw-card-body">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Link to={`/projects/${p.id}`} className="sw-card-title">{p.name}</Link>
+                    <Link to={`/projects/${p.id}`} style={{ color: '#d4af37', fontSize: '18px' }}>
+                      ↗
+                    </Link>
+                  </div>
+                  <p className="sw-card-desc">{p.desc}</p>
+                  <div className="sw-card-loc">
+                    <EnvironmentOutlined /> {p.location}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      )}
+
+        {/* Right Column - Sidebar */}
+        <div style={{ width: '320px', background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', flexShrink: 0 }}>
+          <div style={{ background: '#1e40af', color: '#fff', padding: '16px', fontWeight: 'bold', textAlign: 'center', fontSize: '16px' }}>
+            DỰ ÁN ĐANG BÁN CHẠY
+          </div>
+          
+          <div className="sw-sidebar-group">
+            <div className="sw-sidebar-title">🏢 Dự án Cao Tầng</div>
+            <ul className="sw-sidebar-list">
+              <li>LUMIÈRE HANOI SEASONS GARDEN</li>
+              <li>VINHOMES STAR CITY</li>
+              <li>IMPERIA OCEAN CITY - THE PARKLAND</li>
+              <li>CHARMORA CITY_CT</li>
+              <li>MASTERI GRAND COAST</li>
+            </ul>
+          </div>
+
+          <div className="sw-sidebar-group">
+            <div className="sw-sidebar-title">🏘️ Dự án Thấp Tầng</div>
+            <ul className="sw-sidebar-list">
+              <li>VINHOMES GLOBAL GATE HẠ LONG</li>
+              <li>VINHOMES HẢI VÂN BAY</li>
+              <li>VINHOMES SÀI GÒN PARK</li>
+              <li>VINHOMES GREEN PARADISE</li>
+              <li>VINHOMES OCEAN PARK 2</li>
+            </ul>
+          </div>
+          
+          <div className="sw-sidebar-group">
+            <div className="sw-sidebar-title">⭐ Dự án Mới nhất</div>
+            <ul className="sw-sidebar-list">
+              <li>VINHOMES SÀI GÒN PARK</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
