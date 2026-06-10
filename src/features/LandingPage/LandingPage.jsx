@@ -113,27 +113,41 @@ export const LandingPage = () => {
       </Helmet>
 
       <div className="lp-body">
-        {/* ── HERO ── */}
-        <section className="lp-hero" id="hero">
-          <div className="lp-hero-grid" />
-          <div className="lp-hero-inner">
+        {/* ── HERO SECTION ── */}
+        <section className="lp-hero" id="home">
+          <div className="lp-hero-grid"></div>
+          
+          {/* Glowing Orbs */}
+          <div className="lp-orb lp-orb-1"></div>
+          <div className="lp-orb lp-orb-2"></div>
+          <div className="lp-orb lp-orb-3"></div>
+          
+          {/* Watermark */}
+          <div className="lp-watermark">SALEPRO.COM</div>
+
+          <div className="lp-hero-inner animate-fade-in-up">
             <div className="lp-hero-badge">
-              <div className="lp-hero-badge-dot" />
+              <span className="lp-hero-badge-dot"></span>
               Nền tảng PropTech hàng đầu Việt Nam 2026
             </div>
+            
             <h1 className="lp-hero-h1">
-              Nền tảng công nghệ hỗ trợ<br />
-              kinh doanh <span className="gold-word">Bất động sản</span><br />
-              hàng đầu Việt Nam
+              Nền tảng công nghệ hỗ trợ kinh doanh <span className="gold-word">Bất động sản</span> hàng đầu Việt Nam
             </h1>
+            
             <p className="lp-hero-sub">
-              Kết nối khách hàng với sản phẩm giá trị thực thông qua công nghệ hiện đại.
-              Tra cứu, so sánh và chốt deal nhanh hơn bao giờ hết.
+              Kết nối khách hàng với những sản phẩm bất động sản giá trị thực thông qua nền tảng công nghệ hiện đại, dịch vụ tư vấn chuyên nghiệp và đội ngũ phân phối uy tín.
             </p>
+
             <div className="lp-hero-cta">
-              <Link to="/projects" className="lp-btn-primary">Khám phá dự án</Link>
-              <Link to="/compare" className="lp-btn-outline">So sánh căn hộ</Link>
+              <Link to="/projects" className="lp-btn-primary">
+                Khám phá dự án <span style={{ fontSize: '18px', lineHeight: 1 }}>→</span>
+              </Link>
+              <Link to="/compare" className="lp-btn-outline">
+                Tư vấn miễn phí
+              </Link>
             </div>
+            
             <div className="lp-hero-stats">
               <div className="lp-stat">
                 <div className="lp-stat-num">500+</div>
