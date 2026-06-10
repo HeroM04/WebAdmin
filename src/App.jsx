@@ -26,6 +26,9 @@ import { NewsDetail } from './features/SaleWebPublic/NewsDetail';
 import { EventList } from './features/SaleWebPublic/EventList';
 import { EventDetail } from './features/SaleWebPublic/EventDetail';
 import { UserProfilePage } from './features/SaleWebPublic/UserProfilePage';
+import { SignInPage } from './features/SaleWebPublic/SignInPage';
+import { SignUpPage } from './features/SaleWebPublic/SignUpPage';
+import { PasswordResetPage } from './features/SaleWebPublic/PasswordResetPage';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -79,6 +82,11 @@ const MainAppContent = () => {
       }}
     >
       <Routes>
+        {/* STANDALONE AUTH ROUTES */}
+        <Route path="/sign-in" element={<SignInPage />} />
+        <Route path="/sign-up" element={<SignUpPage />} />
+        <Route path="/password-reset" element={<PasswordResetPage />} />
+
         {/* PUBLIC ROUTES - SALEWEB */}
         <Route path="/" element={<SaleWebLayout />}>
           <Route index element={<LandingPage />} />

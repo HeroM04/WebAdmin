@@ -10,10 +10,8 @@ import {
 } from '@ant-design/icons';
 
 export const SaleWebLayout = () => {
-  const { currentUser, isAuthenticated, loginPublic, logout } = useContext(AppContext);
+  const { currentUser, isAuthenticated, logout } = useContext(AppContext);
   const { compareList } = useContext(CompareContext);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const userMenuItems = [
@@ -33,20 +31,6 @@ export const SaleWebLayout = () => {
       }
     },
   ];
-
-  const handleLogin = async (values) => {
-    setLoading(true);
-    try {
-      // Dùng loginPublic: cho phép mọi role đăng nhập, không ép admin
-      const profile = await loginPublic(values.username, values.password);
-      setIsLoginOpen(false);
-      message.success('Đăng nhập thành công!');
-    } catch (err) {
-      message.error((err instanceof Error ? err.message : err) || 'Đăng nhập thất bại!');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'TRUONG_PHONG';
 
@@ -118,7 +102,7 @@ export const SaleWebLayout = () => {
               </div>
             ) : (
               <button 
-                onClick={() => setIsLoginOpen(true)} 
+                onClick={() => navigate('/sign-in')} 
                 className="saleweb-btn saleweb-btn-primary" 
                 style={{ padding: '8px 20px', borderRadius: '20px' }}
               >
@@ -215,28 +199,6 @@ export const SaleWebLayout = () => {
         </div>
       </footer>
 
-      <Modal
-        title={<span style={{ fontSize: '20px', fontWeight: 700 }}>Đăng Nhập</span>}
-        open={isLoginOpen}
-        onCancel={() => setIsLoginOpen(false)}
-        footer={null}
-        width={400}
-        centered
-      >
-        <Form layout="vertical" onFinish={handleLogin} style={{ marginTop: '24px' }}>
-          <Form.Item label="Tên đăng nhập" name="username" rules={[{ required: true, message: 'Vui lòng nhập tài khoản!' }]}>
-            <Input size="large" />
-          </Form.Item>
-          <Form.Item label="Mật khẩu" name="password" rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}>
-            <Input.Password size="large" />
-          </Form.Item>
-          <Form.Item style={{ marginBottom: 0, marginTop: '24px' }}>
-            <Button type="primary" htmlType="submit" size="large" block loading={loading} style={{ background: '#d4af37', borderColor: '#d4af37' }}>
-              Đăng Nhập
-            </Button>
-          </Form.Item>
-        </Form>
-      </Modal>
     </div>
   );
 };
