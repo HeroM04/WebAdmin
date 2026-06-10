@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import './LandingPage.css';
@@ -10,30 +10,35 @@ const INTRO_ITEMS = [
     label: 'Quỹ Hàng Phong Phú',
     title: 'Quỹ hàng đa dạng, cập nhật liên tục',
     desc: 'Hàng nghìn sản phẩm bất động sản từ căn hộ cao tầng, biệt thự đến nhà phố thương mại được cập nhật theo thời gian thực. Môi giới có ngay bức tranh toàn cảnh thị trường chỉ trong vài giây.',
+    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80'
   },
   {
     num: '02',
     label: 'Tích Hợp Công Nghệ',
     title: 'Công nghệ PropTech tiên tiến bậc nhất',
     desc: 'Nền tảng tích hợp so sánh căn hộ theo Ma trận, tìm kiếm thông minh và bộ lọc nâng cao giúp thu hẹp hàng trăm lựa chọn xuống còn vài sản phẩm phù hợp nhất với nhu cầu khách hàng.',
+    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80'
   },
   {
     num: '03',
     label: 'Giao Diện Thông Minh',
     title: 'Trải nghiệm mượt mà trên mọi thiết bị',
     desc: 'Tối ưu 100% cho Mobile — màn hình hiển thị sắc nét, thao tác vuốt mượt mà, nút bấm đủ lớn. Cầm điện thoại đến gặp khách hàng và demo trực tiếp ngay tại bàn ký hợp đồng.',
+    image: 'https://images.unsplash.com/photo-1512428559087-560fa5ceab42?w=800&q=80'
   },
   {
     num: '04',
     label: 'Hỗ Trợ Chuyên Sâu',
     title: 'Đội ngũ hỗ trợ luôn đồng hành',
     desc: 'Hotline hỗ trợ kỹ thuật 24/7, tài liệu đào tạo video chuyên sâu và cộng đồng môi giới hàng ngàn thành viên. Không bao giờ bạn phải một mình đối mặt với khó khăn.',
+    image: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=800&q=80'
   },
   {
     num: '05',
     label: 'Hoa Hồng Minh Bạch',
     title: 'Chính sách hoa hồng rõ ràng, công bằng',
     desc: 'Toàn bộ chính sách hoa hồng được công bố minh bạch trên hệ thống. Theo dõi tiến độ giao dịch, nhận thanh toán đúng hạn và không bao giờ phải lo bị "chia thấp hơn thỏa thuận".',
+    image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&q=80'
   },
 ];
 
@@ -71,9 +76,9 @@ const VISION_COLS = [
 ];
 
 const CORE_VALUES = [
-  { big: 'Uy Tín', desc: 'Cam kết thông tin trung thực, minh bạch từ giá cả đến pháp lý. Mỗi sản phẩm đưa ra thị trường đều đã qua kiểm duyệt nghiêm ngặt.' },
-  { big: 'Tận Tâm', desc: 'Đội ngũ luôn đặt lợi ích khách hàng và đối tác lên hàng đầu. Không bán sản phẩm, chúng tôi xây dựng mối quan hệ lâu dài.' },
-  { big: 'Chuyên Nghiệp', desc: 'Quy trình làm việc được chuẩn hóa, công cụ hỗ trợ hiện đại và đội ngũ được đào tạo bài bản để mang lại dịch vụ tầm đẳng cấp.' },
+  { big: 'Uy Tín', desc: 'Cam kết thông tin trung thực, minh bạch từ giá cả đến pháp lý. Mỗi sản phẩm đưa ra thị trường đều đã qua kiểm duyệt nghiêm ngặt.', image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80' },
+  { big: 'Tận Tâm', desc: 'Đội ngũ luôn đặt lợi ích khách hàng và đối tác lên hàng đầu. Không bán sản phẩm, chúng tôi xây dựng mối quan hệ lâu dài.', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&q=80' },
+  { big: 'Chuyên Nghiệp', desc: 'Quy trình làm việc được chuẩn hóa, công cụ hỗ trợ hiện đại và đội ngũ được đào tạo bài bản để mang lại dịch vụ tầm đẳng cấp.', image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80' },
 ];
 
 const PARTNERS = [
@@ -85,6 +90,20 @@ const PARTNERS = [
 // ─── Component (Không có Nav riêng, không có Footer riêng) ───
 export const LandingPage = () => {
   const doubled = [...PARTNERS, ...PARTNERS];
+
+  useEffect(() => {
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        }
+      });
+    }, { threshold: 0.1 });
+    
+    reveals.forEach(r => observer.observe(r));
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <>
@@ -139,16 +158,18 @@ export const LandingPage = () => {
         {/* ── INTRO / ABOUT ── */}
         <section className="lp-section lp-section-alt" id="intro">
           <div className="lp-container">
-            <div style={{ textAlign: 'center', marginBottom: 64 }}>
+            <div className="reveal" style={{ textAlign: 'center', marginBottom: 64 }}>
               <div className="lp-section-badge">Về Trí Long Land</div>
               <h2 className="lp-h2">5 điểm khác biệt tạo nên <span>lợi thế cạnh tranh</span></h2>
             </div>
 
             {INTRO_ITEMS.map((item, i) => (
-              <div key={i} className={`lp-intro-item ${i % 2 !== 0 ? 'reverse' : ''}`}>
-                <div className="lp-intro-icon-wrap">
-                  <div className="lp-intro-big-num">{item.num}</div>
-                  <div className="lp-intro-img-label">{item.label}</div>
+              <div key={i} className={`lp-intro-item reveal ${i % 2 !== 0 ? 'reverse' : ''}`}>
+                <div className="lp-intro-image-wrap">
+                  <img src={item.image} alt={item.label} />
+                  <div className="lp-intro-image-overlay">
+                    <div className="lp-intro-img-label">{item.label}</div>
+                  </div>
                 </div>
                 <div className="lp-intro-content">
                   <div className="lp-intro-num">{item.num}</div>
@@ -163,12 +184,12 @@ export const LandingPage = () => {
         {/* ── BENEFIT CARDS ── */}
         <section className="lp-section" id="benefits">
           <div className="lp-container">
-            <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div className="reveal" style={{ textAlign: 'center', marginBottom: 56 }}>
               <div className="lp-section-badge">Lợi ích cộng hưởng</div>
               <h2 className="lp-h2">Ba lợi thế <span>thay đổi cuộc chơi</span></h2>
               <p className="lp-lead" style={{ margin: '0 auto' }}>Không chỉ là công cụ — SalePro là người đồng hành chiến lược giúp bạn bứt phá doanh số và xây dựng đế chế BĐS bền vững.</p>
             </div>
-            <div className="lp-cards-grid">
+            <div className="lp-cards-grid reveal">
               {BENEFIT_CARDS.map((card, i) => (
                 <div key={i} className="lp-card">
                   <div className="lp-card-index">{String(i + 1).padStart(2, '0')}</div>
@@ -183,12 +204,12 @@ export const LandingPage = () => {
         {/* ── VISION 2026 ── */}
         <section className="lp-section lp-section-navy" id="vision">
           <div className="lp-container">
-            <div className="lp-vision-header">
+            <div className="lp-vision-header reveal">
               <div className="lp-section-badge-white">Tầm nhìn 2026</div>
               <h2 className="lp-h2 lp-h2-white">Khởi đầu của chu kỳ <span>tăng trưởng bền vững</span></h2>
               <p className="lp-lead lp-lead-white" style={{ margin: '0 auto' }}>Thị trường bất động sản Việt Nam đang bước vào một giai đoạn chuyển mình lịch sử. Đây là thời điểm để định vị vượt trội.</p>
             </div>
-            <div className="lp-vision-grid">
+            <div className="lp-vision-grid reveal">
               {VISION_COLS.map((col, i) => (
                 <div key={i} className="lp-vision-col">
                   <div className="lp-vision-kw">{col.kw}</div>
@@ -203,15 +224,18 @@ export const LandingPage = () => {
         {/* ── CORE VALUES ── */}
         <section className="lp-section lp-section-alt">
           <div className="lp-container">
-            <div className="lp-values-header">
+            <div className="lp-values-header reveal">
               <div className="lp-section-badge">Giá trị cốt lõi</div>
               <h2 className="lp-h2">Ba <span>giá trị nền tảng</span> chúng tôi cam kết</h2>
             </div>
-            <div className="lp-values-grid">
+            <div className="lp-values-grid reveal">
               {CORE_VALUES.map((v, i) => (
                 <div key={i} className="lp-value-card">
-                  <span className="lp-value-big">{v.big}</span>
-                  <div className="lp-value-desc">{v.desc}</div>
+                  <img src={v.image} alt={v.big} className="lp-value-img" />
+                  <div className="lp-value-content">
+                    <span className="lp-value-big">{v.big}</span>
+                    <div className="lp-value-desc">{v.desc}</div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -219,7 +243,7 @@ export const LandingPage = () => {
         </section>
 
         {/* ── PARTNERS MARQUEE ── */}
-        <section className="lp-marquee-section" id="partners">
+        <section className="lp-marquee-section reveal" id="partners">
           <div className="lp-marquee-label">Đối tác chiến lược & Chủ đầu tư uy tín</div>
           <div style={{ overflow: 'hidden' }}>
             <div className="lp-marquee-track">
