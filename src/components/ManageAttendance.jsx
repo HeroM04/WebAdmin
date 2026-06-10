@@ -177,11 +177,7 @@ export const ManageAttendance = () => {
   const handleExportExcel = async () => {
     try {
       const token = localStorage.getItem('kpi_access_token');
-      // Lấy URL từ backend, thay đổi tuỳ vào đang chạy local hay production
-      let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8088/api';
-      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        baseUrl = 'https://kpi-backend-4xex.onrender.com/api';
-      }
+      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'https://kpi-backend-4xex.onrender.com/api/v1').replace('/api/v1', '/api');
       
       const now = new Date();
       const currentYear = now.getFullYear();

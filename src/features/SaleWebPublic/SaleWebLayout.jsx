@@ -52,6 +52,7 @@ export const SaleWebLayout = () => {
           </div>
 
           <nav style={{ display: 'flex', gap: '32px', fontWeight: 600 }}>
+            <Link to="/landing" style={{ transition: 'color 0.3s' }}>Giới thiệu</Link>
             <Link to="/projects" style={{ transition: 'color 0.3s' }}>Dự án</Link>
             <Link to="/compare" style={{ transition: 'color 0.3s' }}>
               <Badge count={compareList.length} size="small" color="#d4af37" offset={[10, 0]}>

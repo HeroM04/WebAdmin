@@ -132,18 +132,12 @@ export const AppProvider = ({ children }) => {
       
       const token = localStorage.getItem('kpi_access_token');
       
-      // Lấy URL từ biến môi trường, fallback về localhost
-      let wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:8088/ws';
+      // Lấy URL WS từ biến môi trường Vite
+      // .env.production → wss://kpi-backend-4xex.onrender.com/ws
+      // .env.development → http://localhost:8088/ws
+      let wsUrl = import.meta.env.VITE_WS_URL || 'https://kpi-backend-4xex.onrender.com/ws';
 
-      // Ép buộc dùng backend production nếu đang chạy web trên mạng (không phải localhost)
-      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        wsUrl = 'https://kpi-backend-4xex.onrender.com/ws';
-      }
-
-      // QUAN TRỌNG: SockJS yêu cầu truyền HTTP/HTTPS, tuyệt đối KHÔNG truyền ws:// hoặc wss:// 
-      wsUrl = wsUrl.replace('wss://', 'https://').replace('ws://', 'http://');
-
-      // Tự động nâng cấp http:// thành https:// nếu frontend chạy trên HTTPS
+      // Đảm bảo dùng HTTPS nếu web đang chạy trên HTTPS
       if (window.location.protocol === 'https:') {
         wsUrl = wsUrl.replace('http://', 'https://');
       }

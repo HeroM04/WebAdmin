@@ -20,6 +20,7 @@ import { SaleWebLayout } from './features/SaleWebPublic/SaleWebLayout';
 import { ProjectDetails } from './features/SaleWebPublic/ProjectDetails';
 import { ComparePage } from './features/SaleWebPublic/ComparePage';
 import { CompareProvider } from './context/CompareContext';
+import { LandingPage } from './features/LandingPage/LandingPage';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -80,6 +81,9 @@ const MainAppContent = () => {
           <Route path="projects/:id" element={<ProjectDetails />} />
           <Route path="compare" element={<ComparePage />} />
         </Route>
+
+        {/* LANDING PAGE - SEO Marketing */}
+        <Route path="/landing" element={<LandingPage />} />
 
         {/* PRIVATE ROUTES - WEBADMIN */}
         <Route path="/admin" element={
