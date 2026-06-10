@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import { CompareContext } from '../../context/CompareContext';
 import '../../SaleWeb.css';
@@ -56,16 +56,16 @@ export const SaleWebLayout = () => {
           </div>
 
           <nav style={{ display: 'flex', gap: '24px', fontWeight: 600, fontSize: '14px' }}>
-            <Link to="/" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>GIỚI THIỆU</Link>
-            <Link to="/projects" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>DỰ ÁN</Link>
-            <Link to="/news" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>TIN TỨC</Link>
-            <Link to="/events" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>SỰ KIỆN</Link>
-            <Link to="/compare" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>
+            <NavLink to="/" end style={({ isActive }) => ({ transition: 'color 0.3s, text-decoration 0.3s', textTransform: 'uppercase', color: isActive ? '#d4af37' : 'var(--text-primary)', textDecoration: isActive ? 'underline' : 'none', textUnderlineOffset: '4px', textDecorationThickness: '2px' })}>GIỚI THIỆU</NavLink>
+            <NavLink to="/projects" style={({ isActive }) => ({ transition: 'color 0.3s, text-decoration 0.3s', textTransform: 'uppercase', color: isActive ? '#d4af37' : 'var(--text-primary)', textDecoration: isActive ? 'underline' : 'none', textUnderlineOffset: '4px', textDecorationThickness: '2px' })}>DỰ ÁN</NavLink>
+            <NavLink to="/news" style={({ isActive }) => ({ transition: 'color 0.3s, text-decoration 0.3s', textTransform: 'uppercase', color: isActive ? '#d4af37' : 'var(--text-primary)', textDecoration: isActive ? 'underline' : 'none', textUnderlineOffset: '4px', textDecorationThickness: '2px' })}>TIN TỨC</NavLink>
+            <NavLink to="/events" style={({ isActive }) => ({ transition: 'color 0.3s, text-decoration 0.3s', textTransform: 'uppercase', color: isActive ? '#d4af37' : 'var(--text-primary)', textDecoration: isActive ? 'underline' : 'none', textUnderlineOffset: '4px', textDecorationThickness: '2px' })}>SỰ KIỆN</NavLink>
+            <NavLink to="/compare" style={({ isActive }) => ({ transition: 'color 0.3s, text-decoration 0.3s', textTransform: 'uppercase', color: isActive ? '#d4af37' : 'var(--text-primary)', textDecoration: isActive ? 'underline' : 'none', textUnderlineOffset: '4px', textDecorationThickness: '2px' })}>
               <Badge count={compareList.length} size="small" color="#d4af37" offset={[10, 0]}>
-                SO SÁNH CĂN HỘ
+                <span style={{ color: 'inherit' }}>SO SÁNH CĂN HỘ</span>
               </Badge>
-            </Link>
-            <Link to="/guide" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>HƯỚNG DẪN SỬ DỤNG</Link>
+            </NavLink>
+            <NavLink to="/guide" style={({ isActive }) => ({ transition: 'color 0.3s, text-decoration 0.3s', textTransform: 'uppercase', color: isActive ? '#d4af37' : 'var(--text-primary)', textDecoration: isActive ? 'underline' : 'none', textUnderlineOffset: '4px', textDecorationThickness: '2px' })}>HƯỚNG DẪN SỬ DỤNG</NavLink>
           </nav>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
