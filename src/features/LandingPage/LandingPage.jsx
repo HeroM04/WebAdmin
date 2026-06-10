@@ -129,7 +129,7 @@ export const LandingPage = () => {
             </div>
             
             <h1 className="lp-hero-h1">
-              Kiến tạo chuẩn mực mới trong giao dịch <span className="gold-word">Bất động sản</span>
+              Kiến tạo chuẩn mực mới<br />trong giao dịch <span className="gold-word">Bất động sản</span>
             </h1>
             
             <p className="lp-hero-sub">
