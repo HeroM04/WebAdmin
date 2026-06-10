@@ -62,10 +62,17 @@
 
 /* ======= HERO ======= */
 .lp-hero {
-  min-height: 100vh;
-  background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 50%, #243580 100%);
+  height: calc(100vh - 80px); /* Gói gọn trong 1 trang (trừ đi chiều cao nav) */
+  min-height: 500px;
+  background-color: var(--navy);
+  background-image: 
+    linear-gradient(135deg, rgba(27,44,107,0.92) 0%, rgba(15,26,66,0.95) 100%),
+    url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   display: flex; align-items: center; justify-content: center;
-  position: relative; overflow: hidden; padding: 100px 24px 60px;
+  position: relative; overflow: hidden; padding: 40px 24px;
 }
 .lp-hero::before {
   content: '';
@@ -122,7 +129,7 @@
 .lp-btn-outline:hover { border-color: var(--gold); color: var(--gold); background: rgba(201,162,39,0.07); }
 .lp-hero-stats {
   display: flex; gap: 48px; justify-content: center; flex-wrap: wrap;
-  margin-top: 64px; padding-top: 48px;
+  margin-top: 48px; padding-top: 32px;
   border-top: 1px solid rgba(255,255,255,0.1);
 }
 .lp-stat { text-align: center; }
