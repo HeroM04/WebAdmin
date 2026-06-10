@@ -46,20 +46,26 @@ export const SaleWebLayout = () => {
           height: '80px',
         }}>
           <div>
-            <Link to="/">
-              <h1 className="text-gradient-gold" style={{ fontSize: '24px', margin: 0, fontWeight: 700 }}>TRÍ LONG LAND</h1>
+            <Link to="/" style={{ textDecoration: 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ fontSize: '28px', fontWeight: 900, lineHeight: 1 }}>
+                  <span style={{ color: '#d4af37' }}>TRÍ LONG</span> <span style={{ color: '#1B2C6B' }}>LAND</span>
+                </div>
+              </div>
             </Link>
           </div>
 
-          <nav style={{ display: 'flex', gap: '32px', fontWeight: 600 }}>
-            <Link to="/landing" style={{ transition: 'color 0.3s' }}>Giới thiệu</Link>
-            <Link to="/projects" style={{ transition: 'color 0.3s' }}>Dự án</Link>
-            <Link to="/compare" style={{ transition: 'color 0.3s' }}>
+          <nav style={{ display: 'flex', gap: '24px', fontWeight: 600, fontSize: '14px' }}>
+            <Link to="/landing" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>GIỚI THIỆU</Link>
+            <Link to="/projects" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>DỰ ÁN</Link>
+            <Link to="/news" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>TIN TỨC</Link>
+            <Link to="/events" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>SỰ KIỆN</Link>
+            <Link to="/compare" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>
               <Badge count={compareList.length} size="small" color="#d4af37" offset={[10, 0]}>
-                So sánh
+                SO SÁNH CĂN HỘ
               </Badge>
             </Link>
-            <Link to="/contact" style={{ transition: 'color 0.3s' }}>Liên hệ</Link>
+            <Link to="/guide" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>HƯỚNG DẪN SỬ DỤNG</Link>
           </nav>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
