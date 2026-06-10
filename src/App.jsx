@@ -25,6 +25,7 @@ import { NewsList } from './features/SaleWebPublic/NewsList';
 import { NewsDetail } from './features/SaleWebPublic/NewsDetail';
 import { EventList } from './features/SaleWebPublic/EventList';
 import { EventDetail } from './features/SaleWebPublic/EventDetail';
+import { UserProfilePage } from './features/SaleWebPublic/UserProfilePage';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -84,6 +85,7 @@ const MainAppContent = () => {
           <Route path="projects" element={<SaleWebHome />} />
           <Route path="projects/:id" element={<ProjectDetails />} />
           <Route path="compare" element={<ComparePage />} />
+          <Route path="profile" element={<UserProfilePage />} />
           <Route path="news" element={<NewsList />} />
           <Route path="news/:id" element={<NewsDetail />} />
           <Route path="events" element={<EventList />} />

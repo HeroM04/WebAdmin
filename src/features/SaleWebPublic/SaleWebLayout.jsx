@@ -17,11 +17,10 @@ export const SaleWebLayout = () => {
   const navigate = useNavigate();
 
   const userMenuItems = [
-    { key: 'profile', icon: <UserOutlined />, label: 'Thông tin cá nhân' },
-    { key: 'orders', icon: <ShoppingCartOutlined />, label: 'Đơn hàng của tôi' },
-    { key: 'booking', icon: <UnorderedListOutlined />, label: 'Danh sách booking' },
-    { key: 'favorites', icon: <HeartOutlined />, label: 'Căn hộ đang quan tâm' },
-    { key: 'comments', icon: <CommentOutlined />, label: 'Bình luận của tôi' },
+    { key: 'profile', icon: <UserOutlined />, label: 'Thông tin cá nhân', onClick: () => navigate('/profile?tab=profile') },
+    { key: 'orders', icon: <ShoppingCartOutlined />, label: 'Đơn hàng của tôi', onClick: () => navigate('/profile?tab=orders') },
+    { key: 'booking', icon: <UnorderedListOutlined />, label: 'Danh sách booking', onClick: () => navigate('/profile?tab=booking') },
+    { key: 'favorites', icon: <HeartOutlined />, label: 'Căn hộ đang quan tâm', onClick: () => navigate('/profile?tab=favorites') },
     { type: 'divider' },
     { 
       key: 'logout', 
