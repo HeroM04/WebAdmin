@@ -15,39 +15,28 @@ import { ManageKPI } from './components/ManageKPI';
 import { Login } from './components/Login';
 import Leaderboard from './components/Leaderboard';
 import { SaleProPage } from './features/SalePro/SaleProPage';
+import { SaleWebHome } from './features/SaleWebPublic/SaleWebHome';
+import { SaleWebLayout } from './features/SaleWebPublic/SaleWebLayout';
+import { ProjectDetails } from './features/SaleWebPublic/ProjectDetails';
+import { ComparePage } from './features/SaleWebPublic/ComparePage';
+import { CompareProvider } from './context/CompareContext';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
-const MainAppContent = () => {
-  const { theme, isAuthenticated, currentUser, logout } = useContext(AppContext);
-  const { defaultAlgorithm, darkAlgorithm } = antdTheme;
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (isAuthenticated && currentUser) {
-      if (currentUser.role !== 'ADMIN' && currentUser.role !== 'VAN_PHONG') {
-        logout();
-        message.error('Bạn không có quyền truy cập vào trang Quản trị này!');
-      } else if (window.location.pathname === '/' || window.location.pathname === '/login') {
-        navigate(currentUser.role === 'ADMIN' ? '/dashboard' : '/cham-cong');
-      }
-    }
-  }, [isAuthenticated, currentUser, logout, navigate]);
-
-  // Guard: nếu đang "authenticated" nhưng currentUser bị null (dữ liệu localStorage bị hỏng)
-  // → Xóa token hỏng và ép về trang Login, tránh crash toàn trang
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { isAuthenticated, currentUser } = useContext(AppContext);
   if (!isAuthenticated || !currentUser) {
-    // Dọn dẹp localStorage hỏng nếu cần
-    if (isAuthenticated && !currentUser) {
-      localStorage.removeItem('kpi_is_auth');
-      localStorage.removeItem('kpi_current_user');
-    }
-    return (
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    );
+    return <Navigate to="/" replace />;
   }
+  if (allowedRoles && !allowedRoles.includes(currentUser.role)) {
+    message.error('Bạn không có quyền truy cập vào trang này!');
+    return <Navigate to="/admin/cham-cong" replace />;
+  }
+  return children;
+};
+
+const MainAppContent = () => {
+  const { theme } = useContext(AppContext);
+  const { defaultAlgorithm, darkAlgorithm } = antdTheme;
 
   return (
     <ConfigProvider
@@ -83,23 +72,40 @@ const MainAppContent = () => {
         }
       }}
     >
-      <AppLayout>
-        <Routes>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/nhan-su" element={currentUser?.role === 'ADMIN' ? <Personnel /> : <Navigate to="/cham-cong" />} />
-          <Route path="/cham-cong" element={<ManageAttendance />} />
-          <Route path="/thuc-chien" element={<ManageMeetings />} />
-          <Route path="/lan-toa" element={<ManagePosts />} />
-          <Route path="/dao-tao" element={<ManageTraining />} />
-          <Route path="/chot-can" element={<ManageDeals />} />
-          <Route path="/gop-y" element={<Feedback />} />
-          <Route path="/vinh-danh" element={<Leaderboard />} />
-          <Route path="/phong-ban" element={currentUser?.role === 'ADMIN' ? <Departments /> : <Navigate to="/cham-cong" />} />
-          <Route path="/kpi" element={<ManageKPI />} />
-          <Route path="/salepro" element={currentUser?.role === 'ADMIN' ? <SaleProPage /> : <Navigate to="/cham-cong" />} />
-          <Route path="*" element={<Navigate to={currentUser?.role === 'ADMIN' ? "/dashboard" : "/cham-cong"} replace />} />
-        </Routes>
-      </AppLayout>
+      <Routes>
+        {/* PUBLIC ROUTES - SALEWEB */}
+        <Route path="/" element={<SaleWebLayout />}>
+          <Route index element={<SaleWebHome />} />
+          <Route path="projects" element={<SaleWebHome />} />
+          <Route path="projects/:id" element={<ProjectDetails />} />
+          <Route path="compare" element={<ComparePage />} />
+        </Route>
+
+        {/* PRIVATE ROUTES - WEBADMIN */}
+        <Route path="/admin" element={
+          <ProtectedRoute allowedRoles={['ADMIN', 'VAN_PHONG', 'TRUONG_PHONG', 'NHAN_VIEN']}>
+            <AppLayout />
+          </ProtectedRoute>
+        }>
+          <Route path="dashboard" element={<ProtectedRoute allowedRoles={['ADMIN']}><Dashboard /></ProtectedRoute>} />
+          <Route path="nhan-su" element={<ProtectedRoute allowedRoles={['ADMIN']}><Personnel /></ProtectedRoute>} />
+          <Route path="cham-cong" element={<ManageAttendance />} />
+          <Route path="thuc-chien" element={<ManageMeetings />} />
+          <Route path="lan-toa" element={<ManagePosts />} />
+          <Route path="dao-tao" element={<ManageTraining />} />
+          <Route path="chot-can" element={<ManageDeals />} />
+          <Route path="gop-y" element={<Feedback />} />
+          <Route path="vinh-danh" element={<Leaderboard />} />
+          <Route path="phong-ban" element={<ProtectedRoute allowedRoles={['ADMIN']}><Departments /></ProtectedRoute>} />
+          <Route path="kpi" element={<ManageKPI />} />
+          <Route path="salepro" element={<ProtectedRoute allowedRoles={['ADMIN', 'TRUONG_PHONG']}><SaleProPage /></ProtectedRoute>} />
+          
+          <Route path="*" element={<Navigate to="cham-cong" replace />} />
+        </Route>
+
+        {/* FALLBACK */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </ConfigProvider>
   );
 };
@@ -108,7 +114,9 @@ function App() {
   return (
     <BrowserRouter>
       <AppProvider>
-        <MainAppContent />
+        <CompareProvider>
+          <MainAppContent />
+        </CompareProvider>
       </AppProvider>
     </BrowserRouter>
   );

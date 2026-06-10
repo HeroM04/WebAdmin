@@ -335,15 +335,40 @@ export const AppProvider = ({ children }) => {
   };
 
   // --- Authentication ---
+  // loginPublic: Dành cho SaleWeb, cho phép MỌI role đăng nhập (không ép Admin)
+  const loginPublic = async (username, password) => {
+    try {
+      const res = await apiClient.post('/auth/login', { phoneNumber: username, password });
+      localStorage.setItem('kpi_access_token', res.accessToken);
+      localStorage.setItem('kpi_is_auth', 'true');
+
+      const userRes = await apiClient.get('/auth/me').catch(() => null);
+      const userProfile = userRes || { id: username, name: username, role: 'NHAN_VIEN' };
+
+      setCurrentUser(userProfile);
+      setIsAuthenticated(true);
+      return userProfile; // trả về profile để SaleWebLayout quyết định redirect
+    } catch (err) {
+      // Fallback offline
+      if (username === 'admin' && password === 'admin123') {
+        const profile = { id: 'admin', name: 'Quản trị viên', role: 'ADMIN', avatar: '' };
+        setCurrentUser(profile);
+        setIsAuthenticated(true);
+        localStorage.setItem('kpi_is_auth', 'true');
+        return profile;
+      }
+      throw err;
+    }
+  };
+
+  // login: Dành cho màn hình /admin, CHỈ cho phép ADMIN và VAN_PHONG
   const login = async (username, password) => {
     try {
-      // Backend LoginRequestDTO expects phoneNumber
       const res = await apiClient.post('/auth/login', { phoneNumber: username, password });
-      
       localStorage.setItem('kpi_access_token', res.accessToken);
       localStorage.setItem('kpi_is_auth', 'true');
       
-      const userRes = await apiClient.get('/auth/me'); // Giả định backend có API lấy profile hiện tại
+      const userRes = await apiClient.get('/auth/me').catch(() => null);
       const userProfile = userRes || { id: username, name: username, role: username === 'admin' ? 'ADMIN' : 'VAN_PHONG', avatar: '' };
       
       // Chỉ cho phép ADMIN và VAN_PHONG truy cập WebAdmin
@@ -357,14 +382,13 @@ export const AppProvider = ({ children }) => {
       setIsAuthenticated(true);
       return true;
     } catch (err) {
-      // Fallback mock nếu API lỗi connection
       if (username === 'admin' && password === 'admin123') {
-        setCurrentUser({ id: 'admin', name: 'Quản trị viên (Offline)', role: 'Admin', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80' });
+        setCurrentUser({ id: 'admin', name: 'Quản trị viên (Offline)', role: 'Admin', avatar: '' });
         setIsAuthenticated(true);
         localStorage.setItem('kpi_is_auth', 'true');
         return true;
       } else if (username === 'hr' && password === '123456') {
-        setCurrentUser({ id: 'hr', name: 'Nhân sự (Offline)', role: 'HR', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&auto=format&fit=crop&q=80' });
+        setCurrentUser({ id: 'hr', name: 'Nhân sự (Offline)', role: 'HR', avatar: '' });
         setIsAuthenticated(true);
         localStorage.setItem('kpi_is_auth', 'true');
         return true;
@@ -626,6 +650,7 @@ export const AppProvider = ({ children }) => {
         setCurrentUser,
         isAuthenticated,
         login,
+        loginPublic,
         logout,
         theme,
         setTheme,

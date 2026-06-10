@@ -34,18 +34,18 @@ export const AppLayout = ({ children }) => {
   } = useContext(AppContext);
 
   const routeMap = {
-    '/dashboard': 'dashboard',
-    '/nhan-su': 'personnel',
-    '/cham-cong': 'manage_attendance',
-    '/thuc-chien': 'manage_meetings',
-    '/lan-toa': 'manage_posts',
-    '/dao-tao': 'manage_training',
-    '/chot-can': 'manage_deals',
-    '/gop-y': 'feedback',
-    '/phong-ban': 'departments',
-    '/kpi': 'manage_kpi',
-    '/vinh-danh': 'leaderboard',
-    '/salepro': 'salepro',
+    '/admin/dashboard': 'dashboard',
+    '/admin/nhan-su': 'personnel',
+    '/admin/cham-cong': 'manage_attendance',
+    '/admin/thuc-chien': 'manage_meetings',
+    '/admin/lan-toa': 'manage_posts',
+    '/admin/dao-tao': 'manage_training',
+    '/admin/chot-can': 'manage_deals',
+    '/admin/gop-y': 'feedback',
+    '/admin/phong-ban': 'departments',
+    '/admin/kpi': 'manage_kpi',
+    '/admin/vinh-danh': 'leaderboard',
+    '/admin/salepro': 'salepro',
   };
 
   const activeTab = routeMap[location.pathname] || 'dashboard';
@@ -148,18 +148,18 @@ export const AppLayout = ({ children }) => {
     {
       key: 'dashboard',
       icon: <DashboardOutlined />,
-      label: <Link to="/dashboard">Tổng quan Dashboard</Link>
+      label: <Link to="/admin/dashboard">Tổng quan Dashboard</Link>
     },
     ...(currentUser?.role === 'ADMIN' ? [
       {
         key: 'personnel',
         icon: <TeamOutlined />,
-        label: <Link to="/nhan-su">Quản lý Nhân sự</Link>
+        label: <Link to="/admin/nhan-su">Quản lý Nhân sự</Link>
       },
       {
         key: 'departments',
         icon: <BankOutlined />,
-        label: <Link to="/phong-ban">Quản lý Phòng ban</Link>
+        label: <Link to="/admin/phong-ban">Quản lý Phòng ban</Link>
       }
     ] : []),
     {
@@ -219,7 +219,7 @@ export const AppLayout = ({ children }) => {
         {
           key: 'salepro',
           icon: <BankOutlined />,
-          label: <Link to="/salepro">Quỹ hàng (SalePro)</Link>
+          label: <Link to="/admin/salepro">Quỹ hàng (SalePro)</Link>
         }
       ]
     },
@@ -230,12 +230,12 @@ export const AppLayout = ({ children }) => {
           <MessageOutlined style={{ color: pendingFeedbacks > 0 ? '#fbbf24' : 'inherit' }} />
         </Badge>
       ),
-      label: <Link to="/gop-y">Góp ý Nhân sự</Link>
+      label: <Link to="/admin/gop-y">Góp ý Nhân sự</Link>
     },
     {
       key: 'leaderboard',
       icon: <TrophyOutlined style={{ color: '#fbbf24' }} />,
-      label: <Link to="/vinh-danh">Bảng vinh danh</Link>
+      label: <Link to="/admin/vinh-danh">Bảng vinh danh</Link>
     }
   ];
 
@@ -249,7 +249,7 @@ export const AppLayout = ({ children }) => {
       <div style={{ padding: '8px 16px', fontWeight: 'bold', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between' }}>
         <span>Thông báo ({notifications.length})</span>
         {notifications.length > 0 && (
-          <span style={{ color: 'var(--primary-color)', fontSize: '12px', cursor: 'pointer' }} onClick={() => navigate('/cham-cong')}>
+          <span style={{ color: 'var(--primary-color)', fontSize: '12px', cursor: 'pointer' }} onClick={() => navigate('/admin/cham-cong')}>
             Xem ngay
           </span>
         )}
@@ -266,8 +266,8 @@ export const AppLayout = ({ children }) => {
             <List.Item 
               style={{ cursor: 'pointer', padding: '12px 16px', borderBottom: '1px solid var(--border-color)' }}
               onClick={() => {
-                const tabMap = { deal: '/chot-can', att: '/cham-cong', post: '/lan-toa', meet: '/thuc-chien' };
-                navigate(tabMap[item.type] || '/dashboard');
+                const tabMap = { deal: '/admin/chot-can', att: '/admin/cham-cong', post: '/admin/lan-toa', meet: '/admin/thuc-chien' };
+                navigate(tabMap[item.type] || '/admin/dashboard');
                 setNotiVisible(false);
               }}
             >
