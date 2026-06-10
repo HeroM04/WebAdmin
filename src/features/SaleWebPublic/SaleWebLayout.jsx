@@ -79,7 +79,7 @@ export const SaleWebLayout = () => {
           </div>
 
           <nav style={{ display: 'flex', gap: '24px', fontWeight: 600, fontSize: '14px' }}>
-            <Link to="/landing" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>GIỚI THIỆU</Link>
+            <Link to="/" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>GIỚI THIỆU</Link>
             <Link to="/projects" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>DỰ ÁN</Link>
             <Link to="/news" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>TIN TỨC</Link>
             <Link to="/events" style={{ transition: 'color 0.3s', textTransform: 'uppercase', color: 'var(--text-primary)' }}>SỰ KIỆN</Link>

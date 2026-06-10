@@ -80,8 +80,7 @@ const MainAppContent = () => {
       <Routes>
         {/* PUBLIC ROUTES - SALEWEB */}
         <Route path="/" element={<SaleWebLayout />}>
-          <Route index element={<Navigate to="/projects" replace />} />
-          <Route path="landing" element={<LandingPage />} />
+          <Route index element={<LandingPage />} />
           <Route path="projects" element={<SaleWebHome />} />
           <Route path="projects/:id" element={<ProjectDetails />} />
           <Route path="compare" element={<ComparePage />} />
