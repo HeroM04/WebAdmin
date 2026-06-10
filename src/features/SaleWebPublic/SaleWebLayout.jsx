@@ -36,20 +36,14 @@ export const SaleWebLayout = () => {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-      <header style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-        background: 'var(--glass-bg)',
-        backdropFilter: 'var(--glass-blur)',
-        WebkitBackdropFilter: 'var(--glass-blur)',
-        borderBottom: '1px solid var(--border-color)',
-      }}>
-        <div className="saleweb-container" style={{
-          display: 'flex',
-          alignItems: 'center',
+      <header className="saleweb-glass" style={{ position: 'sticky', top: 0, zIndex: 1000, borderBottom: '1px solid #e2e8f0', borderRadius: 0 }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
           justifyContent: 'space-between',
           height: '80px',
+          width: '100%',
+          padding: '0 40px'
         }}>
           <div>
             <Link to="/" style={{ textDecoration: 'none' }}>
