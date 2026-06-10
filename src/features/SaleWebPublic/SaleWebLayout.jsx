@@ -4,6 +4,7 @@ import { AppContext } from '../../context/AppContext';
 import { CompareContext } from '../../context/CompareContext';
 import '../../SaleWeb.css';
 import { Modal, Form, Input, Button, message, Badge } from 'antd';
+import { MailOutlined, PhoneOutlined, EnvironmentOutlined, FacebookFilled, YoutubeFilled, TikTokOutlined, ArrowUpOutlined } from '@ant-design/icons';
 
 export const SaleWebLayout = () => {
   const { currentUser, isAuthenticated, loginPublic, logout } = useContext(AppContext);
@@ -109,14 +110,85 @@ export const SaleWebLayout = () => {
         <Outlet />
       </main>
 
-      <footer style={{
-        marginTop: 'auto',
-        padding: '40px 0',
-        background: '#1e293b',
-        color: '#fff',
-      }}>
-        <div className="saleweb-container" style={{ textAlign: 'center', opacity: 0.8 }}>
-          <p style={{ margin: 0 }}>&copy; {new Date().getFullYear()} Trí Long Land. Bản quyền thuộc về Hệ thống phân phối BĐS Cao cấp.</p>
+      <footer className="saleweb-footer">
+        <div className="saleweb-footer-container">
+          <div className="saleweb-footer-grid">
+            {/* Column 1: Brand & Contact */}
+            <div className="saleweb-footer-col">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <div style={{ fontSize: '32px', fontWeight: 900, lineHeight: 1 }}>
+                  <span style={{ color: '#d4af37' }}>TRÍ LONG</span> <span style={{ color: '#fff' }}>LAND</span>
+                </div>
+              </div>
+              <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', marginBottom: '24px', lineHeight: 1.6 }}>
+                Nền tảng công nghệ hỗ trợ kinh doanh BĐS<br/>hàng đầu Việt Nam
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <MailOutlined style={{ fontSize: '16px' }} />
+                  <span>info@trilongland.vn</span>
+                </div>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <PhoneOutlined style={{ fontSize: '16px' }} />
+                  <span>0976 239 891</span>
+                </div>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  <EnvironmentOutlined style={{ fontSize: '16px', marginTop: '4px' }} />
+                  <span style={{ lineHeight: 1.5 }}>
+                    SB24-30, Sao Biển 24, KĐT Vinhomes Ocean Park,<br/>
+                    Xã Gia Lâm, Thành phố Hà Nội, Việt Nam
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Column 2: Company */}
+            <div className="saleweb-footer-col">
+              <h4 className="saleweb-footer-title">CÔNG TY</h4>
+              <nav className="saleweb-footer-links">
+                <Link to="/about">Về chúng tôi</Link>
+                <Link to="/services">Dịch vụ</Link>
+                <Link to="/news">Tin tức</Link>
+                <Link to="/contact">Liên hệ</Link>
+              </nav>
+            </div>
+
+            {/* Column 3: Information */}
+            <div className="saleweb-footer-col">
+              <h4 className="saleweb-footer-title">THÔNG TIN</h4>
+              <nav className="saleweb-footer-links">
+                <Link to="/guide">Hướng dẫn sử dụng</Link>
+                <Link to="/terms">Điều khoản dịch vụ</Link>
+                <Link to="/privacy">Chính sách bảo mật</Link>
+                <Link to="/faq">FAQ</Link>
+              </nav>
+            </div>
+
+            {/* Column 4: Social */}
+            <div className="saleweb-footer-col">
+              <h4 className="saleweb-footer-title">KẾT NỐI VỚI CHÚNG TÔI</h4>
+              <div className="saleweb-footer-socials">
+                <a href="#" className="social-icon"><FacebookFilled /></a>
+                <a href="#" className="social-icon"><YoutubeFilled /></a>
+                <a href="#" className="social-icon"><TikTokOutlined /></a>
+                <a href="#" className="social-icon" style={{ fontSize: '10px', fontWeight: 'bold' }}>Zalo</a>
+              </div>
+            </div>
+          </div>
+
+          <div className="saleweb-footer-bottom">
+            <div>
+              <p style={{ margin: '0 0 8px 0', fontSize: '13px' }}>
+                &copy; {new Date().getFullYear()} Công ty Cổ phần Kinh doanh bất động sản Trí Long. All rights reserved.
+              </p>
+              <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
+                GCNĐKDN số 0110347195 | Bản quyền thuộc về Công ty Cổ phần Kinh doanh bất động sản Trí Long.
+              </p>
+            </div>
+            <button className="back-to-top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+              <ArrowUpOutlined />
+            </button>
+          </div>
         </div>
       </footer>
 
