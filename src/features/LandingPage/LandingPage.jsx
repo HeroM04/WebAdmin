@@ -132,19 +132,19 @@ export const LandingPage = () => {
             </div>
             
             <h1 className="lp-hero-h1">
-              Nền tảng công nghệ hỗ trợ kinh doanh <span className="gold-word">Bất động sản</span> hàng đầu Việt Nam
+              Kiến tạo chuẩn mực mới trong giao dịch <span className="gold-word">Bất động sản</span>
             </h1>
             
             <p className="lp-hero-sub">
-              Kết nối khách hàng với những sản phẩm bất động sản giá trị thực thông qua nền tảng công nghệ hiện đại, dịch vụ tư vấn chuyên nghiệp và đội ngũ phân phối uy tín.
+              Nơi hội tụ của những siêu dự án đẳng cấp. Chúng tôi kết nối nhà đầu tư tinh hoa với những giá trị thực bền vững thông qua nền tảng công nghệ ưu việt.
             </p>
 
             <div className="lp-hero-cta">
               <Link to="/projects" className="lp-btn-primary">
-                Khám phá dự án <span style={{ fontSize: '18px', lineHeight: 1 }}>→</span>
+                Xem danh mục đầu tư <span style={{ fontSize: '18px', lineHeight: 1 }}>→</span>
               </Link>
               <Link to="/compare" className="lp-btn-outline">
-                Tư vấn miễn phí
+                Nhận tư vấn chuyên sâu
               </Link>
             </div>
             
