@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { Table, Button, Space, Tag, message, Modal, Form, Input, Select, Popconfirm } from 'antd';
 import { EyeOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { saleProApi } from '../api/saleProApi';
-import { useAuth } from '../../../hooks/useAuth';
+import { AppContext } from '../../../context/AppContext';
 
 const { Option } = Select;
 
 const ProjectList = ({ onSelectProject }) => {
-  const { user } = useAuth();
-  const isAdmin = user?.roles?.includes('ADMIN');
+  const { currentUser } = useContext(AppContext);
+  const isAdmin = currentUser?.roles?.includes('ADMIN');
 
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
