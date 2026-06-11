@@ -48,6 +48,9 @@ export const AppLayout = () => {
     '/admin/kpi': 'manage_kpi',
     '/admin/vinh-danh': 'leaderboard',
     '/admin/salepro': 'salepro',
+    '/admin/salepro/projects': 'salepro_projects',
+    '/admin/salepro/inventory': 'salepro_inventory',
+    '/admin/salepro/agents': 'salepro_agents',
     '/admin/tin-tuc': 'manage_news',
     '/admin/su-kien': 'manage_events',
   };
@@ -233,9 +236,24 @@ export const AppLayout = () => {
       ),
       children: [
         {
-          key: 'salepro',
+          key: 'salepro_projects',
           icon: <BankOutlined />,
-          label: <Link to="/admin/salepro">Quỹ hàng & Quỹ căn</Link>
+          label: <Link to="/admin/salepro/projects">Quản lý Dự án</Link>
+        },
+        {
+          key: 'salepro_inventory',
+          icon: <HomeOutlined />,
+          label: <Link to="/admin/salepro/inventory">Tòa nhà & Quỹ căn</Link>
+        },
+        {
+          key: 'salepro',
+          icon: <FolderOpenOutlined />,
+          label: <Link to="/admin/salepro">Quỹ hàng (Ma trận)</Link>
+        },
+        {
+          key: 'salepro_agents',
+          icon: <TeamOutlined />,
+          label: <Link to="/admin/salepro/agents">Chuyên viên</Link>
         },
         {
           key: 'manage_news',

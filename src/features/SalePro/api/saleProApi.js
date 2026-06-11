@@ -53,4 +53,25 @@ export const saleProApi = {
   createApartment: (body) => apiClient.post(`${BASE_PATH}/admin/apartments`, body),
   updateApartment: (id, body) => apiClient.put(`${BASE_PATH}/admin/apartments/${id}`, body),
   deleteApartment: (id) => apiClient.delete(`${BASE_PATH}/admin/apartments/${id}`),
+
+  // Admin - Chuyên viên
+  listAgents: () => apiClient.get(`${BASE_PATH}/admin/agents`),
+  createAgent: (body) => apiClient.post(`${BASE_PATH}/admin/agents`, body),
+  updateAgent: (id, body) => apiClient.put(`${BASE_PATH}/admin/agents/${id}`, body),
+  deleteAgent: (id) => apiClient.delete(`${BASE_PATH}/admin/agents/${id}`),
+
+  // Admin - Mặt bằng tầng
+  createFloorPlan: (body) => apiClient.post(`${BASE_PATH}/admin/floor-plans`, body),
+  updateFloorPlan: (id, body) => apiClient.put(`${BASE_PATH}/admin/floor-plans/${id}`, body),
+  deleteFloorPlan: (id) => apiClient.delete(`${BASE_PATH}/admin/floor-plans/${id}`),
+
+  // Admin - Tiến độ
+  createProgress: (body) => apiClient.post(`${BASE_PATH}/admin/progress`, body),
+  updateProgress: (id, body) => apiClient.put(`${BASE_PATH}/admin/progress/${id}`, body),
+  deleteProgress: (id) => apiClient.delete(`${BASE_PATH}/admin/progress/${id}`),
+
+  // Admin - Tài liệu
+  createDocument: (body) => apiClient.post(`${BASE_PATH}/admin/documents`, body),
+  updateDocument: (id, body) => apiClient.put(`${BASE_PATH}/admin/documents/${id}`, body),
+  deleteDocument: (id) => apiClient.delete(`${BASE_PATH}/admin/documents/${id}`),
 };

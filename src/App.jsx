@@ -17,6 +17,9 @@ import Leaderboard from './components/Leaderboard';
 import { SaleProPage } from './features/SalePro/SaleProPage';
 import { ManageNews } from './features/SalePro/components/ManageNews';
 import { ManageEvents } from './features/SalePro/components/ManageEvents';
+import { ProjectsAdmin } from './features/SalePro/admin/ProjectsAdmin';
+import { AgentsAdmin } from './features/SalePro/admin/AgentsAdmin';
+import { InventoryAdmin } from './features/SalePro/admin/InventoryAdmin';
 import { SaleWebHome } from './features/SaleWebPublic/SaleWebHome';
 import { SaleWebLayout } from './features/SaleWebPublic/SaleWebLayout';
 import { ProjectDetails } from './features/SaleWebPublic/ProjectDetails';
@@ -120,6 +123,9 @@ const MainAppContent = () => {
           <Route path="phong-ban" element={<ProtectedRoute allowedRoles={['ADMIN']}><Departments /></ProtectedRoute>} />
           <Route path="kpi" element={<ManageKPI />} />
           <Route path="salepro" element={<ProtectedRoute allowedRoles={['ADMIN', 'TRUONG_PHONG']}><SaleProPage /></ProtectedRoute>} />
+          <Route path="salepro/projects" element={<ProtectedRoute allowedRoles={['ADMIN']}><ProjectsAdmin /></ProtectedRoute>} />
+          <Route path="salepro/inventory" element={<ProtectedRoute allowedRoles={['ADMIN']}><InventoryAdmin /></ProtectedRoute>} />
+          <Route path="salepro/agents" element={<ProtectedRoute allowedRoles={['ADMIN']}><AgentsAdmin /></ProtectedRoute>} />
           <Route path="tin-tuc" element={<ProtectedRoute allowedRoles={['ADMIN']}><ManageNews /></ProtectedRoute>} />
           <Route path="su-kien" element={<ProtectedRoute allowedRoles={['ADMIN']}><ManageEvents /></ProtectedRoute>} />
           
