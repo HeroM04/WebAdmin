@@ -219,14 +219,20 @@ export const ProjectDetails = () => {
               )}
               {(() => {
                 let mapUrl = details.mapEmbedUrl;
+                let externalLink = null;
                 if (mapUrl) {
                   if (mapUrl.includes('<iframe')) {
                     const match = mapUrl.match(/src=["']([^"']+)["']/i);
                     if (match) mapUrl = match[1];
                   }
                   mapUrl = mapUrl.replace(/&amp;/g, '&').trim();
+                  
                   // Check if pb is clearly invalid (too short)
                   if (mapUrl.includes('pb=') && mapUrl.length < 50) {
+                    mapUrl = null;
+                  } else if (mapUrl && !mapUrl.includes('embed')) {
+                    // Not an embed URL (e.g. google.com/maps/place/...), iframe will be blocked
+                    externalLink = mapUrl;
                     mapUrl = null;
                   }
                 }
@@ -247,7 +253,24 @@ export const ProjectDetails = () => {
                   );
                 }
                 if (details.mapImageUrl) {
-                  return <img src={details.mapImageUrl} alt="Map" style={{ width: '100%', borderRadius: 16, border: '1px solid #e2e8f0' }} />;
+                  return (
+                    <div>
+                      <img src={details.mapImageUrl} alt="Map" style={{ width: '100%', borderRadius: 16, border: '1px solid #e2e8f0' }} />
+                      {externalLink && (
+                        <div style={{ marginTop: 12, textAlign: 'center' }}>
+                          <a href={externalLink} target="_blank" rel="noreferrer" style={{ display: 'inline-block', padding: '10px 20px', background: '#e2e8f0', color: '#0f172a', borderRadius: 8, fontWeight: 600 }}>Xem bản đồ trên Google Maps</a>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                if (externalLink) {
+                  return (
+                    <div style={{ textAlign: 'center', padding: '40px', background: '#f8fafc', borderRadius: 16, border: '1px dashed #cbd5e1' }}>
+                      <p style={{ color: '#64748b', marginBottom: 16 }}>Bản đồ không thể hiển thị trực tiếp trên web do giới hạn từ Google.</p>
+                      <a href={externalLink} target="_blank" rel="noreferrer" style={{ display: 'inline-block', padding: '10px 24px', background: '#d4af37', color: '#fff', borderRadius: 8, fontWeight: 600 }}>Mở bản đồ trên Google Maps</a>
+                    </div>
+                  );
                 }
                 return null;
               })()}
