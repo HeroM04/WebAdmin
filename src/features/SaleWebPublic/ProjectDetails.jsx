@@ -12,6 +12,7 @@ import { newsApi } from './saleWebApi';
 import { formatNewsDate } from './NewsList';
 import UnitDetailModal from '../SalePro/components/UnitDetailModal';
 import BuildingDetailModal from '../SalePro/components/BuildingDetailModal';
+import { ProjectOverview } from './ProjectOverview';
 import {
   getStatusMeta, formatDirection, formatApartmentType, formatBillion, formatArea, toCompareItem,
 } from '../SalePro/components/saleProFormat';
@@ -194,28 +195,7 @@ export const ProjectDetails = () => {
       <div className="sw-tab-content animate-fade-in-up">
         {/* ===== TỔNG QUAN ===== */}
         {activeTab === 'overview' && (
-          <div>
-            {details.bannerImageUrl && (
-              <div style={{ width: '100%', height: '400px', borderRadius: '16px', overflow: 'hidden', marginBottom: '32px' }}>
-                <img src={details.bannerImageUrl} alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
-            )}
-            <div className="sw-info-grid">
-              <div className="sw-info-card"><div className="sw-info-icon">🏢</div><div><div className="sw-info-label">Quy mô</div><div className="sw-info-value">{details.scale || '—'}</div></div></div>
-              <div className="sw-info-card"><div className="sw-info-icon">💰</div><div><div className="sw-info-label">Vốn</div><div className="sw-info-value">{details.capital || '—'}</div></div></div>
-              <div className="sw-info-card"><div className="sw-info-icon">👥</div><div><div className="sw-info-label">Cư dân</div><div className="sw-info-value">{details.residents || '—'}</div></div></div>
-            </div>
-            <div className="sw-overview-card">
-              <div className="sw-overview-content">
-                <div className="sw-overview-title">Tổng quan dự án</div>
-                <ul className="sw-overview-list">
-                  {(details.overviewBullets || []).map((b, i) => <li key={i}>{b}</li>)}
-                </ul>
-                {details.overview && <p style={{ marginTop: '16px', fontSize: '0.9rem', opacity: 0.9 }}>{details.overview}</p>}
-              </div>
-              {details.overviewImageUrl && <img src={details.overviewImageUrl} alt="Overview" className="sw-overview-img" />}
-            </div>
-          </div>
+          <ProjectOverview details={details} buildings={buildings} agent={project?.managingAgent} projectName={projectName} />
         )}
 
         {/* ===== VỊ TRÍ ===== */}

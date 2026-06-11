@@ -67,6 +67,13 @@ export const ProjectsAdmin = () => {
         images360Text: (d.images360 || []).join('\n'),
         // CSBH
         salesPolicy: d.salesPolicy,
+        // Trang Tổng quan (landing)
+        heroImagesText: (d.heroImages || []).join('\n'),
+        productCount: d.productCount, ownership: d.ownership,
+        featureTitle: d.featureTitle, featureDescription: d.featureDescription,
+        featureVideoUrl: d.featureVideoUrl, featureImage: d.featureImage,
+        products: (d.products || []).map((p) => ({ name: p.name, areaRange: p.areaRange, imagesText: (p.images || []).join('\n') })),
+        amenities: d.amenities || [],
       });
     }
     setOpen(true);
@@ -92,6 +99,13 @@ export const ProjectsAdmin = () => {
         masterplanImageUrl: v.masterplanImageUrl,
         images360: splitLines(v.images360Text),
         salesPolicy: v.salesPolicy,
+        // Trang Tổng quan (landing)
+        heroImages: splitLines(v.heroImagesText),
+        productCount: v.productCount, ownership: v.ownership,
+        featureTitle: v.featureTitle, featureDescription: v.featureDescription,
+        featureVideoUrl: v.featureVideoUrl, featureImage: v.featureImage,
+        products: (v.products || []).filter(Boolean).map((p) => ({ name: p.name, areaRange: p.areaRange, images: splitLines(p.imagesText) })),
+        amenities: (v.amenities || []).filter((a) => a && (a.label || a.image)),
       };
       const body = { name: v.name, projectType: v.projectType, status: v.status, managingAgentId: v.managingAgentId, details };
       if (editing) await saleProApi.updateProject(editing.id, body);
@@ -150,6 +164,11 @@ export const ProjectsAdmin = () => {
       key: 'overview', label: 'Tổng quan',
       children: (
         <>
+          <Form.Item name="heroImagesText" label="Ảnh Hero (carousel đầu trang — mỗi dòng 1 URL)"><TextArea rows={3} /></Form.Item>
+          <Space wrap align="start">
+            <Form.Item name="productCount" label='Thẻ "Sản phẩm" (vd 4500 căn)' style={{ minWidth: 200 }}><Input /></Form.Item>
+            <Form.Item name="ownership" label='Thẻ "Sở hữu" (vd Lâu dài)' style={{ minWidth: 200 }}><Input /></Form.Item>
+          </Space>
           <Space wrap align="start">
             <Form.Item name="developer" label="Nhà phát triển" style={{ minWidth: 220 }}><Input /></Form.Item>
             <Form.Item name="address" label="Vị trí (ngắn)" style={{ minWidth: 260 }}><Input /></Form.Item>
@@ -225,6 +244,53 @@ export const ProjectsAdmin = () => {
     {
       key: 'policy', label: 'CSBH',
       children: <Form.Item name="salesPolicy" label="Chính sách bán hàng (HTML/đoạn văn)"><TextArea rows={6} /></Form.Item>,
+    },
+    {
+      key: 'landing', label: 'Sản phẩm & Tiện ích',
+      children: (
+        <>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Sản phẩm (loại căn hộ)</div>
+          <Form.List name="products">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name, ...rest }) => (
+                  <div key={key} style={{ border: '1px solid #eee', borderRadius: 8, padding: 12, marginBottom: 8 }}>
+                    <Space wrap align="start">
+                      <Form.Item {...rest} name={[name, 'name']} label="Tên loại căn" style={{ minWidth: 220 }}><Input placeholder="Căn hộ 1BR/1BR+1" /></Form.Item>
+                      <Form.Item {...rest} name={[name, 'areaRange']} label="Diện tích" style={{ minWidth: 160 }}><Input placeholder="50 - 102 m²" /></Form.Item>
+                      <MinusCircleOutlined onClick={() => remove(name)} style={{ marginTop: 38 }} />
+                    </Space>
+                    <Form.Item {...rest} name={[name, 'imagesText']} label="Ảnh layout (mỗi dòng 1 URL)"><TextArea rows={2} /></Form.Item>
+                  </div>
+                ))}
+                <Button type="dashed" onClick={() => add()} icon={<PlusOutlined />} block>Thêm loại căn</Button>
+              </>
+            )}
+          </Form.List>
+
+          <div style={{ fontWeight: 600, margin: '20px 0 8px' }}>Tiện ích</div>
+          <Form.List name="amenities">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name, ...rest }) => (
+                  <Space key={key} align="baseline" style={{ display: 'flex', marginBottom: 4 }}>
+                    <Form.Item {...rest} name={[name, 'label']} style={{ marginBottom: 0 }}><Input placeholder="Thư viện" style={{ width: 200 }} /></Form.Item>
+                    <Form.Item {...rest} name={[name, 'image']} style={{ marginBottom: 0 }}><Input placeholder="https://... (ảnh)" style={{ width: 360 }} /></Form.Item>
+                    <MinusCircleOutlined onClick={() => remove(name)} />
+                  </Space>
+                ))}
+                <Button type="dashed" onClick={() => add()} icon={<PlusOutlined />} block style={{ marginTop: 8 }}>Thêm tiện ích</Button>
+              </>
+            )}
+          </Form.List>
+
+          <div style={{ fontWeight: 600, margin: '20px 0 8px' }}>Banner video đặc trưng</div>
+          <Form.Item name="featureTitle" label="Tiêu đề"><Input /></Form.Item>
+          <Form.Item name="featureDescription" label="Mô tả"><TextArea rows={3} /></Form.Item>
+          {img('featureVideoUrl', 'Link video')}
+          {img('featureImage', 'Ảnh poster')}
+        </>
+      ),
     },
     {
       key: 'progress', label: 'Tiến độ',
