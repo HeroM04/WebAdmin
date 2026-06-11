@@ -355,29 +355,6 @@ export const AppLayout = () => {
           items={filteredMenuItems}
           style={{ marginTop: 8, paddingBottom: 80, background: 'transparent' }}
         />
-        
-        {/* User Identity Info in Sidebar bottom */}
-        <div style={{ 
-          position: 'absolute', bottom: 0, left: 0, right: 0, 
-          padding: '12px 16px', 
-          borderTop: '1px solid var(--border-color)', 
-          background: 'rgba(0,0,0,0.3)',
-          backdropFilter: 'blur(8px)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {currentUser && (
-              <>
-                <Avatar src={currentUser.avatar || currentUser.avatarUrl} size={36} icon={<UserOutlined />} style={{ border: '2px solid var(--primary-color)', flexShrink: 0 }} />
-                <div style={{ overflow: 'hidden', flex: 1 }}>
-                  <div style={{ fontWeight: 600, color: '#fff', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentUser.name || currentUser.fullName}</div>
-                  <div style={{ fontSize: '10px', color: 'var(--primary-color)', fontWeight: 500 }}>
-                    {currentUser.role}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
       </Sider>
 
       <Layout style={{ marginLeft: 240 }}>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, Select, message, Popconfirm, Space, Tag, InputNumber } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, FieldTimeOutlined, FileTextOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, Select, message, Popconfirm, Space, Tag, InputNumber, Tabs, Alert } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { saleProApi } from '../api/saleProApi';
 
 const { TextArea } = Input;
@@ -15,6 +15,8 @@ const STATUSES = [
   { value: 'DA_HET_HANG', label: 'Đã hết hàng' },
 ];
 
+const splitLines = (s) => (s ? s.split('\n').map((x) => x.trim()).filter(Boolean) : []);
+
 export const ProjectsAdmin = () => {
   const [data, setData] = useState([]);
   const [agents, setAgents] = useState([]);
@@ -22,10 +24,6 @@ export const ProjectsAdmin = () => {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form] = Form.useForm();
-
-  // sub-modal tiến độ / tài liệu
-  const [subProject, setSubProject] = useState(null);
-  const [subType, setSubType] = useState(null); // 'progress' | 'documents'
 
   const load = async () => {
     setLoading(true);
@@ -42,12 +40,33 @@ export const ProjectsAdmin = () => {
     setEditing(record || null);
     form.resetFields();
     if (record) {
+      const d = record.details || {};
       form.setFieldsValue({
         name: record.name,
         projectType: record.projectType,
         status: record.status,
         managingAgentId: record.managingAgent?.id,
-        detailsJson: record.details ? JSON.stringify(record.details, null, 2) : '',
+        // Tổng quan
+        overview: d.overview, developer: d.developer, address: d.address,
+        totalProjectArea: d.totalProjectArea, scaleDescription: d.scaleDescription,
+        constructionDensity: d.constructionDensity, apartmentTypes: d.apartmentTypes,
+        scale: d.scale, capital: d.capital, residents: d.residents,
+        overviewBulletsText: (d.overviewBullets || []).join('\n'),
+        bannerImageUrl: d.bannerImageUrl, overviewImageUrl: d.overviewImageUrl,
+        // Vị trí
+        locationDescription: d.locationDescription, locationMap: d.locationMap,
+        mapImageUrl: d.mapImageUrl, mapEmbedUrl: d.mapEmbedUrl,
+        latitude: d.latitude, longitude: d.longitude,
+        connectionPoints: d.connectionPoints || [],
+        // Đào tạo
+        trainingVideoUrl: d.trainingVideoUrl, trainingThumbnail: d.trainingThumbnail,
+        trainingMaterialsText: (d.trainingMaterials || []).join('\n'),
+        // Mặt bằng
+        masterplanImageUrl: d.masterplanImageUrl,
+        // 360
+        images360Text: (d.images360 || []).join('\n'),
+        // CSBH
+        salesPolicy: d.salesPolicy,
       });
     }
     setOpen(true);
@@ -56,11 +75,24 @@ export const ProjectsAdmin = () => {
   const onSubmit = async () => {
     try {
       const v = await form.validateFields();
-      let details = null;
-      if (v.detailsJson && v.detailsJson.trim()) {
-        try { details = JSON.parse(v.detailsJson); }
-        catch { message.error('Trường "Chi tiết (JSON)" không hợp lệ.'); return; }
-      }
+      const details = {
+        ...(editing?.details || {}),
+        overview: v.overview || null,
+        developer: v.developer, address: v.address, totalProjectArea: v.totalProjectArea,
+        scaleDescription: v.scaleDescription, constructionDensity: v.constructionDensity, apartmentTypes: v.apartmentTypes,
+        scale: v.scale, capital: v.capital, residents: v.residents,
+        overviewBullets: splitLines(v.overviewBulletsText),
+        bannerImageUrl: v.bannerImageUrl, overviewImageUrl: v.overviewImageUrl,
+        locationDescription: v.locationDescription, locationMap: v.locationMap,
+        mapImageUrl: v.mapImageUrl, mapEmbedUrl: v.mapEmbedUrl,
+        latitude: v.latitude ?? null, longitude: v.longitude ?? null,
+        connectionPoints: (v.connectionPoints || []).filter((c) => c && (c.time || c.label)),
+        trainingVideoUrl: v.trainingVideoUrl, trainingThumbnail: v.trainingThumbnail,
+        trainingMaterials: splitLines(v.trainingMaterialsText),
+        masterplanImageUrl: v.masterplanImageUrl,
+        images360: splitLines(v.images360Text),
+        salesPolicy: v.salesPolicy,
+      };
       const body = { name: v.name, projectType: v.projectType, status: v.status, managingAgentId: v.managingAgentId, details };
       if (editing) await saleProApi.updateProject(editing.id, body);
       else await saleProApi.createProject(body);
@@ -68,7 +100,7 @@ export const ProjectsAdmin = () => {
       setOpen(false);
       load();
     } catch (e) {
-      if (e?.errorFields) return;
+      if (e?.errorFields) { message.warning('Vui lòng kiểm tra các trường bắt buộc (tab Cơ bản).'); return; }
       message.error(e?.message || 'Lưu thất bại.');
     }
   };
@@ -85,15 +117,136 @@ export const ProjectsAdmin = () => {
     { title: 'Trạng thái', dataIndex: 'status' },
     { title: 'Chuyên viên', render: (_, r) => r.managingAgent?.fullName || '—' },
     {
-      title: 'Thao tác', width: 260, render: (_, r) => (
-        <Space wrap>
-          <Button size="small" icon={<EditOutlined />} onClick={() => openModal(r)}>Sửa</Button>
-          <Button size="small" icon={<FieldTimeOutlined />} onClick={() => { setSubProject(r); setSubType('progress'); }}>Tiến độ</Button>
-          <Button size="small" icon={<FileTextOutlined />} onClick={() => { setSubProject(r); setSubType('documents'); }}>Tài liệu</Button>
+      title: 'Thao tác', width: 160, render: (_, r) => (
+        <Space>
+          <Button size="small" icon={<EditOutlined />} onClick={() => openModal(r)}>Quản lý</Button>
           <Popconfirm title="Xóa dự án này?" onConfirm={() => onDelete(r.id)} okText="Xóa" cancelText="Hủy">
             <Button size="small" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
+      ),
+    },
+  ];
+
+  const img = (name, label) => <Form.Item name={name} label={label}><Input placeholder="https://..." /></Form.Item>;
+
+  const tabItems = [
+    {
+      key: 'basic', label: 'Cơ bản',
+      children: (
+        <>
+          <Form.Item name="name" label="Tên dự án" rules={[{ required: true, message: 'Nhập tên dự án' }]}><Input /></Form.Item>
+          <Space wrap align="start">
+            <Form.Item name="projectType" label="Loại hình" rules={[{ required: true }]} style={{ minWidth: 240 }}><Select options={PROJECT_TYPES} /></Form.Item>
+            <Form.Item name="status" label="Trạng thái" style={{ minWidth: 200 }}><Select options={STATUSES} /></Form.Item>
+            <Form.Item name="managingAgentId" label="Chuyên viên quản lý" style={{ minWidth: 240 }}>
+              <Select allowClear placeholder="Chọn chuyên viên" options={agents.map((a) => ({ value: a.id, label: `${a.fullName}${a.title ? ` (${a.title})` : ''}` }))} />
+            </Form.Item>
+          </Space>
+        </>
+      ),
+    },
+    {
+      key: 'overview', label: 'Tổng quan',
+      children: (
+        <>
+          <Space wrap align="start">
+            <Form.Item name="developer" label="Nhà phát triển" style={{ minWidth: 220 }}><Input /></Form.Item>
+            <Form.Item name="address" label="Vị trí (ngắn)" style={{ minWidth: 260 }}><Input /></Form.Item>
+          </Space>
+          <Space wrap align="start">
+            <Form.Item name="scale" label="Quy mô (vd 1080 ha)" style={{ minWidth: 180 }}><Input /></Form.Item>
+            <Form.Item name="capital" label="Vốn" style={{ minWidth: 180 }}><Input /></Form.Item>
+            <Form.Item name="residents" label="Cư dân" style={{ minWidth: 180 }}><Input /></Form.Item>
+          </Space>
+          <Space wrap align="start">
+            <Form.Item name="totalProjectArea" label="Tổng diện tích (vd 82.820 m²)" style={{ minWidth: 220 }}><Input /></Form.Item>
+            <Form.Item name="scaleDescription" label="Quy mô mô tả (vd 10 tòa | 35-46 tầng)" style={{ minWidth: 240 }}><Input /></Form.Item>
+            <Form.Item name="constructionDensity" label="Mật độ XD (vd 28.8%)" style={{ minWidth: 160 }}><Input /></Form.Item>
+          </Space>
+          <Form.Item name="apartmentTypes" label="Loại hình căn hộ (vd Studio, 1BR, 2BR, Duplex...)"><Input /></Form.Item>
+          <Form.Item name="overviewBulletsText" label="Gạch đầu dòng tổng quan (mỗi dòng 1 ý)"><TextArea rows={5} /></Form.Item>
+          <Form.Item name="overview" label="Mô tả tổng quan (đoạn văn)"><TextArea rows={3} /></Form.Item>
+          {img('bannerImageUrl', 'Ảnh banner')}
+          {img('overviewImageUrl', 'Ảnh minh hoạ tổng quan')}
+        </>
+      ),
+    },
+    {
+      key: 'location', label: 'Vị trí',
+      children: (
+        <>
+          <Form.Item name="locationDescription" label="Mô tả vị trí"><TextArea rows={4} /></Form.Item>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Điểm kết nối (Thời gian + Địa điểm)</div>
+          <Form.List name="connectionPoints">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name, ...rest }) => (
+                  <Space key={key} align="baseline" style={{ display: 'flex', marginBottom: 4 }}>
+                    <Form.Item {...rest} name={[name, 'time']} style={{ marginBottom: 0 }}><Input placeholder="01" style={{ width: 80 }} /></Form.Item>
+                    <Form.Item {...rest} name={[name, 'label']} style={{ marginBottom: 0 }}><Input placeholder="Ga Cát Linh - Thượng Đình" style={{ width: 360 }} /></Form.Item>
+                    <MinusCircleOutlined onClick={() => remove(name)} />
+                  </Space>
+                ))}
+                <Button type="dashed" onClick={() => add()} icon={<PlusOutlined />} block style={{ marginTop: 8 }}>Thêm điểm kết nối</Button>
+              </>
+            )}
+          </Form.List>
+          <div style={{ marginTop: 16 }}>
+            {img('mapEmbedUrl', 'Link nhúng Google Maps (iframe src)')}
+            {img('mapImageUrl', 'Ảnh bản đồ (nếu không nhúng)')}
+            <Space wrap align="start">
+              <Form.Item name="latitude" label="Vĩ độ (lat)"><InputNumber style={{ width: 160 }} /></Form.Item>
+              <Form.Item name="longitude" label="Kinh độ (lng)"><InputNumber style={{ width: 160 }} /></Form.Item>
+              <Form.Item name="locationMap" label="Mô tả map (cũ)" style={{ minWidth: 240 }}><Input /></Form.Item>
+            </Space>
+          </div>
+        </>
+      ),
+    },
+    {
+      key: 'training', label: 'Đào tạo',
+      children: (
+        <>
+          {img('trainingVideoUrl', 'Link video đào tạo (embed)')}
+          {img('trainingThumbnail', 'Ảnh thumbnail video')}
+          <Form.Item name="trainingMaterialsText" label="Tài liệu đào tạo (mỗi dòng 1 link)"><TextArea rows={4} /></Form.Item>
+        </>
+      ),
+    },
+    {
+      key: 'masterplan', label: 'Mặt bằng',
+      children: <>{img('masterplanImageUrl', 'Ảnh mặt bằng tổng (masterplan)')}</>,
+    },
+    {
+      key: '360', label: 'Ảnh 360º',
+      children: <Form.Item name="images360Text" label="Ảnh 360 / panorama (mỗi dòng 1 link)"><TextArea rows={5} /></Form.Item>,
+    },
+    {
+      key: 'policy', label: 'CSBH',
+      children: <Form.Item name="salesPolicy" label="Chính sách bán hàng (HTML/đoạn văn)"><TextArea rows={6} /></Form.Item>,
+    },
+    {
+      key: 'progress', label: 'Tiến độ',
+      children: editing
+        ? <ProgressManager projectId={editing.id} />
+        : <Alert type="info" showIcon message="Lưu dự án trước, sau đó mở lại để quản lý Tiến độ." />,
+    },
+    {
+      key: 'documents', label: 'Tài liệu',
+      children: editing
+        ? <DocumentsManager projectId={editing.id} />
+        : <Alert type="info" message="Lưu dự án trước, sau đó mở lại để quản lý Tài liệu." />,
+    },
+    {
+      key: 'others', label: 'Tòa nhà / Quỹ căn / Tin tức',
+      children: (
+        <Alert type="info" showIcon message="Quản lý ở mục riêng" description={
+          <ul style={{ margin: 0, paddingLeft: 18 }}>
+            <li><b>Tòa nhà, Bảng hàng, Quỹ căn</b>: vào menu <b>"Tòa nhà & Quỹ căn"</b> (chọn dự án này).</li>
+            <li><b>Tin tức dự án</b>: vào menu <b>"Quản lý Tin tức"</b>, tạo bài và gắn dự án này.</li>
+          </ul>
+        } />
       ),
     },
   ];
@@ -106,80 +259,44 @@ export const ProjectsAdmin = () => {
       </div>
       <Table rowKey="id" columns={columns} dataSource={data} loading={loading} bordered scroll={{ x: 900 }} />
 
-      <Modal open={open} onCancel={() => setOpen(false)} onOk={onSubmit} width={720} title={editing ? 'Sửa dự án' : 'Thêm dự án'} okText="Lưu" cancelText="Hủy" destroyOnHidden>
+      <Modal open={open} onCancel={() => setOpen(false)} onOk={onSubmit} width={940} style={{ top: 24 }}
+        title={editing ? `Quản lý dự án — ${editing.name}` : 'Thêm dự án'} okText="Lưu" cancelText="Hủy" destroyOnHidden>
         <Form form={form} layout="vertical">
-          <Form.Item name="name" label="Tên dự án" rules={[{ required: true, message: 'Nhập tên dự án' }]}><Input /></Form.Item>
-          <Space style={{ display: 'flex' }} align="start">
-            <Form.Item name="projectType" label="Loại hình" rules={[{ required: true }]} style={{ flex: 1, minWidth: 220 }}>
-              <Select options={PROJECT_TYPES} placeholder="Chọn loại" />
-            </Form.Item>
-            <Form.Item name="status" label="Trạng thái" style={{ flex: 1, minWidth: 200 }}>
-              <Select options={STATUSES} placeholder="Chọn trạng thái" />
-            </Form.Item>
-            <Form.Item name="managingAgentId" label="Chuyên viên quản lý" style={{ flex: 1, minWidth: 220 }}>
-              <Select allowClear placeholder="Chọn chuyên viên" options={agents.map((a) => ({ value: a.id, label: `${a.fullName}${a.title ? ` (${a.title})` : ''}` }))} />
-            </Form.Item>
-          </Space>
-          <Form.Item name="detailsJson" label="Chi tiết (JSON) — Tổng quan/Vị trí/360/CSBH/Đào tạo/Mặt bằng..."
-            extra="Cấu trúc linh hoạt. Vd: developer, address, totalProjectArea, scaleDescription, constructionDensity, apartmentTypes, overviewBullets[], bannerImageUrl, locationDescription, connectionPoints[], mapEmbedUrl, masterplanImageUrl, images360[], trainingVideoUrl, salesPolicy...">
-            <TextArea rows={10} placeholder='{"developer":"Masterise Homes","address":"Nguyễn Trãi, Hà Nội",...}' />
-          </Form.Item>
+          <Tabs items={tabItems} />
         </Form>
       </Modal>
-
-      {subType === 'progress' && (
-        <ProgressManager project={subProject} onClose={() => setSubType(null)} />
-      )}
-      {subType === 'documents' && (
-        <DocumentsManager project={subProject} onClose={() => setSubType(null)} />
-      )}
     </div>
   );
 };
 
-// ===== Quản lý Tiến độ của 1 dự án =====
-const ProgressManager = ({ project, onClose }) => {
+// ===== Tiến độ (inline) =====
+const ProgressManager = ({ projectId }) => {
   const [list, setList] = useState([]);
   const [form] = Form.useForm();
   const [editing, setEditing] = useState(null);
 
-  const load = async () => { try { setList((await saleProApi.getProjectProgress(project.id)) || []); } catch { /* ignore */ } };
-  useEffect(() => { load(); }, [project.id]); // eslint-disable-line
+  const load = async () => { try { setList((await saleProApi.getProjectProgress(projectId)) || []); } catch { /* ignore */ } };
+  useEffect(() => { load(); }, [projectId]); // eslint-disable-line
 
   const submit = async () => {
     try {
       const v = await form.validateFields();
-      const body = {
-        projectId: project.id,
-        title: v.title,
-        progressDate: v.progressDate || null,
-        externalUrl: v.externalUrl,
-        images: v.imagesCsv ? v.imagesCsv.split('\n').map((s) => s.trim()).filter(Boolean) : [],
-        sortOrder: v.sortOrder,
-      };
-      if (editing) await saleProApi.updateProgress(editing.id, body);
-      else await saleProApi.createProgress(body);
-      message.success('Đã lưu mốc tiến độ.');
-      form.resetFields(); setEditing(null); load();
+      const body = { projectId, title: v.title, progressDate: v.progressDate || null, externalUrl: v.externalUrl, images: splitLines(v.imagesCsv), sortOrder: v.sortOrder };
+      if (editing) await saleProApi.updateProgress(editing.id, body); else await saleProApi.createProgress(body);
+      message.success('Đã lưu mốc tiến độ.'); form.resetFields(); setEditing(null); load();
     } catch (e) { if (!e?.errorFields) message.error(e?.message || 'Lỗi.'); }
   };
-
-  const edit = (r) => {
-    setEditing(r);
-    form.setFieldsValue({ title: r.title, progressDate: r.progressDate, externalUrl: r.externalUrl, imagesCsv: (r.images || []).join('\n'), sortOrder: r.sortOrder });
-  };
-
+  const edit = (r) => { setEditing(r); form.setFieldsValue({ title: r.title, progressDate: r.progressDate, externalUrl: r.externalUrl, imagesCsv: (r.images || []).join('\n'), sortOrder: r.sortOrder }); };
   const remove = async (id) => { try { await saleProApi.deleteProgress(id); load(); } catch (e) { message.error(e?.message); } };
 
   return (
-    <Modal open onCancel={onClose} footer={null} width={760} title={`Tiến độ — ${project.name}`}>
+    <div>
       <Table rowKey="id" size="small" dataSource={list} pagination={false} style={{ marginBottom: 16 }}
         columns={[
-          { title: 'Mốc', dataIndex: 'title' },
-          { title: 'Ngày', dataIndex: 'progressDate' },
+          { title: 'Mốc', dataIndex: 'title' }, { title: 'Ngày', dataIndex: 'progressDate' },
           { title: 'Ảnh', dataIndex: 'images', render: (v) => (v || []).length },
           { title: 'Link', dataIndex: 'externalUrl', render: (v) => v ? <a href={v} target="_blank" rel="noreferrer">mở</a> : '—' },
-          { title: '', width: 90, render: (_, r) => <Space><Button size="small" icon={<EditOutlined />} onClick={() => edit(r)} /><Popconfirm title="Xóa?" onConfirm={() => remove(r.id)}><Button size="small" danger icon={<DeleteOutlined />} /></Popconfirm></Space> },
+          { title: '', width: 80, render: (_, r) => <Space><Button size="small" icon={<EditOutlined />} onClick={() => edit(r)} /><Popconfirm title="Xóa?" onConfirm={() => remove(r.id)}><Button size="small" danger icon={<DeleteOutlined />} /></Popconfirm></Space> },
         ]} />
       <Form form={form} layout="vertical">
         <Space align="start" wrap>
@@ -192,41 +309,37 @@ const ProgressManager = ({ project, onClose }) => {
         <Button type="primary" onClick={submit}>{editing ? 'Cập nhật mốc' : 'Thêm mốc'}</Button>
         {editing && <Button style={{ marginLeft: 8 }} onClick={() => { setEditing(null); form.resetFields(); }}>Hủy sửa</Button>}
       </Form>
-    </Modal>
+    </div>
   );
 };
 
-// ===== Quản lý Tài liệu (link Drive) của 1 dự án =====
-const DocumentsManager = ({ project, onClose }) => {
+// ===== Tài liệu (inline) =====
+const DocumentsManager = ({ projectId }) => {
   const [list, setList] = useState([]);
   const [form] = Form.useForm();
   const [editing, setEditing] = useState(null);
 
-  const load = async () => { try { setList((await saleProApi.getProjectDocuments(project.id)) || []); } catch { /* ignore */ } };
-  useEffect(() => { load(); }, [project.id]); // eslint-disable-line
+  const load = async () => { try { setList((await saleProApi.getProjectDocuments(projectId)) || []); } catch { /* ignore */ } };
+  useEffect(() => { load(); }, [projectId]); // eslint-disable-line
 
   const submit = async () => {
     try {
       const v = await form.validateFields();
-      const body = { projectId: project.id, label: v.label, driveUrl: v.driveUrl, docType: v.docType, sortOrder: v.sortOrder };
-      if (editing) await saleProApi.updateDocument(editing.id, body);
-      else await saleProApi.createDocument(body);
-      message.success('Đã lưu tài liệu.');
-      form.resetFields(); setEditing(null); load();
+      const body = { projectId, label: v.label, driveUrl: v.driveUrl, docType: v.docType, sortOrder: v.sortOrder };
+      if (editing) await saleProApi.updateDocument(editing.id, body); else await saleProApi.createDocument(body);
+      message.success('Đã lưu tài liệu.'); form.resetFields(); setEditing(null); load();
     } catch (e) { if (!e?.errorFields) message.error(e?.message || 'Lỗi.'); }
   };
-
   const edit = (r) => { setEditing(r); form.setFieldsValue(r); };
   const remove = async (id) => { try { await saleProApi.deleteDocument(id); load(); } catch (e) { message.error(e?.message); } };
 
   return (
-    <Modal open onCancel={onClose} footer={null} width={760} title={`Tài liệu — ${project.name}`}>
+    <div>
       <Table rowKey="id" size="small" dataSource={list} pagination={false} style={{ marginBottom: 16 }}
         columns={[
-          { title: 'Nhãn', dataIndex: 'label' },
-          { title: 'Loại', dataIndex: 'docType' },
+          { title: 'Nhãn', dataIndex: 'label' }, { title: 'Loại', dataIndex: 'docType' },
           { title: 'Link Drive', dataIndex: 'driveUrl', render: (v) => v ? <a href={v} target="_blank" rel="noreferrer">mở</a> : '—' },
-          { title: '', width: 90, render: (_, r) => <Space><Button size="small" icon={<EditOutlined />} onClick={() => edit(r)} /><Popconfirm title="Xóa?" onConfirm={() => remove(r.id)}><Button size="small" danger icon={<DeleteOutlined />} /></Popconfirm></Space> },
+          { title: '', width: 80, render: (_, r) => <Space><Button size="small" icon={<EditOutlined />} onClick={() => edit(r)} /><Popconfirm title="Xóa?" onConfirm={() => remove(r.id)}><Button size="small" danger icon={<DeleteOutlined />} /></Popconfirm></Space> },
         ]} />
       <Form form={form} layout="vertical">
         <Space align="start" wrap>
@@ -238,7 +351,7 @@ const DocumentsManager = ({ project, onClose }) => {
         <Button type="primary" onClick={submit}>{editing ? 'Cập nhật tài liệu' : 'Thêm tài liệu'}</Button>
         {editing && <Button style={{ marginLeft: 8 }} onClick={() => { setEditing(null); form.resetFields(); }}>Hủy sửa</Button>}
       </Form>
-    </Modal>
+    </div>
   );
 };
 
