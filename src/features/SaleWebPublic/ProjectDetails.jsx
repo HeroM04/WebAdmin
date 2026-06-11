@@ -219,7 +219,7 @@ export const ProjectDetails = () => {
               )}
               {details.mapEmbedUrl ? (
                 <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-                  <iframe src={details.mapEmbedUrl} width="100%" height="500" style={{ border: 0, display: 'block' }} allowFullScreen loading="lazy" title="Map" />
+                  <iframe src={details.mapEmbedUrl.includes('<iframe') ? (details.mapEmbedUrl.match(/src="([^"]+)"/) || [])[1] || details.mapEmbedUrl : details.mapEmbedUrl} width="100%" height="500" style={{ border: 0, display: 'block' }} allowFullScreen loading="lazy" title="Map" />
                 </div>
               ) : details.mapImageUrl ? (
                 <img src={details.mapImageUrl} alt="Map" style={{ width: '100%', borderRadius: 16, border: '1px solid #e2e8f0' }} />
