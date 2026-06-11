@@ -1,25 +1,23 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Breadcrumb, Button, Table, Timeline, Checkbox, List } from 'antd';
-import { 
-  HomeOutlined, 
-  ShareAltOutlined,
-  PlayCircleOutlined,
-  EnvironmentOutlined,
-  ReadOutlined,
-  PictureOutlined,
-  TableOutlined,
-  CameraOutlined,
-  FileDoneOutlined,
-  FieldTimeOutlined,
-  FileTextOutlined,
-  CloudDownloadOutlined,
-  CloseOutlined
+import { Breadcrumb, Button, Table, Timeline, Checkbox, List, Select, Tag, message, Spin, Empty, Input } from 'antd';
+import {
+  HomeOutlined, ShareAltOutlined, PlayCircleOutlined, EnvironmentOutlined, ReadOutlined,
+  PictureOutlined, TableOutlined, CameraOutlined, FileDoneOutlined, FieldTimeOutlined,
+  FileTextOutlined, CloudDownloadOutlined, CloseOutlined, ExportOutlined, EyeOutlined, SearchOutlined,
 } from '@ant-design/icons';
 import { CompareContext } from '../../context/CompareContext';
+import { saleProApi } from '../SalePro/api/saleProApi';
+import { newsApi } from './saleWebApi';
+import { formatNewsDate } from './NewsList';
+import UnitDetailModal from '../SalePro/components/UnitDetailModal';
+import BuildingDetailModal from '../SalePro/components/BuildingDetailModal';
+import {
+  getStatusMeta, formatDirection, formatApartmentType, formatBillion, formatArea, toCompareItem,
+} from '../SalePro/components/saleProFormat';
 import '../../SaleWeb.css';
 
-const TABS = [
+const ALL_TABS = [
   { id: 'overview', icon: <HomeOutlined />, label: 'Tổng quan' },
   { id: 'location', icon: <EnvironmentOutlined />, label: 'Vị trí' },
   { id: 'training', icon: <PlayCircleOutlined />, label: 'Đào tạo' },
@@ -31,8 +29,10 @@ const TABS = [
   { id: 'policy', icon: <FileDoneOutlined />, label: 'Chính sách bán hàng' },
   { id: 'progress', icon: <FieldTimeOutlined />, label: 'Tiến độ' },
   { id: 'docs', icon: <FileTextOutlined />, label: 'Tài liệu' },
-  { id: 'news', icon: <ReadOutlined />, label: 'Tin tức' }
+  { id: 'news', icon: <ReadOutlined />, label: 'Tin tức' },
 ];
+
+const PAGE_SIZE = 10;
 
 export const ProjectDetails = () => {
   const { id } = useParams();
@@ -40,76 +40,143 @@ export const ProjectDetails = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { compareList, addToCompare, removeFromCompare, clearCompare } = useContext(CompareContext);
 
-  const handleCheckboxChange = (record, checked) => {
-    if (checked) {
-      // Map table data to apartment structure for CompareContext
-      const apartment = {
-        id: record.key,
-        apartmentCode: record.code,
-        price: record.price,
-        type: record.type,
-        direction: record.direction,
-        floor: record.floor,
-        area: record.area,
-        image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=400', // Mock image
-        // Add fake details
-        landArea: record.area,
-        buildArea: record.area,
-        status: 'Còn hàng',
-        zone: record.zone,
-        axis: record.axis
-      };
-      addToCompare(apartment, { name: 'LUMIÈRE HANOI SEASONS GARDEN' });
-    } else {
-      removeFromCompare(record.key);
+  const [project, setProject] = useState(null);
+  const [buildings, setBuildings] = useState([]);
+  const [selectedApartment, setSelectedApartment] = useState(null);
+  const [selectedBuildingId, setSelectedBuildingId] = useState(null);
+
+  // Quỹ căn (server-side paging/filter/sort)
+  const [apts, setApts] = useState([]);
+  const [aptTotal, setAptTotal] = useState(0);
+  const [aptLoading, setAptLoading] = useState(false);
+  const [aptPage, setAptPage] = useState(1);
+  const [buildingFilter, setBuildingFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [codeSearch, setCodeSearch] = useState('');
+  const [sortBy, setSortBy] = useState('apartmentCode');
+  const [sortDir, setSortDir] = useState('asc');
+
+  // Lazy data theo tab
+  const [progress, setProgress] = useState([]);
+  const [progressIdx, setProgressIdx] = useState(0);
+  const [documents, setDocuments] = useState([]);
+  const [projectNews, setProjectNews] = useState([]);
+
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+    const load = async () => {
+      try {
+        const [proj, blds] = await Promise.all([
+          saleProApi.getProjectById(id),
+          saleProApi.getBuildingsByProjectId(id),
+        ]);
+        if (!active) return;
+        setProject(proj);
+        setBuildings(blds || []);
+      } catch (e) {
+        if (active) message.error('Không thể tải dữ liệu dự án từ máy chủ.');
+      }
+    };
+    load();
+    return () => { active = false; };
+  }, [id]);
+
+  const projectName = project?.name || 'Đang tải...';
+  const details = project?.details || {};
+  const isLowRise = project?.projectType === 'THAP_TANG';
+  const tabs = ALL_TABS.filter((t) => !(t.id === 'buildings' && isLowRise));
+
+  // ===== Quỹ căn fetch =====
+  const fetchApartments = useCallback(async () => {
+    if (!id) return;
+    setAptLoading(true);
+    try {
+      const res = await saleProApi.searchApartments(id, {
+        status: statusFilter === 'ALL' ? undefined : statusFilter,
+        buildingId: buildingFilter === 'ALL' ? undefined : buildingFilter,
+        q: codeSearch || undefined,
+        page: aptPage - 1,
+        size: PAGE_SIZE,
+        sortBy,
+        sortDir,
+      });
+      setApts(res?.content || []);
+      setAptTotal(res?.totalElements || 0);
+    } catch (e) {
+      message.error('Không thể tải quỹ căn.');
+    } finally {
+      setAptLoading(false);
     }
+  }, [id, statusFilter, buildingFilter, codeSearch, aptPage, sortBy, sortDir]);
+
+  useEffect(() => {
+    if (activeTab === 'fund') fetchApartments();
+  }, [activeTab, fetchApartments]);
+
+  // ===== Lazy load các tab khác =====
+  useEffect(() => {
+    if (!id) return;
+    if (activeTab === 'progress' && progress.length === 0) {
+      saleProApi.getProjectProgress(id).then((d) => setProgress(d || [])).catch(() => {});
+    }
+    if (activeTab === 'docs' && documents.length === 0) {
+      saleProApi.getProjectDocuments(id).then((d) => setDocuments(d || [])).catch(() => {});
+    }
+    if (activeTab === 'news' && projectNews.length === 0) {
+      newsApi.list({ projectId: id, size: 12 }).then((d) => setProjectNews(d?.content || [])).catch(() => {});
+    }
+  }, [activeTab, id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleStatusUpdated = (updated) => {
+    setApts((prev) => prev.map((a) => (a.id === updated.id ? { ...a, ...updated } : a)));
+    setSelectedApartment((prev) => (prev && prev.id === updated.id ? { ...prev, ...updated } : prev));
   };
 
-  // MOCK DATA TABLE QUỸ CĂN
+  const handleCheckboxChange = (record, checked) => {
+    if (checked) addToCompare(toCompareItem(record), { name: projectName });
+    else removeFromCompare(record.id);
+  };
+
   const columns = [
-    { title: 'Mã căn', dataIndex: 'code', key: 'code', render: text => <span style={{color: '#ef4444', fontWeight: 'bold'}}>{text}</span> },
-    { title: 'Giá bán', dataIndex: 'price', key: 'price' },
-    { title: 'Loại hình', dataIndex: 'type', key: 'type' },
-    { title: 'Hướng', dataIndex: 'direction', key: 'direction' },
+    { title: 'Mã căn', dataIndex: 'apartmentCode', key: 'apartmentCode', sorter: true,
+      render: (text, record) => <span style={{ color: '#ef4444', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => setSelectedApartment(record)}>{text}</span> },
+    { title: 'Giá bán', dataIndex: 'listedPrice', key: 'listedPrice', sorter: true, render: (v) => <b>{formatBillion(v)}</b> },
+    { title: 'Loại hình', dataIndex: 'apartmentType', key: 'apartmentType', render: (v) => formatApartmentType(v) },
+    { title: 'Hướng', dataIndex: 'direction', key: 'direction', render: (v) => formatDirection(v) },
     { title: 'Tầng', dataIndex: 'floor', key: 'floor' },
-    { title: 'Trục', dataIndex: 'axis', key: 'axis' },
-    { title: 'DT xây dựng', dataIndex: 'area', key: 'area' },
-    { title: 'Phân khu', dataIndex: 'zone', key: 'zone' },
-    { title: 'Tình trạng', dataIndex: 'status', key: 'status', render: () => <span style={{color: '#10b981', border: '1px solid #10b981', background: '#d1fae5', padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold'}}>Còn hàng</span> },
-    { 
-      title: 'Chọn căn', 
-      dataIndex: 'action', 
-      key: 'action', 
-      render: (_, record) => {
-        const isChecked = compareList.some(item => item.id === record.key);
-        return <Checkbox checked={isChecked} onChange={(e) => handleCheckboxChange(record, e.target.checked)} />
-      } 
-    },
+    { title: 'DT đất', dataIndex: 'landArea', key: 'landArea', render: (v) => formatArea(v) },
+    { title: 'DT xây dựng', dataIndex: 'constructionArea', key: 'constructionArea', render: (v) => formatArea(v) },
+    { title: 'Tòa / Phân khu', key: 'building', render: (_, r) => `${r.buildingName || ''}${r.subdivisionName ? ` · ${r.subdivisionName}` : ''}` },
+    { title: 'Tình trạng', dataIndex: 'status', key: 'status', render: (status) => { const m = getStatusMeta(status); return <Tag style={{ color: m.color, background: m.bg, borderColor: m.border, fontWeight: 'bold', borderRadius: 6 }}>{m.label}</Tag>; } },
+    { title: 'Chi tiết', key: 'detail', render: (_, record) => <Button size="small" onClick={() => setSelectedApartment(record)}>Chi tiết</Button> },
+    { title: 'So sánh', key: 'action', align: 'center', render: (_, record) => <Checkbox checked={compareList.some((i) => i.id === record.id)} onChange={(e) => handleCheckboxChange(record, e.target.checked)} /> },
   ];
 
-  const dataInventory = [
-    { key: 'AS85-24', code: 'AS85-24', price: '6.21 tỷ', type: 'LIỀN KỀ', direction: 'ĐÔNG BẮC', floor: 1, axis: '24', area: '144.2 m²', zone: 'IVY PARK', building: 'L1' },
-    { key: 'AS84-36', code: 'AS84-36', price: '6.25 tỷ', type: 'LIỀN KỀ', direction: 'ĐÔNG BẮC', floor: 1, axis: '36', area: '144.2 m²', zone: 'IVY PARK', building: 'L1' },
-    { key: 'AS82-18', code: 'AS82-18', price: '6.35 tỷ', type: 'LIỀN KỀ', direction: 'ĐÔNG BẮC', floor: 1, axis: '18', area: '150.1 m²', zone: 'IVY PARK', building: 'L1' },
-    { key: 'AS83-05', code: 'AS83-05', price: '7.13 tỷ', type: 'LIỀN KỀ', direction: 'TÂY NAM', floor: 1, axis: '05', area: '184.1 m²', zone: 'IVY PARK', building: 'L1' },
-    { key: 'AS82-11', code: 'AS82-11', price: '7.19 tỷ', type: 'LIỀN KỀ', direction: 'TÂY NAM', floor: 1, axis: '11', area: '184.2 m²', zone: 'IVY PARK', building: 'L1' },
-    { key: 'AS81-16', code: 'AS81-16', price: '7.26 tỷ', type: 'LIỀN KỀ', direction: 'ĐÔNG BẮC', floor: 1, axis: '16', area: '150.1 m²', zone: 'IVY PARK', building: 'L1' },
-    { key: 'AS81-31', code: 'AS81-31', price: '8.40 tỷ', type: 'LIỀN KỀ', direction: 'TÂY NAM', floor: 1, axis: '31', area: '185.4 m²', zone: 'IVY PARK', building: 'L1' },
-  ];
+  const onTableChange = (pagination, _filters, sorter) => {
+    if (pagination?.current) setAptPage(pagination.current);
+    if (sorter && sorter.field) {
+      setSortBy(sorter.field);
+      setSortDir(sorter.order === 'descend' ? 'desc' : 'asc');
+    }
+  };
 
   return (
     <div className="saleweb-container" style={{ padding: '24px', background: '#f8fafc', minHeight: '100vh' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
-          <Breadcrumb style={{ marginBottom: '16px' }}>
-            <Breadcrumb.Item><Link to="/">Trang chủ</Link></Breadcrumb.Item>
-            <Breadcrumb.Item><Link to="/projects">Danh sách dự án</Link></Breadcrumb.Item>
-            <Breadcrumb.Item>LUMIÈRE HANOI SEASONS GARDEN</Breadcrumb.Item>
-          </Breadcrumb>
-          <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>LUMIÈRE HANOI SEASONS GARDEN</h1>
+          <Breadcrumb
+            style={{ marginBottom: '16px' }}
+            items={[
+              { title: <Link to="/">Trang chủ</Link> },
+              { title: <Link to="/projects">Danh sách dự án</Link> },
+              { title: projectName },
+            ]}
+          />
+          <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>{projectName}</h1>
           <p style={{ color: '#475569', marginTop: '8px' }}>
-            Theo dõi thông tin chi tiết về bảng giá, quỹ căn, mặt bằng, tiến độ và chính sách bán hàng dự án LUMIÈRE HANOI SEASONS GARDEN.
+            Theo dõi thông tin chi tiết về bảng giá, quỹ căn, mặt bằng, tiến độ và chính sách bán hàng dự án {projectName}.
           </p>
         </div>
         <Button icon={<ShareAltOutlined />}>Chia sẻ</Button>
@@ -117,372 +184,344 @@ export const ProjectDetails = () => {
 
       {/* Tabs */}
       <div className="sw-detail-tabs">
-        {TABS.map(tab => (
-          <div 
-            key={tab.id}
-            className={`sw-detail-tab ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
+        {tabs.map((tab) => (
+          <div key={tab.id} className={`sw-detail-tab ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
             {tab.icon} {tab.label}
           </div>
         ))}
       </div>
 
-      {/* Tab Content */}
       <div className="sw-tab-content animate-fade-in-up">
+        {/* ===== TỔNG QUAN ===== */}
         {activeTab === 'overview' && (
           <div>
-            <div style={{ width: '100%', height: '400px', borderRadius: '16px', overflow: 'hidden', marginBottom: '32px' }}>
-              <img src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?q=80&w=1600" alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
-
+            {details.bannerImageUrl && (
+              <div style={{ width: '100%', height: '400px', borderRadius: '16px', overflow: 'hidden', marginBottom: '32px' }}>
+                <img src={details.bannerImageUrl} alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            )}
             <div className="sw-info-grid">
-              <div className="sw-info-card">
-                <div className="sw-info-icon">🏢</div>
-                <div>
-                  <div className="sw-info-label">Quy mô</div>
-                  <div className="sw-info-value">1080 ha</div>
-                </div>
-              </div>
-              <div className="sw-info-card">
-                <div className="sw-info-icon">💰</div>
-                <div>
-                  <div className="sw-info-label">Vốn</div>
-                  <div className="sw-info-value">2,3 tỷ USD</div>
-                </div>
-              </div>
-              <div className="sw-info-card">
-                <div className="sw-info-icon">👥</div>
-                <div>
-                  <div className="sw-info-label">Cư dân</div>
-                  <div className="sw-info-value">135.000 cư dân</div>
-                </div>
-              </div>
+              <div className="sw-info-card"><div className="sw-info-icon">🏢</div><div><div className="sw-info-label">Quy mô</div><div className="sw-info-value">{details.scale || '—'}</div></div></div>
+              <div className="sw-info-card"><div className="sw-info-icon">💰</div><div><div className="sw-info-label">Vốn</div><div className="sw-info-value">{details.capital || '—'}</div></div></div>
+              <div className="sw-info-card"><div className="sw-info-icon">👥</div><div><div className="sw-info-label">Cư dân</div><div className="sw-info-value">{details.residents || '—'}</div></div></div>
             </div>
-
             <div className="sw-overview-card">
               <div className="sw-overview-content">
                 <div className="sw-overview-title">Tổng quan dự án</div>
                 <ul className="sw-overview-list">
-                  <li>Tên dự án: Lumière Hanoi Seasons Garden</li>
-                  <li>Chủ đầu tư: Masterise Homes</li>
-                  <li>Vị trí: 233 – 235 Nguyễn Trãi, Thanh Xuân, Hà Nội</li>
-                  <li>Vốn đầu tư: ~2.3 tỷ USD</li>
-                  <li>Quy mô: ~1080 ha</li>
-                  <li>Sản phẩm: Căn hộ cao cấp hạng sang</li>
-                  <li>Kết nối giao thông: Tuyến Metro Cát Linh - Hà Đông, Vành Đai 3, Vành Đai 2.5</li>
+                  {(details.overviewBullets || []).map((b, i) => <li key={i}>{b}</li>)}
                 </ul>
-                <p style={{ marginTop: '16px', fontSize: '0.9rem', opacity: 0.9 }}>
-                  Nơi giao thoa của những giá trị sống tinh hoa nhất giữa lòng thủ đô.
-                </p>
+                {details.overview && <p style={{ marginTop: '16px', fontSize: '0.9rem', opacity: 0.9 }}>{details.overview}</p>}
               </div>
-              <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=800" alt="Overview" className="sw-overview-img" />
+              {details.overviewImageUrl && <img src={details.overviewImageUrl} alt="Overview" className="sw-overview-img" />}
             </div>
           </div>
         )}
 
+        {/* ===== VỊ TRÍ ===== */}
         {activeTab === 'location' && (
           <div>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <h2 style={{ color: '#7f1d1d', fontWeight: 800 }}>BẢN ĐỒ VỊ TRÍ</h2>
-              <h3 style={{ color: '#0f172a', marginBottom: '32px' }}>LUMIÈRE HANOI SEASONS GARDEN</h3>
+              <h3 style={{ color: '#0f172a' }}>{projectName}</h3>
             </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-              <div style={{ lineHeight: '1.8', fontSize: '1rem', color: '#334155' }}>
-                <p>
-                  Tọa lạc tại 233 – 235 Nguyễn Trãi, Masteri Cao Xà Lá sở hữu vị trí kim cương ngay trong khu vực nội đô Hà Nội. Dự án nằm trên trục Nguyễn Trãi – tuyến giao thông huyết mạch kết nối Thanh Xuân, Đống Đa và Hà Đông, nhờ đó vừa thuận tiện cho nhu cầu di chuyển hàng ngày, vừa hưởng lợi trực tiếp từ mạng lưới hạ tầng và giao thông công cộng đang ngày càng hoàn thiện. Đây là một trong những yếu tố quan trọng tạo nên giá trị an cư bền vững và tiềm năng tăng giá dài hạn cho dự án.
-                </p>
-                <h4 style={{ fontWeight: 800, marginTop: '24px', marginBottom: '16px', color: '#0f172a' }}>Các điểm kết nối nổi bật của Masteri Cao Xà Lá:</h4>
-                <ul style={{ paddingLeft: '20px' }}>
-                  <li>Cách Ngã Tư Sở khoảng 500m, dễ dàng tiếp cận nút giao lớn của khu Tây Nam Hà Nội.</li>
-                  <li>01 phút đến Ga Thượng Đình, Tuyến Metro Cát Linh - Hà Đông</li>
-                  <li>02 phút đến Vinhomes Royal City - KĐT sôi động bậc nhất phía Tây Hà Nội</li>
-                  <li>03 phút tới Ngã Tư Sở, Vành Đai 2, Vành Đai 2.5 và Vành Đai 3 - các trục giao thông huyết mạch của Thủ Đô</li>
-                  <li>08 phút tới Hồ Tây, tận hưởng hoàng hôn Hồ Tây thơ mộng.</li>
-                  <li>10 phút tới Hồ Hoàn Kiếm, hòa mình vào nhịp sống phố Cổ.</li>
-                  <li>30 phút tới sân bay Nội Bài, sẵn sàng cho mọi chuyến bay</li>
-                  <li>Hưởng lợi từ quy hoạch các tuyến metro tương lai, góp phần gia tăng giá trị bất động sản theo thời gian.</li>
-                </ul>
-              </div>
-              <div style={{ width: '100%', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
-                <iframe 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1m2!1s0x3135ac90c642fc01%3A0x6aab5a22f55b8220!2zMjMzIE5ndXnhu4VuIFRyw6NpLCBUaMaw4bujbmcgxJDDrG5oLCBUaGFuaCBYdcOibiwgSMOgIE7hu5lpLCBWaWV0bmFt!5e0!3m2!1sen!2s!4v1700000000000!5m2!1sen!2s" 
-                  width="100%" 
-                  height="500" 
-                  style={{ border: 0, display: 'block' }} 
-                  allowFullScreen="" 
-                  loading="lazy" 
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Google Maps Location"
-                ></iframe>
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {details.locationDescription && <p style={{ lineHeight: 1.8, color: '#334155' }}>{details.locationDescription}</p>}
+              {(details.connectionPoints || []).length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                  {details.connectionPoints.map((cp, i) => (
+                    <div key={i} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+                      <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#d4af37' }}>{cp.time}'</div>
+                      <div style={{ color: '#334155', fontWeight: 600 }}>{cp.label}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {details.mapEmbedUrl ? (
+                <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                  <iframe src={details.mapEmbedUrl} width="100%" height="500" style={{ border: 0, display: 'block' }} allowFullScreen loading="lazy" title="Map" />
+                </div>
+              ) : details.mapImageUrl ? (
+                <img src={details.mapImageUrl} alt="Map" style={{ width: '100%', borderRadius: 16, border: '1px solid #e2e8f0' }} />
+              ) : null}
             </div>
           </div>
         )}
 
+        {/* ===== ĐÀO TẠO ===== */}
         {activeTab === 'training' && (
           <div>
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <h2 style={{ color: '#0f172a', fontWeight: 800 }}>LUMIÈRE HANOI SEASONS GARDEN</h2>
-            </div>
-            <div style={{ maxWidth: '800px', margin: '0 auto', background: '#000', borderRadius: '16px', overflow: 'hidden', position: 'relative', aspectRatio: '16/9' }}>
-              <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000" alt="Video Thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} />
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '64px', color: '#fff', cursor: 'pointer' }}>
-                <PlayCircleOutlined />
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}><h2 style={{ color: '#0f172a', fontWeight: 800 }}>{projectName}</h2></div>
+            {details.trainingVideoUrl ? (
+              <div style={{ maxWidth: 900, margin: '0 auto', aspectRatio: '16/9', borderRadius: 16, overflow: 'hidden' }}>
+                <iframe src={details.trainingVideoUrl} width="100%" height="100%" style={{ border: 0 }} allowFullScreen title="Training" />
               </div>
-              <div style={{ position: 'absolute', bottom: '20px', left: '20px', color: '#fff', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                [TOÀN CẢNH BĐS T04.2026] TOP 6 LÝ DO NÊN SỞ HỮU BĐS NGAY!
-              </div>
-            </div>
+            ) : <Empty description="Chưa có tài liệu đào tạo" />}
           </div>
         )}
 
+        {/* ===== MẶT BẰNG ===== */}
         {activeTab === 'masterplan' && (
           <div>
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <h2 style={{ color: '#7f1d1d', fontWeight: 800 }}>Mặt bằng</h2>
-              <p>Thiết kế không gian sống mở</p>
-            </div>
-            <div style={{ width: '100%', borderRadius: '16px', overflow: 'hidden' }}>
-              <img src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?q=80&w=1600" alt="Masterplan" style={{ width: '100%', display: 'block' }} />
-            </div>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}><h2 style={{ color: '#7f1d1d', fontWeight: 800 }}>MẶT BẰNG QUỸ CĂN</h2></div>
+            {details.masterplanImageUrl ? (
+              <div style={{ position: 'relative' }}>
+                <img src={details.masterplanImageUrl} alt="Masterplan" style={{ width: '100%', borderRadius: 16, border: '1px solid #e2e8f0', display: 'block' }} />
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 16 }}>
+                  {buildings.map((b) => (
+                    <button key={b.id} className="saleweb-btn saleweb-btn-primary" style={{ padding: '8px 16px' }} onClick={() => setSelectedBuildingId(b.id)}>
+                      📍 Tòa {b.buildingName}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : <Empty description="Chưa có mặt bằng" />}
           </div>
         )}
 
-        {activeTab === 'buildings' && (
+        {/* ===== TÒA NHÀ ===== */}
+        {activeTab === 'buildings' && !isLowRise && (
           <div>
-             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <h2 style={{ color: '#0f172a', fontWeight: 800 }}>DANH SÁCH TÒA NHÀ</h2>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
-              {[1, 2, 3, 4].map(num => (
-                <div key={num} style={{ background: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                  <HomeOutlined style={{ fontSize: '48px', color: '#d4af37', marginBottom: '16px' }} />
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Tòa L{num}</h3>
-                  <p style={{ color: '#64748b' }}>Phân khu THE BLOOM</p>
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '16px' }}>
-                    <div><strong style={{ color: '#1e40af' }}>35</strong> tầng</div>
-                    <div><strong style={{ color: '#1e40af' }}>210</strong> căn hộ</div>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}><h2 style={{ color: '#0f172a', fontWeight: 800 }}>DANH SÁCH TÒA NHÀ</h2></div>
+            {buildings.length === 0 ? <Empty description="Chưa có dữ liệu tòa nhà." /> : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+                {buildings.map((b) => (
+                  <div key={b.id} onClick={() => setSelectedBuildingId(b.id)}
+                    style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                    <div style={{ height: 180, background: '#e2e8f0' }}>
+                      {b.imageUrl && <img src={b.imageUrl} alt={b.buildingName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                    </div>
+                    <div style={{ padding: 20 }}>
+                      <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>TÒA NHÀ</div>
+                      <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '4px 0 12px' }}>{b.buildingName}</h3>
+                      <div style={{ background: '#f8fafc', borderRadius: 8, padding: '8px 12px', marginBottom: 8 }}>
+                        <span style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>PHÂN KHU</span>
+                        <div style={{ fontWeight: 700, color: '#0f172a' }}>{b.subdivisionName || '—'}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <div style={{ flex: 1, background: '#f8fafc', borderRadius: 8, padding: '8px 12px' }}>
+                          <span style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>SỐ TẦNG</span>
+                          <div style={{ fontWeight: 700, color: '#1e40af' }}>{b.totalFloors ?? '—'}</div>
+                        </div>
+                        <div style={{ flex: 1, background: '#dcfce7', borderRadius: 8, padding: '8px 12px' }}>
+                          <span style={{ color: '#16a34a', fontSize: '0.75rem', fontWeight: 700 }}>CÒN HÀNG</span>
+                          <div style={{ fontWeight: 700, color: '#16a34a' }}>{b.availableCount ?? 0}/{b.apartmentCount ?? 0}</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ===== BẢNG HÀNG (project-level: mặt bằng + chọn tòa) ===== */}
+        {activeTab === 'inventory' && (
+          <div>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}><h2 style={{ color: '#0f172a', fontWeight: 800 }}>BẢNG HÀNG</h2></div>
+            {details.masterplanImageUrl && (
+              <img src={details.masterplanImageUrl} alt="Inventory map" style={{ width: '100%', borderRadius: 16, border: '1px solid #e2e8f0', display: 'block', marginBottom: 16 }} />
+            )}
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              {buildings.map((b) => (
+                <button key={b.id} className="saleweb-btn saleweb-btn-primary" style={{ padding: '8px 16px' }} onClick={() => setSelectedBuildingId(b.id)}>
+                  📍 Bảng hàng Tòa {b.buildingName}
+                </button>
               ))}
             </div>
           </div>
         )}
 
-        {activeTab === 'inventory' && (
-          <div>
-             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <h2 style={{ color: '#0f172a', fontWeight: 800 }}>BẢNG HÀNG</h2>
-            </div>
-            <div style={{ width: '100%', position: 'relative', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-              <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1600" alt="Inventory Map" style={{ width: '100%', display: 'block', opacity: 0.8 }} />
-              <div style={{ position: 'absolute', top: '40%', left: '50%', background: '#a855f7', color: '#fff', padding: '4px 12px', borderRadius: '999px', fontWeight: 'bold', cursor: 'pointer', border: '2px solid #fff', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
-                📍 TÒA L1
-              </div>
-              <div style={{ position: 'absolute', top: '60%', left: '65%', background: '#a855f7', color: '#fff', padding: '4px 12px', borderRadius: '999px', fontWeight: 'bold', cursor: 'pointer', border: '2px solid #fff', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
-                📍 TÒA L2
-              </div>
-            </div>
-          </div>
-        )}
-
+        {/* ===== QUỸ CĂN ===== */}
         {activeTab === 'fund' && (
           <div style={{ background: '#fff', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
               <h2 style={{ color: '#0f172a', fontWeight: 800, margin: 0 }}>BẢNG HÀNG (QUỸ CĂN)</h2>
-              <div>
-                <Button>Bộ lọc</Button>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <Input placeholder="Tìm mã căn..." prefix={<SearchOutlined />} allowClear style={{ width: 180 }}
+                  onChange={(e) => { setAptPage(1); setCodeSearch(e.target.value); }} />
+                <Select value={buildingFilter} onChange={(v) => { setAptPage(1); setBuildingFilter(v); }} style={{ width: 200 }}
+                  options={[{ value: 'ALL', label: 'Tất cả tòa nhà' }, ...buildings.map((b) => ({ value: b.id, label: `Tòa ${b.buildingName}${b.subdivisionName ? ` · ${b.subdivisionName}` : ''}` }))]} />
+                <Select value={statusFilter} onChange={(v) => { setAptPage(1); setStatusFilter(v); }} style={{ width: 180 }}
+                  options={[
+                    { value: 'ALL', label: 'Tất cả trạng thái' },
+                    { value: 'CON_HANG', label: 'Còn hàng' },
+                    { value: 'QUY_DOC_QUYEN', label: 'Quỹ Độc quyền' },
+                    { value: 'DA_BAN', label: 'Đã bán' },
+                  ]} />
               </div>
             </div>
-            <Table 
-              columns={columns} 
-              dataSource={dataInventory} 
-              pagination={false} 
-              bordered 
-            />
+            <Table rowKey="id" columns={columns} dataSource={apts} loading={aptLoading} bordered scroll={{ x: 1200 }}
+              pagination={{ current: aptPage, pageSize: PAGE_SIZE, total: aptTotal, showSizeChanger: false }}
+              onChange={onTableChange} />
           </div>
         )}
 
+        {/* ===== ẢNH 360 ===== */}
         {activeTab === '360' && (
           <div>
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <h2 style={{ color: '#0f172a', fontWeight: 800 }}>TOÀN CẢNH DỰ ÁN</h2>
-            </div>
-            <div style={{ width: '100%', position: 'relative', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0', height: '600px', background: '#000' }}>
-              <img src="https://images.unsplash.com/photo-1506501139174-099022df5260?q=80&w=1600" alt="360 Panorama" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              {/* Fake 360 interactive marker */}
-              <div style={{ position: 'absolute', top: '40%', left: '50%', background: 'rgba(6, 78, 59, 0.9)', color: '#fff', padding: '16px', borderRadius: '8px', minWidth: '200px', border: '1px solid rgba(255,255,255,0.2)' }}>
-                <div style={{ fontWeight: 'bold', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '8px', marginBottom: '8px' }}>THÔNG TIN TỔNG QUAN</div>
-                <div style={{ fontSize: '12px', lineHeight: '2' }}>
-                  🏢 Dự án: Lumiere Seasons Garden<br/>
-                  📍 Vị trí: Nguyễn Trãi, Hà Nội<br/>
-                  📐 Tổng diện tích: 30.000 m²<br/>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}><h2 style={{ color: '#0f172a', fontWeight: 800 }}>TOÀN CẢNH DỰ ÁN</h2></div>
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+              <div style={{ flex: 2, minWidth: 320 }}>
+                {(details.images360 || []).length > 0 ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    {details.images360.map((img, i) => (
+                      <img key={i} src={img} alt={`360-${i}`} style={{ width: '100%', height: 240, objectFit: 'cover', borderRadius: 12, border: '1px solid #e2e8f0' }} />
+                    ))}
+                  </div>
+                ) : <Empty description="Chưa có ảnh 360" />}
+              </div>
+              <div style={{ flex: 1, minWidth: 280, background: '#064e3b', color: '#fff', borderRadius: 12, padding: 24, height: 'fit-content' }}>
+                <div style={{ fontWeight: 'bold', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 8, marginBottom: 12 }}>THÔNG TIN TỔNG QUAN</div>
+                <div style={{ fontSize: 13, lineHeight: 2.2 }}>
+                  🏢 Tên dự án: {projectName}<br />
+                  🏗 Nhà phát triển: {details.developer || '—'}<br />
+                  📍 Vị trí: {details.address || '—'}<br />
+                  📐 Tổng diện tích: {details.totalProjectArea || '—'}<br />
+                  🏢 Quy mô: {details.scaleDescription || '—'}<br />
+                  📊 Mật độ xây dựng: {details.constructionDensity || '—'}<br />
+                  🏠 Loại hình: {details.apartmentTypes || '—'}
                 </div>
               </div>
-              <div style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(0,0,0,0.5)', color: '#fff', padding: '8px 16px', borderRadius: '4px' }}>INFO [ ]</div>
             </div>
           </div>
         )}
 
+        {/* ===== CHÍNH SÁCH BÁN HÀNG ===== */}
         {activeTab === 'policy' && (
           <div>
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <h2 style={{ color: '#0f172a', fontWeight: 800 }}>CHÍNH SÁCH BÁN HÀNG VƯỢT TRỘI</h2>
-            </div>
-            <div style={{ background: '#13352c', padding: '60px 40px', borderRadius: '16px', color: '#fff', textAlign: 'center' }}>
-              <h3 style={{ color: '#d4af37', fontSize: '2.5rem', fontWeight: 900, marginBottom: '24px', letterSpacing: '2px' }}>MIỄN PHÍ PHÍ QUẢN LÝ</h3>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '60px', marginBottom: '40px' }}>
-                <div>
-                  <div style={{ fontSize: '5rem', fontWeight: 900, color: '#fcd34d', lineHeight: '1' }}>24</div>
-                  <div style={{ fontSize: '1.2rem', color: '#fde68a' }}>Tháng (Khách mới)</div>
-                </div>
-                <div style={{ width: '2px', background: 'rgba(255,255,255,0.2)' }}></div>
-                <div>
-                  <div style={{ fontSize: '5rem', fontWeight: 900, color: '#fcd34d', lineHeight: '1' }}>48</div>
-                  <div style={{ fontSize: '1.2rem', color: '#fde68a' }}>Tháng (Cư dân cũ)</div>
-                </div>
-              </div>
-              <h3 style={{ color: '#d4af37', fontSize: '1.8rem', fontWeight: 700, border: '1px solid #d4af37', display: 'inline-block', padding: '12px 32px', borderRadius: '99px' }}>
-                THANH TOÁN TIẾN ĐỘ CHUẨN
-              </h3>
-            </div>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}><h2 style={{ color: '#0f172a', fontWeight: 800 }}>CHÍNH SÁCH BÁN HÀNG</h2></div>
+            {details.salesPolicy ? (
+              <div style={{ background: '#13352c', padding: '40px', borderRadius: '16px', color: '#fff', fontSize: '1.1rem', lineHeight: 1.9 }}
+                dangerouslySetInnerHTML={{ __html: details.salesPolicy }} />
+            ) : <Empty description="Chưa có chính sách bán hàng" />}
           </div>
         )}
 
+        {/* ===== TIẾN ĐỘ ===== */}
         {activeTab === 'progress' && (
           <div style={{ background: '#fff', padding: '32px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
             <h2 style={{ color: '#0f172a', fontWeight: 800, marginBottom: '32px' }}>TIẾN ĐỘ DỰ ÁN</h2>
-            <div style={{ display: 'flex', gap: '40px' }}>
-              <div style={{ width: '250px' }}>
-                <Timeline items={[
-                  { color: '#1e40af', children: <div style={{background: '#f1f5f9', padding: '8px 16px', borderRadius: '4px', fontWeight: 'bold'}}>14/4/2026</div> },
-                  { color: '#cbd5e1', children: <div style={{background: '#f8fafc', padding: '8px 16px', borderRadius: '4px', color: '#64748b'}}>7/4/2026</div> },
-                  { color: '#cbd5e1', children: <div style={{background: '#f8fafc', padding: '8px 16px', borderRadius: '4px', color: '#64748b'}}>1/4/2026</div> },
-                ]} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <h3 style={{ marginBottom: '16px' }}>Hình ảnh tiến độ (14/4/2026)</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                  {[1,2,3,4,5,6].map(img => (
-                    <div key={img} style={{ width: '100%', aspectRatio: '4/3', background: '#e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-                      <img src={`https://images.unsplash.com/photo-1541888087405-eb81b2383c44?q=80&w=400&auto=format&fit=crop&sig=${img}`} alt="Progress" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
-                    </div>
-                  ))}
+            {progress.length === 0 ? <Empty description="Chưa có dữ liệu tiến độ" /> : (
+              <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap' }}>
+                <div style={{ width: '260px' }}>
+                  <Timeline
+                    items={progress.map((p, i) => ({
+                      color: i === progressIdx ? '#1e40af' : '#cbd5e1',
+                      children: (
+                        <div onClick={() => setProgressIdx(i)} style={{ cursor: 'pointer', background: i === progressIdx ? '#f1f5f9' : '#f8fafc', padding: '8px 16px', borderRadius: '4px', fontWeight: i === progressIdx ? 'bold' : 'normal', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                          <span>{p.title}</span>
+                          <span style={{ display: 'flex', gap: 8 }}>
+                            <EyeOutlined onClick={() => setProgressIdx(i)} />
+                            {p.externalUrl && <a href={p.externalUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}><ExportOutlined /></a>}
+                          </span>
+                        </div>
+                      ),
+                    }))}
+                  />
+                </div>
+                <div style={{ flex: 1, minWidth: 320 }}>
+                  <h3 style={{ marginBottom: '16px' }}>Hình ảnh tiến độ {progress[progressIdx]?.title ? `(${progress[progressIdx].title})` : ''}</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                    {(progress[progressIdx]?.images || []).map((img, i) => (
+                      <div key={i} style={{ width: '100%', aspectRatio: '4/3', borderRadius: '8px', overflow: 'hidden' }}>
+                        <img src={img} alt="Progress" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
+            )}
+          </div>
+        )}
+
+        {/* ===== TÀI LIỆU ===== */}
+        {activeTab === 'docs' && (
+          <div style={{ background: '#fff', padding: '32px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+            <h2 style={{ color: '#0f172a', fontWeight: 800, marginBottom: '8px', textAlign: 'center' }}>TÀI LIỆU DỰ ÁN</h2>
+            {documents.length === 0 ? <Empty description="Chưa có tài liệu" /> : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                {documents.map((doc, i) => (
+                  <a key={doc.id} href={doc.driveUrl} target="_blank" rel="noreferrer"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '8px', textDecoration: 'none', color: '#0f172a' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ background: '#d4af37', color: '#fff', width: 28, height: 28, borderRadius: 6, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{doc.sortOrder ?? i + 1}</span>
+                      <b>{doc.label}</b>
+                    </span>
+                    <ExportOutlined style={{ color: '#94a3b8' }} />
+                  </a>
+                ))}
+              </div>
+            )}
+            <div style={{ marginTop: 16, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: 12, color: '#92400e' }}>
+              ⓘ Lưu ý: Tài liệu dự án có thể được cập nhật, chỉnh sửa theo từng đợt.
             </div>
           </div>
         )}
 
-        {activeTab === 'docs' && (
-          <div style={{ background: '#fff', padding: '32px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-             <h2 style={{ color: '#0f172a', fontWeight: 800, marginBottom: '24px' }}>TÀI LIỆU DỰ ÁN</h2>
-             <List
-                itemLayout="horizontal"
-                dataSource={[
-                  { title: 'Brochure Dự Án (Bản chuẩn 2026)', size: '12 MB' },
-                  { title: 'Mặt bằng phân lô L1, L2', size: '5 MB' },
-                  { title: 'Chính sách bán hàng T4/2026', size: '2 MB' },
-                  { title: 'Bảng vật liệu bàn giao', size: '3.5 MB' },
-                ]}
-                renderItem={item => (
-                  <List.Item
-                    actions={[<Button type="primary" icon={<CloudDownloadOutlined />}>Tải xuống</Button>]}
-                  >
-                    <List.Item.Meta
-                      avatar={<FileTextOutlined style={{fontSize: '32px', color: '#ef4444'}} />}
-                      title={<a style={{fontSize: '1.1rem', fontWeight: 'bold'}}>{item.title}</a>}
-                      description={`PDF Format • ${item.size}`}
-                    />
-                  </List.Item>
-                )}
-              />
-          </div>
-        )}
-
+        {/* ===== TIN TỨC DỰ ÁN ===== */}
         {activeTab === 'news' && (
-          <div style={{ background: '#fff', padding: '32px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-            <h2 style={{ color: '#0f172a', fontWeight: 800, marginBottom: '24px' }}>TIN TỨC CẬP NHẬT</h2>
-             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=200" alt="News" style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '8px' }} />
-                  <div>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '8px' }}>Lễ ra mắt phân khu The Bloom</h3>
-                    <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Sự kiện mở bán chính thức phân khu đẹp nhất dự án với hàng ngàn ưu đãi...</p>
-                    <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '8px' }}>12/04/2026</div>
+          <div>
+            <h2 style={{ color: '#0f172a', fontWeight: 800, marginBottom: '24px' }}>TIN TỨC DỰ ÁN</h2>
+            {projectNews.length === 0 ? <Empty description="Chưa có tin tức cho dự án này" /> : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+                {projectNews.map((news) => (
+                  <div key={news.id} style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                    <div style={{ position: 'relative', height: 180 }}>
+                      <img src={news.thumbnail} alt={news.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      {news.categoryName && <div style={{ position: 'absolute', top: 12, left: 12, background: '#d97706', color: '#fff', padding: '4px 12px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 'bold' }}>🏷️ {news.categoryName}</div>}
+                    </div>
+                    <div style={{ padding: 16 }}>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: 8 }}>{news.title}</h3>
+                      <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: 12 }}>{news.summary}</p>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{formatNewsDate(news.publishedAt)}</span>
+                        <Link to={`/news/${news.id}`} style={{ color: '#0f172a', fontWeight: 'bold', textDecoration: 'underline', fontSize: '0.85rem' }}>Đọc thêm</Link>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=200" alt="News" style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '8px' }} />
-                  <div>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '8px' }}>Cất nóc tháp L1 vượt tiến độ 30 ngày</h3>
-                    <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Nhà thầu Coteccons chính thức làm lễ cất nóc đánh dấu cột mốc quan trọng...</p>
-                    <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '8px' }}>05/04/2026</div>
-                  </div>
-                </div>
-             </div>
-           </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
       {/* Floating Compare Bar */}
       {compareList.length > 0 && (
-        <div style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: '#fff',
-          boxShadow: '0 -4px 12px rgba(0,0,0,0.1)',
-          padding: '16px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          zIndex: 1000,
-          borderTopLeftRadius: '16px',
-          borderTopRightRadius: '16px'
-        }}>
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', boxShadow: '0 -4px 12px rgba(0,0,0,0.1)', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1000, borderTopLeftRadius: '16px', borderTopRightRadius: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            <div style={{ fontWeight: 'bold', fontSize: '1rem', color: '#0f172a' }}>
-              <span style={{ marginRight: '8px' }}>🏢</span>
-              So sánh căn hộ <span style={{ background: '#3b82f6', color: '#fff', borderRadius: '50%', width: '24px', height: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>{compareList.length}</span>
+            <div style={{ fontWeight: 'bold', color: '#0f172a' }}>
+              <span style={{ marginRight: 8 }}>🏢</span>So sánh căn hộ
+              <span style={{ background: '#3b82f6', color: '#fff', borderRadius: '50%', width: 24, height: 24, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, marginLeft: 8 }}>{compareList.length}</span>
             </div>
-            
             <div style={{ display: 'flex', gap: '12px' }}>
               {compareList.map((item, index) => (
-                <div key={item.id} style={{ display: 'flex', alignItems: 'center', background: '#f1f5f9', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', minWidth: '120px', position: 'relative' }}>
-                  <div style={{ background: '#1e293b', color: '#fff', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', marginRight: '12px' }}>
-                    {index + 1}
-                  </div>
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', background: '#f1f5f9', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', minWidth: 120, position: 'relative' }}>
+                  <div style={{ background: '#1e293b', color: '#fff', width: 20, height: 20, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 'bold', marginRight: 12 }}>{index + 1}</div>
                   <div>
                     <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#0f172a' }}>{item.apartmentCode}</div>
                     <div style={{ color: '#ef4444', fontSize: '0.85rem', fontWeight: 'bold' }}>{item.price}</div>
                   </div>
-                  <CloseOutlined 
-                    onClick={() => removeFromCompare(item.id)}
-                    style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '10px', color: '#94a3b8', cursor: 'pointer' }} 
-                  />
+                  <CloseOutlined onClick={() => removeFromCompare(item.id)} style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, color: '#94a3b8', cursor: 'pointer' }} />
                 </div>
               ))}
             </div>
           </div>
-
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <span style={{ color: '#64748b', fontSize: '0.9rem' }}>Chọn 2 căn hộ trở lên để bắt đầu so sánh</span>
+            <span style={{ color: '#64748b', fontSize: '0.9rem' }}>Chọn 2 căn hộ trở lên để so sánh</span>
             <Button onClick={clearCompare}>Hủy</Button>
-            <Button 
-              type="primary" 
-              disabled={compareList.length < 2}
-              onClick={() => navigate('/compare')}
-              style={{ background: compareList.length >= 2 ? '#3b82f6' : '#cbd5e1', fontWeight: 'bold' }}
-            >
+            <Button type="primary" disabled={compareList.length < 2} onClick={() => navigate('/compare')} style={{ background: compareList.length >= 2 ? '#3b82f6' : '#cbd5e1', fontWeight: 'bold' }}>
               Đi đến so sánh ({compareList.length})
             </Button>
           </div>
         </div>
       )}
+
+      {/* Modals */}
+      <UnitDetailModal open={!!selectedApartment} apartment={selectedApartment} projectName={projectName} onClose={() => setSelectedApartment(null)} onStatusUpdated={handleStatusUpdated} />
+      <BuildingDetailModal open={!!selectedBuildingId} buildingId={selectedBuildingId} onClose={() => setSelectedBuildingId(null)} onSelectApartment={(apt) => { setSelectedBuildingId(null); setSelectedApartment(apt); }} />
     </div>
   );
 };

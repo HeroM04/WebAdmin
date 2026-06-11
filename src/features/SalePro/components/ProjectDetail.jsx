@@ -32,7 +32,7 @@ const ProjectDetail = ({ project, onBack }) => {
         </TabPane>
         
         <TabPane tab="Bảng hàng (Inventory)" key="inventory">
-          <InventoryMatrix projectId={project.id} />
+          <InventoryMatrix projectId={project.id} projectName={project.name} />
         </TabPane>
 
         <TabPane tab="So sánh Căn hộ" key="compare">
