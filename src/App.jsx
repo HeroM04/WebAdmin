@@ -15,6 +15,8 @@ import { ManageKPI } from './components/ManageKPI';
 import { Login } from './components/Login';
 import Leaderboard from './components/Leaderboard';
 import { SaleProPage } from './features/SalePro/SaleProPage';
+import { ManageNews } from './features/SalePro/components/ManageNews';
+import { ManageEvents } from './features/SalePro/components/ManageEvents';
 import { SaleWebHome } from './features/SaleWebPublic/SaleWebHome';
 import { SaleWebLayout } from './features/SaleWebPublic/SaleWebLayout';
 import { ProjectDetails } from './features/SaleWebPublic/ProjectDetails';
@@ -118,6 +120,8 @@ const MainAppContent = () => {
           <Route path="phong-ban" element={<ProtectedRoute allowedRoles={['ADMIN']}><Departments /></ProtectedRoute>} />
           <Route path="kpi" element={<ManageKPI />} />
           <Route path="salepro" element={<ProtectedRoute allowedRoles={['ADMIN', 'TRUONG_PHONG']}><SaleProPage /></ProtectedRoute>} />
+          <Route path="tin-tuc" element={<ProtectedRoute allowedRoles={['ADMIN']}><ManageNews /></ProtectedRoute>} />
+          <Route path="su-kien" element={<ProtectedRoute allowedRoles={['ADMIN']}><ManageEvents /></ProtectedRoute>} />
           
           <Route path="*" element={<Navigate to="cham-cong" replace />} />
         </Route>

@@ -19,7 +19,9 @@ import {
   BookOutlined,
   FolderOpenOutlined,
   BankOutlined,
-  TrophyOutlined
+  TrophyOutlined,
+  FileTextOutlined,
+  CalendarOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 
@@ -46,6 +48,8 @@ export const AppLayout = () => {
     '/admin/kpi': 'manage_kpi',
     '/admin/vinh-danh': 'leaderboard',
     '/admin/salepro': 'salepro',
+    '/admin/tin-tuc': 'manage_news',
+    '/admin/su-kien': 'manage_events',
   };
 
   const activeTab = routeMap[location.pathname] || 'dashboard';
@@ -142,6 +146,8 @@ export const AppLayout = () => {
     manage_kpi: 'Chấm KPI & Hậu kiểm',
     leaderboard: 'Bảng Vinh Danh',
     salepro: 'Quản lý Quỹ hàng (SalePro)',
+    manage_news: 'Quản lý Tin tức (SalePro)',
+    manage_events: 'Quản lý Sự kiện (SalePro)',
   };
 
   const menuItems = [
@@ -166,7 +172,7 @@ export const AppLayout = () => {
       type: 'group',
       label: (
         <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>
-          TÍNH NĂNG CHÍNH
+          TÍNH NĂNG KPI
         </span>
       ),
       children: [
@@ -215,14 +221,34 @@ export const AppLayout = () => {
           key: 'manage_kpi',
           icon: <TrophyOutlined />,
           label: 'Chấm KPI'
-        },
-        {
-          key: 'salepro',
-          icon: <BankOutlined />,
-          label: <Link to="/admin/salepro">Quỹ hàng (SalePro)</Link>
         }
       ]
     },
+    ...(currentUser?.role === 'ADMIN' ? [{
+      type: 'group',
+      label: (
+        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>
+          TÍNH NĂNG SALEPRO
+        </span>
+      ),
+      children: [
+        {
+          key: 'salepro',
+          icon: <BankOutlined />,
+          label: <Link to="/admin/salepro">Quỹ hàng & Quỹ căn</Link>
+        },
+        {
+          key: 'manage_news',
+          icon: <FileTextOutlined />,
+          label: <Link to="/admin/tin-tuc">Quản lý Tin tức</Link>
+        },
+        {
+          key: 'manage_events',
+          icon: <CalendarOutlined />,
+          label: <Link to="/admin/su-kien">Quản lý Sự kiện</Link>
+        }
+      ]
+    }] : []),
     {
       key: 'feedback',
       icon: (
