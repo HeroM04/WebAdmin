@@ -40,4 +40,17 @@ export const saleProApi = {
   // Tiến độ & Tài liệu
   getProjectProgress: (projectId) => apiClient.get(`${BASE_PATH}/projects/${projectId}/progress`),
   getProjectDocuments: (projectId) => apiClient.get(`${BASE_PATH}/projects/${projectId}/documents`),
+
+  // Admin CRUD
+  createProject: (body) => apiClient.post(`${BASE_PATH}/admin/projects`, body),
+  updateProject: (id, body) => apiClient.put(`${BASE_PATH}/admin/projects/${id}`, body),
+  deleteProject: (id) => apiClient.delete(`${BASE_PATH}/admin/projects/${id}`),
+
+  createBuilding: (body) => apiClient.post(`${BASE_PATH}/admin/buildings`, body),
+  updateBuilding: (id, body) => apiClient.put(`${BASE_PATH}/admin/buildings/${id}`, body),
+  deleteBuilding: (id) => apiClient.delete(`${BASE_PATH}/admin/buildings/${id}`),
+
+  createApartment: (body) => apiClient.post(`${BASE_PATH}/admin/apartments`, body),
+  updateApartment: (id, body) => apiClient.put(`${BASE_PATH}/admin/apartments/${id}`, body),
+  deleteApartment: (id) => apiClient.delete(`${BASE_PATH}/admin/apartments/${id}`),
 };
