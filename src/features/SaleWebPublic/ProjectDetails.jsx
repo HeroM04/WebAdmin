@@ -217,13 +217,40 @@ export const ProjectDetails = () => {
                   ))}
                 </div>
               )}
-              {details.mapEmbedUrl ? (
-                <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-                  <iframe src={details.mapEmbedUrl.includes('<iframe') ? (details.mapEmbedUrl.match(/src="([^"]+)"/) || [])[1] || details.mapEmbedUrl : details.mapEmbedUrl} width="100%" height="500" style={{ border: 0, display: 'block' }} allowFullScreen loading="lazy" title="Map" />
-                </div>
-              ) : details.mapImageUrl ? (
-                <img src={details.mapImageUrl} alt="Map" style={{ width: '100%', borderRadius: 16, border: '1px solid #e2e8f0' }} />
-              ) : null}
+              {(() => {
+                let mapUrl = details.mapEmbedUrl;
+                if (mapUrl) {
+                  if (mapUrl.includes('<iframe')) {
+                    const match = mapUrl.match(/src=["']([^"']+)["']/i);
+                    if (match) mapUrl = match[1];
+                  }
+                  mapUrl = mapUrl.replace(/&amp;/g, '&').trim();
+                  // Check if pb is clearly invalid (too short)
+                  if (mapUrl.includes('pb=') && mapUrl.length < 50) {
+                    mapUrl = null;
+                  }
+                }
+                
+                if (mapUrl) {
+                  return (
+                    <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                      <iframe src={mapUrl} width="100%" height="500" style={{ border: 0, display: 'block' }} allowFullScreen loading="lazy" title="Map" />
+                    </div>
+                  );
+                }
+                if (details.latitude && details.longitude) {
+                  const q = `${details.latitude},${details.longitude}`;
+                  return (
+                    <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                      <iframe src={`https://maps.google.com/maps?q=${q}&hl=vi&z=15&output=embed`} width="100%" height="500" style={{ border: 0, display: 'block' }} allowFullScreen loading="lazy" title="Map" />
+                    </div>
+                  );
+                }
+                if (details.mapImageUrl) {
+                  return <img src={details.mapImageUrl} alt="Map" style={{ width: '100%', borderRadius: 16, border: '1px solid #e2e8f0' }} />;
+                }
+                return null;
+              })()}
             </div>
           </div>
         )}
