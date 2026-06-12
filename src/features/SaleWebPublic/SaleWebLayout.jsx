@@ -208,10 +208,10 @@ export const SaleWebLayout = () => {
           <div className="saleweb-footer-bottom">
             <div>
               <p style={{ margin: '0 0 8px 0', fontSize: '13px' }}>
-                &copy; {new Date().getFullYear()} Công ty Cổ phần Kinh doanh bất động sản Trí Long. All rights reserved.
+                &copy; {new Date().getFullYear()} Công ty Cổ phần Kinh doanh bất động sản Sale Hub. All rights reserved.
               </p>
               <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
-                GCNĐKDN số 0110347195 | Bản quyền thuộc về Công ty Cổ phần Kinh doanh bất động sản Trí Long.
+                GCNĐKDN số 0110347195 | Bản quyền thuộc về Công ty Cổ phần Kinh doanh bất động sản Sale Hub.
               </p>
             </div>
             <button className="back-to-top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>

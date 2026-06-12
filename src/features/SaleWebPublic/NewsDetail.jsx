@@ -4,6 +4,7 @@ import { Button, Spin, Empty, message } from 'antd';
 import { ShareAltOutlined, CalendarOutlined, UserOutlined, EyeOutlined, CopyOutlined, FacebookOutlined, LinkOutlined, TagOutlined } from '@ant-design/icons';
 import { NewsSidebar, formatNewsDate } from './NewsList';
 import { newsApi } from './saleWebApi';
+import { transformDriveUrl } from '../SalePro/components/saleProFormat';
 import '../../SaleWeb.css';
 
 // Ước tính thời gian đọc
@@ -112,7 +113,7 @@ export const NewsDetail = () => {
       {/* Hero Banner */}
       {article.thumbnail && (
         <div className="sw-news-detail-hero">
-          <img src={article.thumbnail} alt={article.title} />
+          <img src={transformDriveUrl(article.thumbnail)} alt={article.title} />
           <div className="sw-news-detail-hero-overlay">
             {article.categoryName && (
               <div style={{ marginBottom: '10px' }}>

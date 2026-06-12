@@ -54,7 +54,7 @@ export const SignUpPage = () => {
           textAlign: 'center'
         }}>
           <div style={{ fontSize: '32px', fontWeight: 900, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: '#d4af37' }}>TRÍ LONG</span> <span style={{ color: '#fff' }}>LAND</span>
+            <span style={{ color: '#d4af37' }}>SALE</span> <span style={{ color: '#fff' }}>HUB</span>
           </div>
           <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.8)', margin: 0, lineHeight: 1.5 }}>
             Nền tảng công nghệ hỗ trợ kinh<br/>doanh BĐS hàng đầu Việt Nam
@@ -134,7 +134,7 @@ export const SignUpPage = () => {
               { validator: (_, value) => value ? Promise.resolve() : Promise.reject(new Error('Vui lòng đồng ý với điều khoản!')) }
             ]}>
               <Checkbox style={{ fontSize: '0.85rem' }}>
-                Tôi đồng ý với <Link to="/terms" style={{ color: '#1B2C6B', fontWeight: 'bold' }}>Điều khoản dịch vụ</Link> và <Link to="/privacy" style={{ color: '#1B2C6B', fontWeight: 'bold' }}>Chính sách bảo mật</Link> của Trí Long Land
+                Tôi đồng ý với <Link to="/terms" style={{ color: '#1B2C6B', fontWeight: 'bold' }}>Điều khoản dịch vụ</Link> và <Link to="/privacy" style={{ color: '#1B2C6B', fontWeight: 'bold' }}>Chính sách bảo mật</Link> của Sale Hub
               </Checkbox>
             </Form.Item>
 

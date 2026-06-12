@@ -339,11 +339,9 @@ export const AppLayout = () => {
     <Layout style={{ minHeight: '100vh' }}>
       <Sider width={240} theme="dark" style={{ borderRight: '1px solid var(--border-color)', position: 'fixed', height: '100vh', left: 0, top: 0, bottom: 0, zIndex: 100, overflowY: 'auto', overflowX: 'hidden' }}>
         <div style={{ height: 64, display: 'flex', alignItems: 'center', padding: '0 20px', borderBottom: '1px solid var(--border-color)', justifyContent: 'center' }}>
-          <img src="/logo.png" alt="Trí Long Land" style={{ height: 40, objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; document.getElementById('sidebar-fallback-logo').style.display = 'block'; }} />
-          <div id="sidebar-fallback-logo" style={{ display: 'none', textAlign: 'center' }}>
-            <div className="outfit-font" style={{ color: '#fbbf24', fontSize: 18, fontWeight: 900, letterSpacing: 0.5, lineHeight: 1.2 }}>
-              SALE <span style={{ color: 'var(--text-primary)' }}>HUB</span>
-            </div>
+          <img src="/logo.png" alt="Sale Hub" style={{ height: 40, objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; document.getElementById('sidebar-fallback-logo').style.display = 'block'; }} />
+          <div id="sidebar-fallback-logo" style={{ display: 'none', color: '#fbbf24', fontWeight: 'bold', fontSize: '1.2rem', whiteSpace: 'nowrap' }}>
+            SALE <span style={{ color: 'var(--text-primary)' }}>HUB</span>
           </div>
         </div>
 
@@ -365,7 +363,7 @@ export const AppLayout = () => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <h2 className="outfit-font" style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-              {PAGE_TITLES[activeTab] || 'Trí Long Land Admin'}
+              {PAGE_TITLES[activeTab] || 'Sale Hub Admin'}
             </h2>
             {totalPending > 0 && (
               <Badge 
@@ -427,7 +425,7 @@ export const AppLayout = () => {
           </div>
         </Content>
         <Footer style={{ textAlign: 'center', background: 'var(--bg-container)', color: 'var(--text-secondary)', borderTop: '1px solid var(--border-color)' }}>
-          Trí Long Land Admin ©{new Date().getFullYear()} - Hệ thống Quản lý Bất động sản
+          Sale Hub Admin ©{new Date().getFullYear()} - Hệ thống Quản lý Bất động sản
         </Footer>
       </Layout>
     </Layout>

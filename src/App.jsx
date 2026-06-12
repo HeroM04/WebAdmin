@@ -49,21 +49,20 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 };
 
 const MainAppContent = () => {
-  const { theme } = useContext(AppContext);
-  const { defaultAlgorithm, darkAlgorithm } = antdTheme;
+  const { defaultAlgorithm } = antdTheme;
 
   return (
     <ConfigProvider
       theme={{
-        algorithm: theme === 'dark' ? darkAlgorithm : defaultAlgorithm,
+        algorithm: defaultAlgorithm,
         token: {
           colorPrimary: '#10b981',
           colorLink: '#10b981',
           borderRadius: 8,
           fontFamily: "'Inter', sans-serif",
-          colorBgBase: theme === 'dark' ? '#0b0f19' : '#f8fafc',
-          colorBgContainer: theme === 'dark' ? '#151e2e' : '#ffffff',
-          colorBorder: theme === 'dark' ? '#1f293d' : '#e2e8f0'
+          colorBgBase: '#f8fafc',
+          colorBgContainer: '#ffffff',
+          colorBorder: '#e2e8f0'
         },
         components: {
           Menu: {
@@ -77,8 +76,8 @@ const MainAppContent = () => {
             darkItemTextHover: '#10b981'
           },
           Table: {
-            colorHeaderBg: theme === 'dark' ? '#111827' : '#f1f5f9',
-            colorHeaderColor: theme === 'dark' ? '#94a3b8' : '#475569'
+            colorHeaderBg: '#f1f5f9',
+            colorHeaderColor: '#475569'
           },
           Tabs: {
             colorBorderSecondary: 'transparent'

@@ -140,7 +140,7 @@ const LoanCalculatorModal = ({ open, onClose, apartment }) => {
           />
           <div className="sw-loan-note">
             Lưu ý: Công cụ tính toán này chỉ hỗ trợ cho việc ước tính khoản vay, không phải là sự
-            đảm bảo về khoản vay của Trí Long Land.
+            đảm bảo về khoản vay của Sale Hub.
           </div>
         </div>
       </div>

@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: salehub-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: trilong_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456sa
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - salehub-network
+
+  backend:
+    build:
+      context: ../kpi-backend
+      dockerfile: Dockerfile
+    container_name: salehub-backend
+    restart: unless-stopped
+    depends_on:
+      - postgres-db
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      # Kết nối nội bộ qua tên container 'postgres-db'
+      - DATABASE_URL=jdbc:postgresql://postgres-db:5432/trilong_db
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=123456sa
+    ports:
+      - "8088:8088"
+    volumes:
+      # Map thư mục local để lưu trữ ảnh upload không bị mất khi container khởi động lại
+      - backend-uploads:/app/uploads
+    networks:
+      - salehub-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Đường dẫn API khi gọi từ trình duyệt của User -> Backend
+        # Nếu deploy lên server thật, bạn cần thay localhost bằng IP Public hoặc Domain
+        - VITE_API_BASE_URL=http://localhost:8088/api/v1
+        - VITE_WS_URL=ws://localhost:8088/ws
+    container_name: salehub-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - salehub-network
+
+volumes:
+  pgdata:
+  backend-uploads:
+
+networks:
+  salehub-network:
+    driver: bridge

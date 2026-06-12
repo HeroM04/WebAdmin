@@ -122,3 +122,20 @@ export const toCompareItem = (apartment) => ({
   zone: apartment.subdivisionName,
   axis: apartment.axis,
 });
+
+/**
+ * Chuyển đổi link Google Drive dạng view sang dạng direct link để dùng trong thẻ <img>.
+ * VD: https://drive.google.com/file/d/1ABC/view -> https://drive.google.com/uc?export=view&id=1ABC
+ */
+export const transformDriveUrl = (url) => {
+  if (!url) return url;
+  try {
+    const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)\//);
+    if (match && match[1]) {
+      return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+    }
+  } catch (e) {
+    // ignore
+  }
+  return url;
+};

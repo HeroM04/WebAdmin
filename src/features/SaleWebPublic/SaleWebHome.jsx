@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Input, Select, Spin, Empty } from 'antd';
 import { SearchOutlined, HeartOutlined, HeartFilled, EnvironmentOutlined } from '@ant-design/icons';
 import { saleProApi } from '../SalePro/api/saleProApi';
+import { transformDriveUrl } from '../SalePro/components/saleProFormat';
 import '../../SaleWeb.css';
 
 const FAV_KEY = 'salepro_project_favorites';
@@ -119,9 +120,9 @@ export const SaleWebHome = () => {
                   const d = p.details || {};
                   const img = (d.heroImages && d.heroImages[0]) || d.bannerImageUrl || FALLBACK_IMG;
                   return (
-                    <div key={p.id} className="sw-project-card" style={{ cursor: 'pointer' }} onClick={() => navigate(`/projects/${p.id}`)}>
+                    <div key={p.id} className="sw-project-card" onClick={() => navigate(`/projects/${p.id}`)} style={{ cursor: 'pointer' }}>
                       <div className="sw-card-img-wrap">
-                        <img src={img} alt={p.name} className="sw-card-img" />
+                        <img src={transformDriveUrl(img)} alt={p.name} className="sw-card-img" />
                         <div className="sw-card-badges">
                           <span className={`sw-badge ${p.projectType === 'CAO_TANG' ? 'sw-badge-blue' : 'sw-badge-orange'}`}>
                             {TYPE_LABELS[p.projectType] || p.projectType}

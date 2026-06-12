@@ -108,7 +108,7 @@ const UnitDetailModal = ({ open, onClose, apartment, projectName, onStatusUpdate
   };
 
   const handleShare = async () => {
-    const text = `${apartment.apartmentCode} – ${projectName || 'Trí Long Land'} – Giá NY: ${formatBillion(apartment.listedPrice)}\n${window.location.href}`;
+    const text = `${apartment.apartmentCode} – ${projectName || 'Sale Hub'} – Giá NY: ${formatBillion(apartment.listedPrice)}\n${window.location.href}`;
     try {
       await navigator.clipboard.writeText(text);
       message.success('Đã sao chép thông tin căn hộ để chia sẻ!');

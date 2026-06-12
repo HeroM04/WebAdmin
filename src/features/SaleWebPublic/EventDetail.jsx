@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Breadcrumb, Spin, Empty, Button, message, Image } from 'antd';
 import { CalendarOutlined, EnvironmentOutlined, TeamOutlined, ShareAltOutlined, FacebookOutlined, LinkOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { eventApi } from './saleWebApi';
+import { transformDriveUrl } from '../SalePro/components/saleProFormat';
 import { formatEventTime, eventStatusLabel, eventTypeLabel } from './EventList';
 import '../../SaleWeb.css';
 
@@ -100,7 +101,7 @@ export const EventDetail = () => {
 
       {/* Hero Banner */}
       <div className="sw-event-detail-hero">
-        <img src={event.bannerImage} alt={event.title} />
+        <img src={transformDriveUrl(event.bannerImage)} alt={event.title} />
         <div className="sw-event-detail-hero-overlay">
           <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
             <span className={`sw-event-type-badge ${event.eventType?.toLowerCase() || 'general'}`} style={{ position: 'static' }}>

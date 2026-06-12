@@ -108,8 +108,8 @@ export const LandingPage = () => {
   return (
     <>
       <Helmet>
-        <title>Trí Long Land – Nền tảng BĐS hàng đầu Việt Nam</title>
-        <meta name="description" content="Trí Long Land – Cổng thông tin PropTech kết nối môi giới với sản phẩm bất động sản giá trị thực qua công nghệ hiện đại." />
+        <title>Sale Hub – Nền tảng BĐS hàng đầu Việt Nam</title>
+        <meta name="description" content="Sale Hub – Cổng thông tin PropTech kết nối môi giới với sản phẩm bất động sản giá trị thực qua công nghệ hiện đại." />
       </Helmet>
 
       <div className="lp-body">
@@ -170,7 +170,7 @@ export const LandingPage = () => {
         <section className="lp-section lp-section-alt" id="intro">
           <div className="lp-container">
             <div className="reveal" style={{ textAlign: 'center', marginBottom: 64 }}>
-              <div className="lp-section-badge">Về Trí Long Land</div>
+              <div className="lp-section-badge">Về Sale Hub</div>
               <h2 className="lp-h2">5 điểm khác biệt tạo nên <span>lợi thế cạnh tranh</span></h2>
             </div>
 

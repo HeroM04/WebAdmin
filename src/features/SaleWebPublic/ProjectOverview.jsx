@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Carousel, Empty } from 'antd';
 import { PlayCircleOutlined, PhoneOutlined, MessageOutlined } from '@ant-design/icons';
+import { transformDriveUrl } from '../SalePro/components/saleProFormat';
 
 /**
  * Trang "Tổng quan" của chi tiết dự án — layout kiểu landing (bám sát salepro.com).
@@ -41,7 +42,7 @@ export const ProjectOverview = ({ details = {}, buildings = [], agent, projectNa
             {heroImages.map((img, i) => (
               <div key={i}>
                 <div style={{ height: 460, width: '100%' }}>
-                  <img src={img} alt={`hero-${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={transformDriveUrl(img)} alt={`hero-${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
               </div>
             ))}
@@ -68,7 +69,7 @@ export const ProjectOverview = ({ details = {}, buildings = [], agent, projectNa
 
       {/* 3. Tổng quan dự án (overlay xanh trên ảnh) */}
       <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', minHeight: 320 }}>
-        <img src={overviewBg} alt="overview" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={transformDriveUrl(overviewBg)} alt="overview" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         <div style={{ position: 'relative', background: 'rgba(6,46,38,0.82)', color: '#fff', padding: '40px 44px', minHeight: 320 }}>
           <h2 style={{ color: '#fbbf24', fontSize: '1.6rem', fontWeight: 800, marginTop: 0, marginBottom: 20 }}>Tổng quan dự án</h2>
           {bullets.length > 0 ? (
@@ -104,7 +105,7 @@ export const ProjectOverview = ({ details = {}, buildings = [], agent, projectNa
             ))}
           </div>
           <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-            <img src={mpTabs[mpIdx]?.image} alt="masterplan" style={{ width: '100%', display: 'block' }} />
+            <img src={transformDriveUrl(mpTabs[mpIdx]?.image)} alt="masterplan" style={{ width: '100%', display: 'block' }} />
           </div>
         </div>
       )}
@@ -118,7 +119,7 @@ export const ProjectOverview = ({ details = {}, buildings = [], agent, projectNa
               <div key={i} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: (p.images || []).length > 1 ? '1fr 1fr' : '1fr', gap: 4, padding: 8, background: '#f8fafc' }}>
                   {(p.images || []).slice(0, 4).map((img, j) => (
-                    <img key={j} src={img} alt={`${p.name}-${j}`} style={{ width: '100%', height: 120, objectFit: 'contain', background: '#fff', borderRadius: 6 }} />
+                    <img key={j} src={transformDriveUrl(img)} alt={`${p.name}-${j}`} style={{ width: '100%', height: 120, objectFit: 'contain', background: '#fff', borderRadius: 6 }} />
                   ))}
                 </div>
                 <div style={{ padding: 16, textAlign: 'center' }}>
@@ -141,7 +142,7 @@ export const ProjectOverview = ({ details = {}, buildings = [], agent, projectNa
             {details.featureDescription && <p style={{ lineHeight: 1.8, opacity: 0.92 }}>{details.featureDescription}</p>}
           </div>
           <div style={{ flex: 1, minWidth: 280, position: 'relative', borderRadius: 12, overflow: 'hidden', aspectRatio: '16/9', background: '#000' }}>
-            {details.featureImage && <img src={details.featureImage} alt="feature" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }} />}
+            {details.featureImage && <img src={transformDriveUrl(details.featureImage)} alt="feature" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }} />}
             {details.featureVideoUrl && (
               <a href={details.featureVideoUrl} target="_blank" rel="noreferrer"
                  style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 56 }}>
@@ -159,7 +160,7 @@ export const ProjectOverview = ({ details = {}, buildings = [], agent, projectNa
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
             {amenities.map((a, i) => (
               <div key={i} style={{ position: 'relative', height: 180, borderRadius: 12, overflow: 'hidden' }}>
-                <img src={a.image} alt={a.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={transformDriveUrl(a.image)} alt={a.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(6,46,38,0.85), rgba(6,46,38,0.05))' }} />
                 <div style={{ position: 'absolute', bottom: 12, left: 12, right: 12, color: '#fff', fontWeight: 700, textAlign: 'center', textTransform: 'uppercase', fontSize: '0.85rem' }}>{a.label}</div>
               </div>

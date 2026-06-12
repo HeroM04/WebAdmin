@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Input, Select, DatePicker, Button, Spin, Empty, Pagination, message } from 'antd';
 import { SearchOutlined, CalendarOutlined, EnvironmentOutlined, TeamOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { eventApi } from './saleWebApi';
+import { transformDriveUrl } from '../SalePro/components/saleProFormat';
 import '../../SaleWeb.css';
 
 const { Option } = Select;
@@ -61,7 +62,7 @@ const EventHero = ({ event }) => {
   return (
     <Link to={`/events/${event.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
       <div className="sw-event-hero">
-        <img src={event.bannerImage} alt={event.title} />
+        <img src={transformDriveUrl(event.bannerImage)} alt={event.title} />
         <div className="sw-event-hero-overlay">
           <div className="sw-event-hero-content">
             <div style={{ marginBottom: '12px', display: 'flex', gap: '8px' }}>
@@ -227,7 +228,7 @@ export const EventList = () => {
             {gridEvents.map((event) => (
               <div key={event.id} className="sw-event-card" style={{ cursor: 'pointer' }} onClick={() => navigate(`/events/${event.id}`)}>
                 <div className="sw-event-card-img">
-                  <img src={event.bannerImage} alt={event.title} />
+                  <img src={transformDriveUrl(event.thumbnail || event.bannerImage)} alt={event.title} />
                   <span className={`sw-event-status-badge ${event.status?.toLowerCase() || 'upcoming'}`}>
                     <span style={{ width: '6px', height: '6px', background: '#fff', borderRadius: '50%', display: 'inline-block' }}></span>
                     {eventStatusLabel(event.status)}
@@ -238,9 +239,9 @@ export const EventList = () => {
                 </div>
 
                 <div className="sw-event-card-body">
-                  <Link to={`/events/${event.id}`} className="sw-event-card-title" style={{ textDecoration: 'none' }}>
+                  <h3 className="sw-event-card-title">
                     {event.title}
-                  </Link>
+                  </h3>
 
                   <div className="sw-event-card-info">
                     <CalendarOutlined style={{ marginTop: '3px', color: '#3b82f6', flexShrink: 0 }} />

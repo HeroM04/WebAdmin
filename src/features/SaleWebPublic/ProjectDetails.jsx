@@ -63,6 +63,16 @@ export const ProjectDetails = () => {
   const [documents, setDocuments] = useState([]);
   const [projectNews, setProjectNews] = useState([]);
 
+  // Referral: link chia sẻ ?ref=<saleId> -> chuyên viên tư vấn là sale đã chia sẻ
+  const refId = new URLSearchParams(window.location.search).get('ref');
+  const [referrer, setReferrer] = useState(null);
+  useEffect(() => {
+    if (!refId) { setReferrer(null); return; }
+    let active = true;
+    saleProApi.getReferrer(refId).then((d) => { if (active && d) setReferrer(d); }).catch(() => {});
+    return () => { active = false; };
+  }, [refId]);
+
   useEffect(() => {
     if (!id) return;
     let active = true;
@@ -87,6 +97,22 @@ export const ProjectDetails = () => {
   const details = project?.details || {};
   const isLowRise = project?.projectType === 'THAP_TANG';
   const tabs = ALL_TABS.filter((t) => !(t.id === 'buildings' && isLowRise));
+  // Chuyên viên tư vấn: ưu tiên sale giới thiệu (referrer) -> mặc định là chuyên viên quản lý dự án
+  const consultant = referrer || project?.managingAgent || null;
+
+  const handleShare = async () => {
+    let url = `${window.location.origin}/projects/${id}`;
+    try {
+      const u = JSON.parse(localStorage.getItem('kpi_current_user'));
+      if (u?.id) url += `?ref=${u.id}`;
+    } catch { /* ignore */ }
+    try {
+      await navigator.clipboard.writeText(url);
+      message.success('Đã sao chép link chia sẻ dự án (khách mở link sẽ thấy bạn là chuyên viên tư vấn)!');
+    } catch {
+      message.info(url);
+    }
+  };
 
   // ===== Quỹ căn fetch =====
   const fetchApartments = useCallback(async () => {
@@ -180,7 +206,7 @@ export const ProjectDetails = () => {
             Theo dõi thông tin chi tiết về bảng giá, quỹ căn, mặt bằng, tiến độ và chính sách bán hàng dự án {projectName}.
           </p>
         </div>
-        <Button icon={<ShareAltOutlined />}>Chia sẻ</Button>
+        <Button icon={<ShareAltOutlined />} onClick={handleShare}>Chia sẻ</Button>
       </div>
 
       {/* Tabs */}
@@ -195,7 +221,7 @@ export const ProjectDetails = () => {
       <div className="sw-tab-content animate-fade-in-up">
         {/* ===== TỔNG QUAN ===== */}
         {activeTab === 'overview' && (
-          <ProjectOverview details={details} buildings={buildings} agent={project?.managingAgent} projectName={projectName} />
+          <ProjectOverview details={details} buildings={buildings} agent={consultant} projectName={projectName} />
         )}
 
         {/* ===== VỊ TRÍ ===== */}
@@ -246,6 +272,14 @@ export const ProjectDetails = () => {
                 }
                 if (details.latitude && details.longitude) {
                   const q = `${details.latitude},${details.longitude}`;
+                  return (
+                    <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                      <iframe src={`https://maps.google.com/maps?q=${q}&hl=vi&z=15&output=embed`} width="100%" height="500" style={{ border: 0, display: 'block' }} allowFullScreen loading="lazy" title="Map" />
+                    </div>
+                  );
+                }
+                if (details.address || projectName) {
+                  const q = encodeURIComponent(details.address || projectName);
                   return (
                     <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
                       <iframe src={`https://maps.google.com/maps?q=${q}&hl=vi&z=15&output=embed`} width="100%" height="500" style={{ border: 0, display: 'block' }} allowFullScreen loading="lazy" title="Map" />

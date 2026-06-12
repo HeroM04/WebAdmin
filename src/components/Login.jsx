@@ -52,10 +52,10 @@ export const Login = () => {
           margin: '0 auto 20px',
           display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
-          <img src="/logo.png" alt="Trí Long Land" style={{ height: 80, objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; document.getElementById('fallback-logo').style.display = 'block'; }} />
+          <img src="/logo.png" alt="Sale Hub" style={{ height: 80, objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; document.getElementById('fallback-logo').style.display = 'block'; }} />
           <div id="fallback-logo" style={{ display: 'none' }}>
             <h2 className="outfit-font" style={{ color: '#fbbf24', fontSize: 32, fontWeight: 900, margin: 0, letterSpacing: 1, textTransform: 'uppercase' }}>
-              TRÍ LONG <span style={{ color: '#fff' }}>LAND</span>
+              SALE <span style={{ color: '#fff' }}>HUB</span>
             </h2>
             <div style={{ color: '#3b82f6', fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginTop: 4 }}>
               Kiến tạo sự bền vững

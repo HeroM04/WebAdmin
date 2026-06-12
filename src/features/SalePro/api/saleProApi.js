@@ -15,6 +15,8 @@ export const saleProApi = {
 
   getProjectById: (id) => apiClient.get(`${BASE_PATH}/projects/${id}`),
 
+  getReferrer: (userId) => apiClient.get(`${BASE_PATH}/referrer/${userId}`),
+
   getBuildingsByProjectId: (projectId) => apiClient.get(`${BASE_PATH}/projects/${projectId}/buildings`),
 
   getBuildingById: (buildingId) => apiClient.get(`${BASE_PATH}/buildings/${buildingId}`),

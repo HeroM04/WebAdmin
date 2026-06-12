@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Input, Tag, List, Spin, Empty, Pagination, message } from 'antd';
 import { SearchOutlined, CloseOutlined, EyeOutlined, UserOutlined, CalendarOutlined } from '@ant-design/icons';
 import { newsApi } from './saleWebApi';
+import { transformDriveUrl } from '../SalePro/components/saleProFormat';
 import '../../SaleWeb.css';
 
 const PAGE_SIZE = 9;
@@ -184,7 +185,7 @@ export const NewsList = () => {
                 {featured && (
                   <div className="sw-news-featured">
                     <Link to={`/news/${featured.id}`} className="sw-news-featured-main">
-                      <img src={featured.thumbnail} alt={featured.title} />
+                      <img src={transformDriveUrl(featured.thumbnail)} alt={featured.title} />
                       <div className="sw-news-featured-overlay">
                         {featured.categoryName && (
                           <div style={{ marginBottom: '8px' }}>
@@ -205,7 +206,7 @@ export const NewsList = () => {
                       <div className="sw-news-featured-side">
                         {featuredSide.map((news) => (
                           <Link key={news.id} to={`/news/${news.id}`} className="sw-news-featured-side-item" style={{ textDecoration: 'none', color: 'inherit' }}>
-                            <img src={news.thumbnail} alt={news.title} />
+                            <img src={transformDriveUrl(news.thumbnail)} alt={news.title} />
                             <div className="sw-side-content">
                               {news.categoryName && (
                                 <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#d97706', marginBottom: '4px' }}>{news.categoryName}</span>
@@ -228,9 +229,9 @@ export const NewsList = () => {
                     )}
                     <div className="sw-news-grid">
                       {gridArticles.map((news) => (
-                        <div key={news.id} className="sw-news-card" style={{ cursor: 'pointer' }} onClick={() => navigate(`/news/${news.id}`)}>
+                        <div key={news.id} className="sw-news-card" onClick={() => navigate(`/news/${news.id}`)} style={{ cursor: 'pointer' }}>
                           <div className="sw-news-card-img-wrap">
-                            <img src={news.thumbnail} alt={news.title} />
+                            <img src={transformDriveUrl(news.thumbnail)} alt={news.title} />
                             {news.categoryName && (
                               <div className="sw-news-card-category">{news.categoryName}</div>
                             )}

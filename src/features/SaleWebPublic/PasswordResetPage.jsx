@@ -52,7 +52,7 @@ export const PasswordResetPage = () => {
           textAlign: 'center'
         }}>
           <div style={{ fontSize: '36px', fontWeight: 900, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: '#d4af37' }}>TRÍ LONG</span> <span style={{ color: '#fff' }}>LAND</span>
+            <span style={{ color: '#d4af37' }}>SALE</span> <span style={{ color: '#fff' }}>HUB</span>
           </div>
           <p style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.8)', margin: 0, lineHeight: 1.5 }}>
             Nền tảng công nghệ hỗ trợ kinh<br/>doanh BĐS hàng đầu Việt Nam

@@ -66,8 +66,7 @@ export const AppProvider = ({ children }) => {
     return localStorage.getItem('kpi_is_auth') === 'true';
   });
 
-  // Chỉ dùng giao diện SÁNG (đã bỏ toggle tối/sáng)
-  const [theme, setTheme] = useState('light');
+
 
   // Sync state to localStorage on changes
   useEffect(() => {
@@ -279,10 +278,7 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  useEffect(() => {
-    localStorage.setItem('kpi_theme', theme);
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+
 
   // Helper to trigger KPI calculation updates
   const updateKpiPoints = (userId, type, points, month = '2026-05') => {
@@ -645,8 +641,7 @@ export const AppProvider = ({ children }) => {
         login,
         loginPublic,
         logout,
-        theme,
-        setTheme,
+
         addDepartment,
         updateDepartment,
         deleteDepartment,
