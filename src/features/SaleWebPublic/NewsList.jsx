@@ -30,7 +30,7 @@ export const NewsSidebar = ({ categories: categoriesProp, tags: tagsProp, onSele
   }, [tagsProp]);
 
   return (
-    <div style={{ width: '340px', display: 'flex', flexDirection: 'column', gap: '24px', flexShrink: 0 }}>
+    <div className="sw-page-sidebar">
       {/* Popular Articles Widget */}
       {popularArticles && popularArticles.length > 0 && (
         <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
@@ -171,7 +171,7 @@ export const NewsList = () => {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '36px', alignItems: 'flex-start' }}>
+      <div className="sw-page-flex">
         {/* Main Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <Spin spinning={loading}>

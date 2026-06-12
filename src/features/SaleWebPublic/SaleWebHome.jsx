@@ -107,14 +107,14 @@ export const SaleWebHome = () => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-        {/* Left Column - Grid: 3 dự án / hàng */}
-        <div style={{ flex: 1 }}>
+      <div className="sw-home-layout">
+        {/* Left Column - Grid */}
+        <div style={{ flex: 1, minWidth: 0 }}>
           <Spin spinning={loading}>
             {filtered.length === 0 && !loading ? (
               <Empty description="Không có dự án phù hợp" style={{ padding: '60px 0' }} />
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+              <div className="sw-home-grid">
                 {filtered.map((p) => {
                   const d = p.details || {};
                   const img = (d.heroImages && d.heroImages[0]) || d.bannerImageUrl || FALLBACK_IMG;
@@ -152,7 +152,7 @@ export const SaleWebHome = () => {
         </div>
 
         {/* Right Column - Sidebar (tự sinh từ dữ liệu dự án) */}
-        <div style={{ width: '300px', background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', flexShrink: 0 }}>
+        <div className="sw-home-sidebar">
           <div style={{ background: '#1e40af', color: '#fff', padding: '14px', fontWeight: 'bold', textAlign: 'center', fontSize: '15px' }}>
             DỰ ÁN ĐANG BÁN CHẠY
           </div>

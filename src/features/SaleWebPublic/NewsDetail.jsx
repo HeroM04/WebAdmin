@@ -153,7 +153,7 @@ export const NewsDetail = () => {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '36px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+      <div className="sw-page-flex" style={{ flexWrap: 'wrap' }}>
         {/* Main Content */}
         <div style={{ flex: 1, minWidth: 320 }}>
           {/* Share Bar */}
@@ -222,7 +222,7 @@ export const NewsDetail = () => {
         </div>
 
         {/* Sidebar with TOC + Categories + Tags */}
-        <div style={{ width: '340px', display: 'flex', flexDirection: 'column', gap: '24px', flexShrink: 0 }}>
+        <div className="sw-page-sidebar">
           {/* Table of Contents */}
           {toc.length > 0 && (
             <div className="sw-toc">

@@ -208,7 +208,7 @@ export const ProjectDetails = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               {details.locationDescription && <p style={{ lineHeight: 1.8, color: '#334155' }}>{details.locationDescription}</p>}
               {(details.connectionPoints || []).length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                <div className="sw-pd-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
                   {details.connectionPoints.map((cp, i) => (
                     <div key={i} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
                       <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#d4af37' }}>{cp.time}'</div>
@@ -314,7 +314,7 @@ export const ProjectDetails = () => {
           <div>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}><h2 style={{ color: '#0f172a', fontWeight: 800 }}>DANH SÁCH TÒA NHÀ</h2></div>
             {buildings.length === 0 ? <Empty description="Chưa có dữ liệu tòa nhà." /> : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+              <div className="sw-pd-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
                 {buildings.map((b) => (
                   <div key={b.id} onClick={() => setSelectedBuildingId(b.id)}
                     style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
@@ -392,17 +392,17 @@ export const ProjectDetails = () => {
         {activeTab === '360' && (
           <div>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}><h2 style={{ color: '#0f172a', fontWeight: 800 }}>TOÀN CẢNH DỰ ÁN</h2></div>
-            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            <div className="sw-pd-flex-wrap" style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
               <div style={{ flex: 2, minWidth: 320 }}>
                 {(details.images360 || []).length > 0 ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div className="sw-pd-grid-2">
                     {details.images360.map((img, i) => (
                       <img key={i} src={img} alt={`360-${i}`} style={{ width: '100%', height: 240, objectFit: 'cover', borderRadius: 12, border: '1px solid #e2e8f0' }} />
                     ))}
                   </div>
                 ) : <Empty description="Chưa có ảnh 360" />}
               </div>
-              <div style={{ flex: 1, minWidth: 280, background: '#064e3b', color: '#fff', borderRadius: 12, padding: 24, height: 'fit-content' }}>
+              <div className="sw-pd-sidebar" style={{ flex: 1, minWidth: 280, background: '#064e3b', color: '#fff', borderRadius: 12, padding: 24, height: 'fit-content' }}>
                 <div style={{ fontWeight: 'bold', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 8, marginBottom: 12 }}>THÔNG TIN TỔNG QUAN</div>
                 <div style={{ fontSize: 13, lineHeight: 2.2 }}>
                   🏢 Tên dự án: {projectName}<br />
@@ -453,7 +453,7 @@ export const ProjectDetails = () => {
                 </div>
                 <div style={{ flex: 1, minWidth: 320 }}>
                   <h3 style={{ marginBottom: '16px' }}>Hình ảnh tiến độ {progress[progressIdx]?.title ? `(${progress[progressIdx].title})` : ''}</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                  <div className="sw-pd-grid-3">
                     {(progress[progressIdx]?.images || []).map((img, i) => (
                       <div key={i} style={{ width: '100%', aspectRatio: '4/3', borderRadius: '8px', overflow: 'hidden' }}>
                         <img src={img} alt="Progress" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -471,7 +471,7 @@ export const ProjectDetails = () => {
           <div style={{ background: '#fff', padding: '32px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
             <h2 style={{ color: '#0f172a', fontWeight: 800, marginBottom: '8px', textAlign: 'center' }}>TÀI LIỆU DỰ ÁN</h2>
             {documents.length === 0 ? <Empty description="Chưa có tài liệu" /> : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+              <div className="sw-pd-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
                 {documents.map((doc, i) => (
                   <a key={doc.id} href={doc.driveUrl} target="_blank" rel="noreferrer"
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '8px', textDecoration: 'none', color: '#0f172a' }}>
@@ -495,7 +495,7 @@ export const ProjectDetails = () => {
           <div>
             <h2 style={{ color: '#0f172a', fontWeight: 800, marginBottom: '24px' }}>TIN TỨC DỰ ÁN</h2>
             {projectNews.length === 0 ? <Empty description="Chưa có tin tức cho dự án này" /> : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+              <div className="sw-pd-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
                 {projectNews.map((news) => (
                   <div key={news.id} style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
                     <div style={{ position: 'relative', height: 180 }}>

@@ -136,7 +136,7 @@ export const EventDetail = () => {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+      <div className="sw-event-detail-flex" style={{ flexWrap: 'wrap' }}>
         {/* Left Column (Content) */}
         <div style={{ flex: 1, minWidth: 320 }}>
           {/* Share Bar */}
@@ -230,7 +230,7 @@ export const EventDetail = () => {
         </div>
 
         {/* Right Column (Info Widget) */}
-        <div style={{ width: '380px', flexShrink: 0 }}>
+        <div className="sw-event-detail-sidebar">
           <div className="sw-event-info-widget">
             <h3>📋 Thông tin sự kiện</h3>
 
