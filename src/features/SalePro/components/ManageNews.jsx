@@ -9,6 +9,7 @@ import {
   EyeOutlined, FileTextOutlined, UploadOutlined, ReloadOutlined
 } from '@ant-design/icons';
 import { apiClient } from '../../../utils/apiClient';
+import { RichContentEditor } from '../admin/RichContentEditor';
 
 const { Search } = Input;
 const { TextArea } = Input;
@@ -465,8 +466,8 @@ export const ManageNews = () => {
             <TextArea rows={2} placeholder="Mô tả ngắn gọn nội dung bài viết..." />
           </Form.Item>
 
-          <Form.Item name="content" label="Nội dung chi tiết">
-            <TextArea rows={6} placeholder="Nội dung HTML hoặc text đầy đủ..." />
+          <Form.Item name="content" label="Nội dung chi tiết (xen kẽ đoạn văn + ảnh)">
+            <RichContentEditor />
           </Form.Item>
 
           {/* Thumbnail Upload */}

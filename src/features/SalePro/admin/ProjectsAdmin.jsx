@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, Select, message, Popconfirm, Space, Tag, InputNumber, Tabs, Alert } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, message, Popconfirm, Space, Tag, InputNumber, Tabs, Alert, Switch } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { saleProApi } from '../api/saleProApi';
 
@@ -68,6 +68,7 @@ export const ProjectsAdmin = () => {
         // CSBH
         salesPolicy: d.salesPolicy,
         // Trang Tổng quan (landing)
+        isHot: !!d.isHot,
         heroImagesText: (d.heroImages || []).join('\n'),
         productCount: d.productCount, ownership: d.ownership,
         featureTitle: d.featureTitle, featureDescription: d.featureDescription,
@@ -100,6 +101,7 @@ export const ProjectsAdmin = () => {
         images360: splitLines(v.images360Text),
         salesPolicy: v.salesPolicy,
         // Trang Tổng quan (landing)
+        isHot: !!v.isHot,
         heroImages: splitLines(v.heroImagesText),
         productCount: v.productCount, ownership: v.ownership,
         featureTitle: v.featureTitle, featureDescription: v.featureDescription,
@@ -155,6 +157,9 @@ export const ProjectsAdmin = () => {
             <Form.Item name="status" label="Trạng thái" style={{ minWidth: 200 }}><Select options={STATUSES} /></Form.Item>
             <Form.Item name="managingAgentId" label="Chuyên viên quản lý" style={{ minWidth: 240 }}>
               <Select allowClear placeholder="Chọn chuyên viên" options={agents.map((a) => ({ value: a.id, label: `${a.fullName}${a.title ? ` (${a.title})` : ''}` }))} />
+            </Form.Item>
+            <Form.Item name="isHot" label="Gắn nhãn 🔥 HOT" valuePropName="checked">
+              <Switch />
             </Form.Item>
           </Space>
         </>

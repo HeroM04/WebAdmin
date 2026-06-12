@@ -224,6 +224,20 @@ export const AppLayout = () => {
           key: 'manage_kpi',
           icon: <TrophyOutlined />,
           label: 'Chấm KPI'
+        },
+        {
+          key: 'feedback',
+          icon: (
+            <Badge count={pendingFeedbacks} size="small" offset={[8, 0]}>
+              <MessageOutlined style={{ color: pendingFeedbacks > 0 ? '#fbbf24' : 'inherit' }} />
+            </Badge>
+          ),
+          label: <Link to="/admin/gop-y">Góp ý Nhân sự</Link>
+        },
+        {
+          key: 'leaderboard',
+          icon: <TrophyOutlined style={{ color: '#fbbf24' }} />,
+          label: <Link to="/admin/vinh-danh">Bảng vinh danh</Link>
         }
       ]
     },
@@ -267,20 +281,6 @@ export const AppLayout = () => {
         }
       ]
     }] : []),
-    {
-      key: 'feedback',
-      icon: (
-        <Badge count={pendingFeedbacks} size="small" offset={[8, 0]}>
-          <MessageOutlined style={{ color: pendingFeedbacks > 0 ? '#fbbf24' : 'inherit' }} />
-        </Badge>
-      ),
-      label: <Link to="/admin/gop-y">Góp ý Nhân sự</Link>
-    },
-    {
-      key: 'leaderboard',
-      icon: <TrophyOutlined style={{ color: '#fbbf24' }} />,
-      label: <Link to="/admin/vinh-danh">Bảng vinh danh</Link>
-    }
   ];
 
   const isAdmin = currentUser?.role?.toUpperCase() === 'ADMIN';

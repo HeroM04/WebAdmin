@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Input, Tag, List, Spin, Empty, Pagination, message } from 'antd';
-import { SearchOutlined, CloseOutlined } from '@ant-design/icons';
+import { SearchOutlined, CloseOutlined, EyeOutlined, UserOutlined, CalendarOutlined } from '@ant-design/icons';
 import { newsApi } from './saleWebApi';
 import '../../SaleWeb.css';
 
@@ -15,7 +15,7 @@ export const formatNewsDate = (iso) => {
   return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
 };
 
-export const NewsSidebar = ({ categories: categoriesProp, tags: tagsProp, onSelectCategory, selectedCategoryId }) => {
+export const NewsSidebar = ({ categories: categoriesProp, tags: tagsProp, onSelectCategory, selectedCategoryId, popularArticles }) => {
   const [categories, setCategories] = useState(categoriesProp || []);
   const [tags, setTags] = useState(tagsProp || []);
 
@@ -30,42 +30,66 @@ export const NewsSidebar = ({ categories: categoriesProp, tags: tagsProp, onSele
   }, [tagsProp]);
 
   return (
-    <div style={{ width: '320px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ width: '340px', display: 'flex', flexDirection: 'column', gap: '24px', flexShrink: 0 }}>
+      {/* Popular Articles Widget */}
+      {popularArticles && popularArticles.length > 0 && (
+        <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+          <h3 style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: '18px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px', paddingBottom: '10px', borderBottom: '2px solid #d4af37', display: 'inline-block' }}>🔥 Tin nổi bật</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {popularArticles.map((article, idx) => (
+              <Link key={article.id} to={`/news/${article.id}`} style={{ display: 'flex', gap: '12px', textDecoration: 'none', color: 'inherit' }}>
+                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: idx < 3 ? '#ef4444' : '#e2e8f0', color: idx < 3 ? '#fff' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: '800', flexShrink: 0, marginTop: '2px' }}>
+                  {idx + 1}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#0f172a', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '4px' }}>{article.title}</div>
+                  <div style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'flex', gap: '10px' }}>
+                    <span><EyeOutlined /> {article.viewCount || 0}</span>
+                    <span>{formatNewsDate(article.publishedAt)}</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Categories Widget */}
       <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '16px', color: '#0f172a' }}>Chuyên mục</h3>
+        <h3 style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: '18px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px', paddingBottom: '10px', borderBottom: '2px solid #d4af37', display: 'inline-block' }}>Chuyên mục</h3>
         <List
           dataSource={categories}
           locale={{ emptyText: 'Chưa có chuyên mục' }}
           renderItem={(item) => (
             <List.Item
-              style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px dashed #f1f5f9', cursor: 'pointer' }}
+              style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px dashed #f1f5f9', cursor: 'pointer', transition: 'all 0.2s' }}
               onClick={() => onSelectCategory && onSelectCategory(item)}
             >
-              <span style={{ color: selectedCategoryId === item.id ? '#d97706' : '#334155', fontWeight: 500 }}>{item.name}</span>
-              <span style={{ color: '#0f172a', fontWeight: 'bold' }}>{item.articleCount}</span>
+              <span style={{ color: selectedCategoryId === item.id ? '#d97706' : '#334155', fontWeight: selectedCategoryId === item.id ? 700 : 500, transition: 'all 0.2s' }}>{item.name}</span>
+              <span style={{ background: '#f1f5f9', color: '#0f172a', fontWeight: 'bold', padding: '2px 10px', borderRadius: '999px', fontSize: '0.75rem' }}>{item.articleCount}</span>
             </List.Item>
           )}
         />
       </div>
 
       {/* Tags Widget */}
-      <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '16px', color: '#0f172a' }}>Thẻ</h3>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {tags.map((tag) => (
-            <Tag key={tag} style={{ padding: '6px 14px', borderRadius: '16px', margin: 0, cursor: 'pointer', border: '1px solid #cbd5e1', color: '#475569', background: '#fff' }}>
-              {tag}
-            </Tag>
-          ))}
+      {tags.length > 0 && (
+        <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+          <h3 style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: '18px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px', paddingBottom: '10px', borderBottom: '2px solid #d4af37', display: 'inline-block' }}>Thẻ</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {tags.map((tag) => (
+              <span key={tag} className="sw-tag-chip">{tag}</span>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
 
 export const NewsList = () => {
   const [articles, setArticles] = useState([]);
+  const [allArticles, setAllArticles] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -75,6 +99,8 @@ export const NewsList = () => {
 
   useEffect(() => {
     newsApi.categories().then((d) => setCategories(d || [])).catch(() => {});
+    // Lấy top bài viết cho sidebar "Tin nổi bật"
+    newsApi.list({ size: 10, sort: 'viewCount,desc' }).then((res) => setAllArticles(res?.content || [])).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -101,19 +127,30 @@ export const NewsList = () => {
     return () => { active = false; };
   }, [q, selectedCategory, page]);
 
+  // Featured = bài đầu tiên (nếu đang trang 1, không filter)
+  const showFeatured = page === 1 && !q && !selectedCategory;
+  const featured = showFeatured && articles.length > 0 ? articles[0] : null;
+  const featuredSide = showFeatured && articles.length > 1 ? articles.slice(1, 4) : [];
+  const gridArticles = showFeatured ? articles.slice(featured ? 4 : 0) : articles;
+
+  // Popular for sidebar
+  const popular = allArticles.sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0)).slice(0, 5);
+
   return (
-    <div className="saleweb-container" style={{ padding: '16px 24px 24px' }}>
+    <div className="saleweb-container animate-fade-in-up" style={{ padding: '16px 24px 40px' }}>
       {/* Header */}
-      <div style={{ marginBottom: '14px' }}>
-        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Trang chủ / Danh sách tin tức</div>
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>
+          <Link to="/" style={{ color: '#64748b', textDecoration: 'none' }}>Trang chủ</Link> / Tin tức
+        </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase' }}>
-            Danh sách tin tức
+          <h1 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase' }}>
+            Tin tức <span style={{ color: '#d4af37' }}>bất động sản</span>
           </h1>
           <Input
             placeholder="Tìm kiếm tin tức..."
             prefix={<SearchOutlined />}
-            style={{ width: '300px', borderRadius: '8px' }}
+            style={{ width: '320px', borderRadius: '8px' }}
             size="large"
             allowClear
             onChange={(e) => { setPage(1); setQ(e.target.value); }}
@@ -123,10 +160,10 @@ export const NewsList = () => {
 
       {/* Active Filter */}
       {selectedCategory && (
-        <div style={{ marginBottom: '14px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px 14px', display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#fff' }}>
-          <span style={{ color: '#64748b' }}>Chuyên mục: <strong style={{ color: '#0f172a' }}>{selectedCategory.name}</strong></span>
+        <div style={{ marginBottom: '16px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px 14px', display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#fff' }}>
+          <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Chuyên mục: <strong style={{ color: '#0f172a' }}>{selectedCategory.name}</strong></span>
           <div
-            style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginLeft: '8px' }}
+            style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginLeft: '4px', transition: 'background 0.2s' }}
             onClick={() => { setPage(1); setSelectedCategory(null); }}
           >
             <CloseOutlined style={{ fontSize: '10px', color: '#64748b' }} />
@@ -134,40 +171,91 @@ export const NewsList = () => {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', gap: '36px', alignItems: 'flex-start' }}>
         {/* Main Content */}
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <Spin spinning={loading}>
             {articles.length === 0 && !loading ? (
               <Empty description="Không có tin tức phù hợp" style={{ padding: '60px 0' }} />
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
-                {articles.map((news) => (
-                  <div key={news.id} style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ position: 'relative', height: '180px' }}>
-                      <img src={news.thumbnail} alt={news.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      {news.categoryName && (
-                        <div style={{ position: 'absolute', top: '12px', left: '12px', background: '#d97706', color: '#fff', padding: '4px 12px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '10px' }}>🏷️</span> {news.categoryName}
+              <>
+                {/* Featured Section */}
+                {featured && (
+                  <div className="sw-news-featured">
+                    <Link to={`/news/${featured.id}`} className="sw-news-featured-main">
+                      <img src={featured.thumbnail} alt={featured.title} />
+                      <div className="sw-news-featured-overlay">
+                        {featured.categoryName && (
+                          <div style={{ marginBottom: '8px' }}>
+                            <span style={{ background: '#d97706', padding: '3px 12px', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 700 }}>{featured.categoryName}</span>
+                          </div>
+                        )}
+                        <h2>{featured.title}</h2>
+                        <p>{featured.summary}</p>
+                        <div style={{ display: 'flex', gap: '16px', fontSize: '0.78rem', opacity: 0.75, marginTop: '6px' }}>
+                          <span><UserOutlined /> {featured.author || 'Mayhomes'}</span>
+                          <span><CalendarOutlined /> {formatNewsDate(featured.publishedAt)}</span>
+                          <span><EyeOutlined /> {featured.viewCount || 0} lượt xem</span>
                         </div>
-                      )}
-                    </div>
-                    <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', marginBottom: '12px', lineHeight: 1.4, textTransform: 'uppercase' }}>{news.title}</h3>
-                      <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '16px', flex: 1, lineHeight: 1.6 }}>{news.summary}</p>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px' }}>
-                        <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{formatNewsDate(news.publishedAt)}</span>
-                        <Link to={`/news/${news.id}`} style={{ color: '#0f172a', fontWeight: 'bold', textDecoration: 'underline', fontSize: '0.85rem' }}>Đọc thêm</Link>
                       </div>
-                    </div>
+                    </Link>
+
+                    {featuredSide.length > 0 && (
+                      <div className="sw-news-featured-side">
+                        {featuredSide.map((news) => (
+                          <Link key={news.id} to={`/news/${news.id}`} className="sw-news-featured-side-item" style={{ textDecoration: 'none', color: 'inherit' }}>
+                            <img src={news.thumbnail} alt={news.title} />
+                            <div className="sw-side-content">
+                              {news.categoryName && (
+                                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#d97706', marginBottom: '4px' }}>{news.categoryName}</span>
+                              )}
+                              <h4>{news.title}</h4>
+                              <span>{formatNewsDate(news.publishedAt)}</span>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
+                )}
+
+                {/* Grid Cards */}
+                {gridArticles.length > 0 && (
+                  <>
+                    {featured && (
+                      <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', marginBottom: '20px', paddingBottom: '10px', borderBottom: '2px solid #d4af37', display: 'inline-block', textTransform: 'uppercase' }}>Tin mới nhất</h2>
+                    )}
+                    <div className="sw-news-grid">
+                      {gridArticles.map((news) => (
+                        <div key={news.id} className="sw-news-card">
+                          <div className="sw-news-card-img-wrap">
+                            <img src={news.thumbnail} alt={news.title} />
+                            {news.categoryName && (
+                              <div className="sw-news-card-category">{news.categoryName}</div>
+                            )}
+                          </div>
+                          <div className="sw-news-card-body">
+                            <Link to={`/news/${news.id}`} className="sw-news-card-title" style={{ textDecoration: 'none' }}>{news.title}</Link>
+                            <div className="sw-news-card-summary">{news.summary}</div>
+                            <div className="sw-news-card-meta">
+                              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                <span><CalendarOutlined /> {formatNewsDate(news.publishedAt)}</span>
+                                {news.viewCount > 0 && <span>• <EyeOutlined /> {news.viewCount}</span>}
+                              </div>
+                              <Link to={`/news/${news.id}`}>Đọc thêm →</Link>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
             )}
           </Spin>
 
           {total > PAGE_SIZE && (
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '36px' }}>
               <Pagination current={page} pageSize={PAGE_SIZE} total={total} showSizeChanger={false} onChange={setPage} />
             </div>
           )}
@@ -178,6 +266,7 @@ export const NewsList = () => {
           categories={categories}
           selectedCategoryId={selectedCategory?.id}
           onSelectCategory={(cat) => { setPage(1); setSelectedCategory(cat); }}
+          popularArticles={popular}
         />
       </div>
     </div>

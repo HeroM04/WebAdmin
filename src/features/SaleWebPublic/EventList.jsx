@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Input, Select, DatePicker, Button, Spin, Empty, Pagination, message } from 'antd';
-import { SearchOutlined, CalendarOutlined, EnvironmentOutlined } from '@ant-design/icons';
+import { SearchOutlined, CalendarOutlined, EnvironmentOutlined, TeamOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { eventApi } from './saleWebApi';
 import '../../SaleWeb.css';
 
@@ -22,13 +22,121 @@ export const formatEventTime = (start, end) => {
   return e ? `${s} - ${e}` : s;
 };
 
-export const eventStatusLabel = (status) => (status === 'UPCOMING' ? 'SẮP DIỄN RA' : 'ĐÃ KẾT THÚC');
+export const eventStatusLabel = (status) => {
+  const map = { UPCOMING: 'SẮP DIỄN RA', ONGOING: 'ĐANG DIỄN RA', ENDED: 'ĐÃ KẾT THÚC' };
+  return map[status] || status;
+};
 export const eventTypeLabel = (type) => (type === 'TRAINING' ? 'ĐÀO TẠO' : 'SỰ KIỆN CHUNG');
+
+// Countdown hook
+const useCountdown = (targetDate) => {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    if (!targetDate) return;
+    const target = new Date(targetDate).getTime();
+    const update = () => {
+      const now = Date.now();
+      const diff = Math.max(0, target - now);
+      setTimeLeft({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / (1000 * 60)) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+      });
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [targetDate]);
+
+  return timeLeft;
+};
+
+// Hero component cho sự kiện upcoming gần nhất
+const EventHero = ({ event }) => {
+  const countdown = useCountdown(event.startTime);
+  const isUpcoming = new Date(event.startTime) > new Date();
+
+  return (
+    <Link to={`/events/${event.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+      <div className="sw-event-hero">
+        <img src={event.bannerImage} alt={event.title} />
+        <div className="sw-event-hero-overlay">
+          <div className="sw-event-hero-content">
+            <div style={{ marginBottom: '12px', display: 'flex', gap: '8px' }}>
+              <span className={`sw-event-status-badge ${event.status?.toLowerCase() || 'upcoming'}`} style={{ position: 'static' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff', display: 'inline-block' }}></span>
+                {eventStatusLabel(event.status)}
+              </span>
+              <span className={`sw-event-type-badge ${event.eventType?.toLowerCase() || 'general'}`} style={{ position: 'static' }}>
+                {eventTypeLabel(event.eventType)}
+              </span>
+            </div>
+            <h2>{event.title}</h2>
+            <p style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', fontSize: '0.9rem' }}>
+              <span><CalendarOutlined style={{ marginRight: '6px' }} />{formatEventTime(event.startTime, event.endTime)}</span>
+              <span><EnvironmentOutlined style={{ marginRight: '6px' }} />{event.location}</span>
+              {event.participantCount > 0 && <span><TeamOutlined style={{ marginRight: '6px' }} />{event.participantCount} người tham gia</span>}
+            </p>
+          </div>
+
+          {isUpcoming && (
+            <div className="sw-event-countdown">
+              <div className="sw-countdown-unit">
+                <div className="sw-countdown-num">{countdown.days}</div>
+                <div className="sw-countdown-label">Ngày</div>
+              </div>
+              <div className="sw-countdown-unit">
+                <div className="sw-countdown-num">{countdown.hours}</div>
+                <div className="sw-countdown-label">Giờ</div>
+              </div>
+              <div className="sw-countdown-unit">
+                <div className="sw-countdown-num">{countdown.minutes}</div>
+                <div className="sw-countdown-label">Phút</div>
+              </div>
+              <div className="sw-countdown-unit">
+                <div className="sw-countdown-num">{countdown.seconds}</div>
+                <div className="sw-countdown-label">Giây</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+};
+
+// Mini countdown cho card
+const MiniCountdown = ({ targetDate }) => {
+  const countdown = useCountdown(targetDate);
+  if (!targetDate || new Date(targetDate) <= new Date()) return null;
+  return (
+    <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
+      {[
+        { v: countdown.days, l: 'ngày' },
+        { v: countdown.hours, l: 'giờ' },
+        { v: countdown.minutes, l: 'phút' },
+      ].map((u, i) => (
+        <div key={i} style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '6px 10px', textAlign: 'center', minWidth: '48px' }}>
+          <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0369a1' }}>{u.v}</div>
+          <div style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>{u.l}</div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// Strip HTML for plain text preview
+const stripHtml = (html) => {
+  if (!html) return '';
+  return html.replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').substring(0, 150);
+};
 
 export const EventList = () => {
   const [events, setEvents] = useState([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1); // antd Pagination is 1-based
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [q, setQ] = useState('');
   const [type, setType] = useState('all-type');
@@ -63,17 +171,30 @@ export const EventList = () => {
     return () => { active = false; };
   }, [q, type, status, from, to, page]);
 
+  // Hero = sự kiện UPCOMING gần nhất (chỉ trang 1, không filter)
+  const showHero = page === 1 && !q && type === 'all-type' && status === 'all-status' && !from && !to;
+  const heroEvent = showHero ? events.find(e => e.status === 'UPCOMING' || e.status === 'ONGOING') : null;
+  const gridEvents = heroEvent ? events.filter(e => e.id !== heroEvent.id) : events;
+
   return (
-    <div className="saleweb-container" style={{ padding: '16px 24px 24px' }}>
-      <div style={{ marginBottom: '14px' }}>
-        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Trang chủ / Sự kiện</div>
-        <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase' }}>
-          SỰ KIỆN
+    <div className="saleweb-container animate-fade-in-up" style={{ padding: '16px 24px 40px' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>
+          <Link to="/" style={{ color: '#64748b', textDecoration: 'none' }}>Trang chủ</Link> / Sự kiện
+        </div>
+        <h1 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0f172a', margin: '0 0 16px', textTransform: 'uppercase' }}>
+          Sự kiện <span style={{ color: '#d4af37' }}>nổi bật</span>
         </h1>
       </div>
 
+      {/* Hero Event */}
+      {heroEvent && heroEvent.bannerImage && (
+        <EventHero event={heroEvent} />
+      )}
+
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', background: '#fff', padding: '14px 18px', borderRadius: '14px', border: '1px solid #e2e8f0', flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
         <Input
           placeholder="Tìm kiếm sự kiện..."
           prefix={<SearchOutlined />}
@@ -89,50 +210,66 @@ export const EventList = () => {
         <Select value={status} style={{ width: '180px' }} onChange={(v) => { setPage(1); setStatus(v); }}>
           <Option value="all-status">Tất cả trạng thái</Option>
           <Option value="UPCOMING">Sắp diễn ra</Option>
+          <Option value="ONGOING">Đang diễn ra</Option>
           <Option value="ENDED">Đã kết thúc</Option>
         </Select>
         <DatePicker placeholder="Từ ngày" style={{ width: '160px' }} format="DD/MM/YYYY" onChange={(d) => { setPage(1); setFrom(d); }} />
         <DatePicker placeholder="Đến ngày" style={{ width: '160px' }} format="DD/MM/YYYY" onChange={(d) => { setPage(1); setTo(d); }} />
       </div>
 
+      {/* Event Cards Grid */}
       <Spin spinning={loading}>
-        {events.length === 0 && !loading ? (
+        {gridEvents.length === 0 && !loading ? (
           <Empty description="Không có sự kiện phù hợp" style={{ padding: '60px 0' }} />
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
-            {events.map((event) => (
-              <div key={event.id} style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-                <div style={{ position: 'relative', height: '220px' }}>
-                  <img src={event.bannerImage} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <div style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '4px 12px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ width: '8px', height: '8px', background: event.status === 'ENDED' ? '#94a3b8' : '#10b981', borderRadius: '50%', display: 'inline-block' }}></span>
+          <div className="sw-event-grid">
+            {gridEvents.map((event) => (
+              <div key={event.id} className="sw-event-card">
+                <div className="sw-event-card-img">
+                  <img src={event.bannerImage} alt={event.title} />
+                  <span className={`sw-event-status-badge ${event.status?.toLowerCase() || 'upcoming'}`}>
+                    <span style={{ width: '6px', height: '6px', background: '#fff', borderRadius: '50%', display: 'inline-block' }}></span>
                     {eventStatusLabel(event.status)}
-                  </div>
-                  <div style={{ position: 'absolute', top: '12px', right: '12px', background: event.eventType === 'TRAINING' ? '#2563eb' : '#7c3aed', color: '#fff', padding: '4px 12px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                  </span>
+                  <span className={`sw-event-type-badge ${event.eventType?.toLowerCase() || 'general'}`}>
                     {eventTypeLabel(event.eventType)}
-                  </div>
+                  </span>
                 </div>
 
-                <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <Link to={`/events/${event.id}`} style={{ color: '#0f172a', textDecoration: 'none' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '16px', lineHeight: 1.4, minHeight: '46px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                      {event.title}
-                    </h3>
+                <div className="sw-event-card-body">
+                  <Link to={`/events/${event.id}`} className="sw-event-card-title" style={{ textDecoration: 'none' }}>
+                    {event.title}
                   </Link>
 
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: '#64748b', fontSize: '0.9rem', marginBottom: '12px' }}>
-                    <CalendarOutlined style={{ marginTop: '3px', color: '#3b82f6' }} />
+                  <div className="sw-event-card-info">
+                    <CalendarOutlined style={{ marginTop: '3px', color: '#3b82f6', flexShrink: 0 }} />
                     <span>{formatEventTime(event.startTime, event.endTime)}</span>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: '#64748b', fontSize: '0.9rem', marginBottom: '24px', flex: 1 }}>
-                    <EnvironmentOutlined style={{ marginTop: '3px', color: '#ef4444' }} />
+                  <div className="sw-event-card-info">
+                    <EnvironmentOutlined style={{ marginTop: '3px', color: '#ef4444', flexShrink: 0 }} />
                     <span>{event.location}</span>
                   </div>
 
-                  <Link to={`/events/${event.id}`}>
-                    <Button block size="large" style={{ background: event.status === 'ENDED' ? '#94a3b8' : '#10b981', color: '#fff', border: 'none', fontWeight: 'bold', borderRadius: '8px' }}>
-                      {eventStatusLabel(event.status)}
+                  {/* Description preview */}
+                  {event.description && (
+                    <div className="sw-event-card-desc">
+                      {stripHtml(event.description)}
+                    </div>
+                  )}
+
+                  {/* Countdown for upcoming */}
+                  {(event.status === 'UPCOMING' || event.status === 'ONGOING') && (
+                    <MiniCountdown targetDate={event.startTime} />
+                  )}
+
+                  <Link to={`/events/${event.id}`} style={{ marginTop: 'auto' }}>
+                    <Button block size="large" style={{
+                      background: event.status === 'ENDED' ? '#94a3b8' : event.status === 'ONGOING' ? '#f59e0b' : '#10b981',
+                      color: '#fff', border: 'none', fontWeight: 'bold', borderRadius: '10px',
+                      transition: 'all 0.3s ease'
+                    }}>
+                      {event.status === 'ENDED' ? 'XEM CHI TIẾT' : event.status === 'ONGOING' ? 'ĐANG DIỄN RA' : 'XEM & ĐĂNG KÝ'}
                     </Button>
                   </Link>
                 </div>
@@ -143,7 +280,7 @@ export const EventList = () => {
       </Spin>
 
       {total > PAGE_SIZE && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '36px' }}>
           <Pagination current={page} pageSize={PAGE_SIZE} total={total} showSizeChanger={false} onChange={setPage} />
         </div>
       )}

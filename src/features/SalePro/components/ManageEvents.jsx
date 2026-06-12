@@ -10,6 +10,7 @@ import {
   ReloadOutlined, ClockCircleOutlined
 } from '@ant-design/icons';
 import { apiClient } from '../../../utils/apiClient';
+import { RichContentEditor } from '../admin/RichContentEditor';
 
 const { Search } = Input;
 const { TextArea } = Input;
@@ -433,8 +434,8 @@ export const ManageEvents = () => {
             </Col>
           </Row>
 
-          <Form.Item name="description" label="Mô tả sự kiện">
-            <TextArea rows={4} placeholder="Mô tả chi tiết nội dung sự kiện..." />
+          <Form.Item name="description" label="Nội dung sự kiện (xen kẽ đoạn văn + ảnh)">
+            <RichContentEditor />
           </Form.Item>
 
           {/* Banner Upload */}
