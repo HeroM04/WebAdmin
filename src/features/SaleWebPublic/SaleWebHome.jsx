@@ -119,7 +119,7 @@ export const SaleWebHome = () => {
                   const d = p.details || {};
                   const img = (d.heroImages && d.heroImages[0]) || d.bannerImageUrl || FALLBACK_IMG;
                   return (
-                    <div key={p.id} className="sw-project-card">
+                    <div key={p.id} className="sw-project-card" style={{ cursor: 'pointer' }} onClick={() => navigate(`/projects/${p.id}`)}>
                       <div className="sw-card-img-wrap">
                         <img src={img} alt={p.name} className="sw-card-img" />
                         <div className="sw-card-badges">
@@ -127,7 +127,7 @@ export const SaleWebHome = () => {
                             {TYPE_LABELS[p.projectType] || p.projectType}
                           </span>
                         </div>
-                        <div className="sw-card-fav" onClick={() => toggleFav(p.id)}>
+                        <div className="sw-card-fav" onClick={(e) => { e.stopPropagation(); toggleFav(p.id); }}>
                           {favorites.includes(p.id) ? <HeartFilled style={{ color: '#ef4444' }} /> : <HeartOutlined />}
                         </div>
                         {d.isHot && <div className="sw-badge-hot">🔥 HOT</div>}

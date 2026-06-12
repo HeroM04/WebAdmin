@@ -66,9 +66,8 @@ export const AppProvider = ({ children }) => {
     return localStorage.getItem('kpi_is_auth') === 'true';
   });
 
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('kpi_theme') || 'dark';
-  });
+  // Chỉ dùng giao diện SÁNG (đã bỏ toggle tối/sáng)
+  const [theme, setTheme] = useState('light');
 
   // Sync state to localStorage on changes
   useEffect(() => {

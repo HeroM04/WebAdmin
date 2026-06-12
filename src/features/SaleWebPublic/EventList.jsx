@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Input, Select, DatePicker, Button, Spin, Empty, Pagination, message } from 'antd';
 import { SearchOutlined, CalendarOutlined, EnvironmentOutlined, TeamOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { eventApi } from './saleWebApi';
@@ -134,6 +134,7 @@ const stripHtml = (html) => {
 };
 
 export const EventList = () => {
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -224,7 +225,7 @@ export const EventList = () => {
         ) : (
           <div className="sw-event-grid">
             {gridEvents.map((event) => (
-              <div key={event.id} className="sw-event-card">
+              <div key={event.id} className="sw-event-card" style={{ cursor: 'pointer' }} onClick={() => navigate(`/events/${event.id}`)}>
                 <div className="sw-event-card-img">
                   <img src={event.bannerImage} alt={event.title} />
                   <span className={`sw-event-status-badge ${event.status?.toLowerCase() || 'upcoming'}`}>

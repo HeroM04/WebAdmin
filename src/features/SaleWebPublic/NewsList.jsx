@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Input, Tag, List, Spin, Empty, Pagination, message } from 'antd';
 import { SearchOutlined, CloseOutlined, EyeOutlined, UserOutlined, CalendarOutlined } from '@ant-design/icons';
 import { newsApi } from './saleWebApi';
@@ -88,6 +88,7 @@ export const NewsSidebar = ({ categories: categoriesProp, tags: tagsProp, onSele
 };
 
 export const NewsList = () => {
+  const navigate = useNavigate();
   const [articles, setArticles] = useState([]);
   const [allArticles, setAllArticles] = useState([]);
   const [total, setTotal] = useState(0);
@@ -227,7 +228,7 @@ export const NewsList = () => {
                     )}
                     <div className="sw-news-grid">
                       {gridArticles.map((news) => (
-                        <div key={news.id} className="sw-news-card">
+                        <div key={news.id} className="sw-news-card" style={{ cursor: 'pointer' }} onClick={() => navigate(`/news/${news.id}`)}>
                           <div className="sw-news-card-img-wrap">
                             <img src={news.thumbnail} alt={news.title} />
                             {news.categoryName && (

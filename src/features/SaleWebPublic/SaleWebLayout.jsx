@@ -57,7 +57,7 @@ export const SaleWebLayout = () => {
             <Link to="/" style={{ textDecoration: 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{ fontSize: '24px', fontWeight: 900, lineHeight: 1 }}>
-                  <span style={{ color: '#d4af37' }}>TRÍ LONG</span> <span style={{ color: '#1B2C6B' }}>LAND</span>
+                  <span style={{ color: '#d4af37' }}>SALE</span> <span style={{ color: '#1B2C6B' }}>HUB</span>
                 </div>
               </div>
             </Link>
@@ -146,7 +146,7 @@ export const SaleWebLayout = () => {
             <div className="saleweb-footer-col">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                 <div style={{ fontSize: '28px', fontWeight: 900, lineHeight: 1 }}>
-                  <span style={{ color: '#d4af37' }}>TRÍ LONG</span> <span style={{ color: '#fff' }}>LAND</span>
+                  <span style={{ color: '#d4af37' }}>SALE</span> <span style={{ color: '#fff' }}>HUB</span>
                 </div>
               </div>
               <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', marginBottom: '24px', lineHeight: 1.6 }}>

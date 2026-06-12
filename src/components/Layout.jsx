@@ -342,7 +342,7 @@ export const AppLayout = () => {
           <img src="/logo.png" alt="Trí Long Land" style={{ height: 40, objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; document.getElementById('sidebar-fallback-logo').style.display = 'block'; }} />
           <div id="sidebar-fallback-logo" style={{ display: 'none', textAlign: 'center' }}>
             <div className="outfit-font" style={{ color: '#fbbf24', fontSize: 18, fontWeight: 900, letterSpacing: 0.5, lineHeight: 1.2 }}>
-              TRÍ LONG <span style={{ color: 'var(--text-primary)' }}>LAND</span>
+              SALE <span style={{ color: 'var(--text-primary)' }}>HUB</span>
             </div>
           </div>
         </div>
@@ -389,13 +389,6 @@ export const AppLayout = () => {
               />
             </Tooltip>
 
-            <Tooltip title={theme === 'dark' ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}>
-              <Button
-                type="text"
-                icon={<BulbOutlined style={{ color: theme === 'dark' ? '#fbbf24' : 'var(--text-secondary)' }} />}
-                onClick={toggleTheme}
-              />
-            </Tooltip>
 
             <Popover
               content={notificationContent}
