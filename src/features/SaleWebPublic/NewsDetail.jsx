@@ -45,9 +45,9 @@ export const NewsDetail = () => {
   }
 
   return (
-    <div className="saleweb-container" style={{ padding: '24px 0' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>
+    <div className="saleweb-container" style={{ padding: '16px 24px 24px' }}>
+      <div style={{ marginBottom: '14px' }}>
+        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>
           Trang chủ / <Link to="/news" style={{ color: '#64748b' }}>Danh sách tin tức</Link> / Chi tiết
         </div>
       </div>

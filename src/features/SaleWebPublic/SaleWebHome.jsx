@@ -73,32 +73,31 @@ export const SaleWebHome = () => {
   };
 
   return (
-    <div className="saleweb-container animate-fade-in-up" style={{ padding: '40px 24px' }}>
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '24px' }}>Danh sách dự án</h2>
-        
+    <div className="saleweb-container animate-fade-in-up" style={{ padding: '16px 24px 24px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '1.6rem', fontWeight: 800, textTransform: 'uppercase', margin: '0 0 12px' }}>Danh sách dự án</h2>
+
         {/* Filters */}
-        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Input 
-            placeholder="Tìm kiếm dự án..." 
-            prefix={<SearchOutlined />} 
-            style={{ width: 250, borderRadius: '8px' }}
-            size="large"
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Input
+            placeholder="Tìm kiếm dự án..."
+            prefix={<SearchOutlined />}
+            style={{ width: 280, borderRadius: '8px' }}
           />
-          <Select placeholder="Chọn chủ đầu tư" size="large" style={{ width: 200 }} />
-          <Select placeholder="Chọn khu vực" size="large" style={{ width: 160 }} />
-          <Select placeholder="Chọn loại hình" size="large" style={{ width: 160 }} />
-          <Select placeholder="Chọn trạng thái" size="large" style={{ width: 160 }} />
+          <Select placeholder="Chọn chủ đầu tư" style={{ width: 190 }} />
+          <Select placeholder="Chọn khu vực" style={{ width: 170 }} />
+          <Select placeholder="Chọn loại hình" style={{ width: 170 }} />
+          <Select placeholder="Chọn trạng thái" style={{ width: 170 }} />
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
-        {/* Left Column - Grid */}
+      <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+        {/* Left Column - Grid: cố định 3 dự án / hàng như salepro.com */}
         <div style={{ flex: 1 }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-            gap: '24px'
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '20px'
           }}>
             {MOCK_PROJECTS.map(p => (
               <div key={p.id} className="sw-project-card">

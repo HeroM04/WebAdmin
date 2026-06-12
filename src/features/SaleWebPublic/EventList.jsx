@@ -64,16 +64,16 @@ export const EventList = () => {
   }, [q, type, status, from, to, page]);
 
   return (
-    <div className="saleweb-container" style={{ padding: '24px 0' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>Trang chủ / Sự kiện</div>
-        <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase' }}>
+    <div className="saleweb-container" style={{ padding: '16px 24px 24px' }}>
+      <div style={{ marginBottom: '14px' }}>
+        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Trang chủ / Sự kiện</div>
+        <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase' }}>
           SỰ KIỆN
         </h1>
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
         <Input
           placeholder="Tìm kiếm sự kiện..."
           prefix={<SearchOutlined />}

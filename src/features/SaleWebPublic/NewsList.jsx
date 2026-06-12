@@ -102,12 +102,12 @@ export const NewsList = () => {
   }, [q, selectedCategory, page]);
 
   return (
-    <div className="saleweb-container" style={{ padding: '24px 0' }}>
+    <div className="saleweb-container" style={{ padding: '16px 24px 24px' }}>
       {/* Header */}
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>Trang chủ / Danh sách tin tức</div>
+      <div style={{ marginBottom: '14px' }}>
+        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Trang chủ / Danh sách tin tức</div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase' }}>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase' }}>
             Danh sách tin tức
           </h1>
           <Input
@@ -123,7 +123,7 @@ export const NewsList = () => {
 
       {/* Active Filter */}
       {selectedCategory && (
-        <div style={{ marginBottom: '24px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px 16px', display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#fff' }}>
+        <div style={{ marginBottom: '14px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px 14px', display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#fff' }}>
           <span style={{ color: '#64748b' }}>Chuyên mục: <strong style={{ color: '#0f172a' }}>{selectedCategory.name}</strong></span>
           <div
             style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginLeft: '8px' }}

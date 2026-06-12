@@ -163,20 +163,20 @@ export const ProjectDetails = () => {
   };
 
   return (
-    <div className="saleweb-container" style={{ padding: '24px', background: '#f8fafc', minHeight: '100vh' }}>
+    <div className="saleweb-container" style={{ padding: '14px 24px 24px', background: '#f8fafc', minHeight: '100vh' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
         <div>
           <Breadcrumb
-            style={{ marginBottom: '16px' }}
+            style={{ marginBottom: '8px' }}
             items={[
               { title: <Link to="/">Trang chủ</Link> },
               { title: <Link to="/projects">Danh sách dự án</Link> },
               { title: projectName },
             ]}
           />
-          <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>{projectName}</h1>
-          <p style={{ color: '#475569', marginTop: '8px' }}>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>{projectName}</h1>
+          <p style={{ color: '#475569', margin: '4px 0 0', fontSize: '0.9rem' }}>
             Theo dõi thông tin chi tiết về bảng giá, quỹ căn, mặt bằng, tiến độ và chính sách bán hàng dự án {projectName}.
           </p>
         </div>

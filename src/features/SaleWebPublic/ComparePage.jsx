@@ -36,15 +36,15 @@ export const ComparePage = () => {
   const bestPriceId = findBestPrice();
 
   return (
-    <div className="saleweb-container" style={{ padding: '24px 0', background: '#fff' }}>
+    <div className="saleweb-container" style={{ padding: '16px 24px 24px', background: '#fff' }}>
       {/* Header section */}
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>
+      <div style={{ marginBottom: '14px' }}>
+        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>
           Trang chủ / <span style={{ color: '#0f172a' }}>So sánh căn hộ</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase' }}>
+            <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', margin: 0, textTransform: 'uppercase' }}>
               SO SÁNH CĂN HỘ
             </h1>
             <div style={{ color: '#64748b', marginTop: '4px' }}>{compareList.length}/5 căn hộ đang được so sánh</div>

@@ -39,9 +39,9 @@ export const EventDetail = () => {
   const gallery = event.galleryImages || [];
 
   return (
-    <div className="saleweb-container" style={{ padding: '24px 0' }}>
+    <div className="saleweb-container" style={{ padding: '16px 24px 24px' }}>
       <Breadcrumb
-        style={{ marginBottom: '24px' }}
+        style={{ marginBottom: '14px' }}
         items={[
           { title: <Link to="/">Trang chủ</Link> },
           { title: <Link to="/events">Sự kiện</Link> },

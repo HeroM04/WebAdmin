@@ -4,7 +4,8 @@
    ======================================================== */
 .saleweb-container {
   width: 100%;
-  max-width: 1280px;
+  /* Nới rộng sát mép như salepro.com (trước đây 1280px gây nhiều khoảng trắng 2 bên) */
+  max-width: 1760px;
   margin: 0 auto;
   padding: 0 24px;
 }
@@ -67,7 +68,7 @@
 
 .saleweb-footer-container {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1760px;
   margin: 0 auto;
   padding: 0 24px;
 }
@@ -242,7 +243,7 @@
   border-radius: 4px;
 }
 .sw-card-body {
-  padding: 20px;
+  padding: 14px 16px;
 }
 .sw-card-title {
   font-size: 1.1rem;
@@ -307,7 +308,7 @@
   display: flex;
   gap: 12px;
   border-bottom: 1px solid #e2e8f0;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   flex-wrap: nowrap;
   justify-content: space-between;
   overflow-x: auto;
