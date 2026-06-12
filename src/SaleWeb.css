@@ -4,8 +4,7 @@
    ======================================================== */
 .saleweb-container {
   width: 100%;
-  /* Nới rộng sát mép như salepro.com (trước đây 1280px gây nhiều khoảng trắng 2 bên) */
-  max-width: 1760px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 0 24px;
 }
@@ -68,7 +67,7 @@
 
 .saleweb-footer-container {
   width: 100%;
-  max-width: 1760px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 0 24px;
 }
