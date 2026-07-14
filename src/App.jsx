@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useContext } from 'react';
 import { ConfigProvider, theme as antdTheme, message } from 'antd';
 import { AppProvider, AppContext } from './context/AppContext';
 import { AppLayout } from './components/Layout';
@@ -14,27 +14,7 @@ import { Departments } from './components/Departments';
 import { ManageKPI } from './components/ManageKPI';
 import { Login } from './components/Login';
 import Leaderboard from './components/Leaderboard';
-import { SaleProPage } from './features/SalePro/SaleProPage';
-import { ManageNews } from './features/SalePro/components/ManageNews';
-import { ManageEvents } from './features/SalePro/components/ManageEvents';
-import { ProjectsAdmin } from './features/SalePro/admin/ProjectsAdmin';
-import { AgentsAdmin } from './features/SalePro/admin/AgentsAdmin';
-import { InventoryAdmin } from './features/SalePro/admin/InventoryAdmin';
-import { SaleWebHome } from './features/SaleWebPublic/SaleWebHome';
-import { SaleWebLayout } from './features/SaleWebPublic/SaleWebLayout';
-import { ProjectDetails } from './features/SaleWebPublic/ProjectDetails';
-import { ComparePage } from './features/SaleWebPublic/ComparePage';
-import { CompareProvider } from './context/CompareContext';
-import { LandingPage } from './features/LandingPage/LandingPage';
-import { NewsList } from './features/SaleWebPublic/NewsList';
-import { NewsDetail } from './features/SaleWebPublic/NewsDetail';
-import { EventList } from './features/SaleWebPublic/EventList';
-import { EventDetail } from './features/SaleWebPublic/EventDetail';
-import { UserProfilePage } from './features/SaleWebPublic/UserProfilePage';
-import { SignInPage } from './features/SaleWebPublic/SignInPage';
-import { SignUpPage } from './features/SaleWebPublic/SignUpPage';
-import { PasswordResetPage } from './features/SaleWebPublic/PasswordResetPage';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, currentUser } = useContext(AppContext);
@@ -46,6 +26,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/admin/cham-cong" replace />;
   }
   return children;
+};
+
+const RootEntry = () => {
+  const { isAuthenticated, currentUser } = useContext(AppContext);
+  if (isAuthenticated && currentUser) {
+    return <Navigate to="/admin/cham-cong" replace />;
+  }
+  return <Login />;
 };
 
 const MainAppContent = () => {
@@ -86,25 +74,10 @@ const MainAppContent = () => {
       }}
     >
       <Routes>
-        {/* STANDALONE AUTH ROUTES */}
-        <Route path="/sign-in" element={<SignInPage />} />
-        <Route path="/sign-up" element={<SignUpPage />} />
-        <Route path="/password-reset" element={<PasswordResetPage />} />
+        {/* ĐĂNG NHẬP */}
+        <Route path="/" element={<RootEntry />} />
 
-        {/* PUBLIC ROUTES - SALEWEB */}
-        <Route path="/" element={<SaleWebLayout />}>
-          <Route index element={<LandingPage />} />
-          <Route path="projects" element={<SaleWebHome />} />
-          <Route path="projects/:id" element={<ProjectDetails />} />
-          <Route path="compare" element={<ComparePage />} />
-          <Route path="profile" element={<UserProfilePage />} />
-          <Route path="news" element={<NewsList />} />
-          <Route path="news/:id" element={<NewsDetail />} />
-          <Route path="events" element={<EventList />} />
-          <Route path="events/:id" element={<EventDetail />} />
-        </Route>
-
-        {/* PRIVATE ROUTES - WEBADMIN */}
+        {/* KHU VỰC QUẢN TRỊ - WEBADMIN */}
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['ADMIN', 'VAN_PHONG', 'TRUONG_PHONG', 'NHAN_VIEN']}>
             <AppLayout />
@@ -121,13 +94,7 @@ const MainAppContent = () => {
           <Route path="vinh-danh" element={<Leaderboard />} />
           <Route path="phong-ban" element={<ProtectedRoute allowedRoles={['ADMIN']}><Departments /></ProtectedRoute>} />
           <Route path="kpi" element={<ManageKPI />} />
-          <Route path="salepro" element={<ProtectedRoute allowedRoles={['ADMIN', 'TRUONG_PHONG']}><SaleProPage /></ProtectedRoute>} />
-          <Route path="salepro/projects" element={<ProtectedRoute allowedRoles={['ADMIN']}><ProjectsAdmin /></ProtectedRoute>} />
-          <Route path="salepro/inventory" element={<ProtectedRoute allowedRoles={['ADMIN']}><InventoryAdmin /></ProtectedRoute>} />
-          <Route path="salepro/agents" element={<ProtectedRoute allowedRoles={['ADMIN']}><AgentsAdmin /></ProtectedRoute>} />
-          <Route path="tin-tuc" element={<ProtectedRoute allowedRoles={['ADMIN']}><ManageNews /></ProtectedRoute>} />
-          <Route path="su-kien" element={<ProtectedRoute allowedRoles={['ADMIN']}><ManageEvents /></ProtectedRoute>} />
-          
+
           <Route path="*" element={<Navigate to="cham-cong" replace />} />
         </Route>
 
@@ -142,9 +109,7 @@ function App() {
   return (
     <BrowserRouter>
       <AppProvider>
-        <CompareProvider>
-          <MainAppContent />
-        </CompareProvider>
+        <MainAppContent />
       </AppProvider>
     </BrowserRouter>
   );

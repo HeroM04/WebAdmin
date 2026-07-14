@@ -17,11 +17,8 @@ import {
   FileImageOutlined,
   HomeOutlined,
   BookOutlined,
-  FolderOpenOutlined,
   BankOutlined,
-  TrophyOutlined,
-  FileTextOutlined,
-  CalendarOutlined
+  TrophyOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 
@@ -47,12 +44,6 @@ export const AppLayout = () => {
     '/admin/phong-ban': 'departments',
     '/admin/kpi': 'manage_kpi',
     '/admin/vinh-danh': 'leaderboard',
-    '/admin/salepro': 'salepro',
-    '/admin/salepro/projects': 'salepro_projects',
-    '/admin/salepro/inventory': 'salepro_inventory',
-    '/admin/salepro/agents': 'salepro_agents',
-    '/admin/tin-tuc': 'manage_news',
-    '/admin/su-kien': 'manage_events',
   };
 
   const activeTab = routeMap[location.pathname] || 'dashboard';
@@ -148,9 +139,6 @@ export const AppLayout = () => {
     departments: 'Quản lý Phòng ban',
     manage_kpi: 'Chấm KPI & Hậu kiểm',
     leaderboard: 'Bảng Vinh Danh',
-    salepro: 'Quản lý Quỹ hàng (SalePro)',
-    manage_news: 'Quản lý Tin tức (SalePro)',
-    manage_events: 'Quản lý Sự kiện (SalePro)',
   };
 
   const menuItems = [
@@ -241,46 +229,6 @@ export const AppLayout = () => {
         }
       ]
     },
-    ...(currentUser?.role === 'ADMIN' ? [{
-      type: 'group',
-      label: (
-        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>
-          TÍNH NĂNG SALEPRO
-        </span>
-      ),
-      children: [
-        {
-          key: 'salepro_projects',
-          icon: <BankOutlined />,
-          label: <Link to="/admin/salepro/projects">Quản lý Dự án</Link>
-        },
-        {
-          key: 'salepro_inventory',
-          icon: <HomeOutlined />,
-          label: <Link to="/admin/salepro/inventory">Tòa nhà & Quỹ căn</Link>
-        },
-        {
-          key: 'salepro',
-          icon: <FolderOpenOutlined />,
-          label: <Link to="/admin/salepro">Quỹ hàng (Ma trận)</Link>
-        },
-        {
-          key: 'salepro_agents',
-          icon: <TeamOutlined />,
-          label: <Link to="/admin/salepro/agents">Chuyên viên</Link>
-        },
-        {
-          key: 'manage_news',
-          icon: <FileTextOutlined />,
-          label: <Link to="/admin/tin-tuc">Quản lý Tin tức</Link>
-        },
-        {
-          key: 'manage_events',
-          icon: <CalendarOutlined />,
-          label: <Link to="/admin/su-kien">Quản lý Sự kiện</Link>
-        }
-      ]
-    }] : []),
   ];
 
   const isAdmin = currentUser?.role?.toUpperCase() === 'ADMIN';
