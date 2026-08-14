@@ -347,12 +347,17 @@ export const ManageDeals = () => {
                 </Row>
               </div>
 
-              {/* ẢNH HỢP ĐỒNG — bằng chứng để duyệt deal */}
-              <div className="premium-card" style={{ padding: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1, marginBottom: 10 }}>
-                  📄 ẢNH HỢP ĐỒNG
-                </div>
-                {detailRecord.contractPhotoUrl ? (
+              {/* ẢNH HỢP ĐỒNG — chỉ hiện khi có ảnh THẬT.
+                  Nghiệp vụ chốt căn không bắt buộc ảnh hợp đồng, nên khi không có
+                  thì ẩn hẳn mục này thay vì hiện ô trống. Các deal cũ từng bị app
+                  gửi lên ảnh mẫu dummyimage.com cũng được lọc bỏ để khỏi gây
+                  hiểu nhầm là đã có chứng từ. */}
+              {detailRecord.contractPhotoUrl
+                && !detailRecord.contractPhotoUrl.includes('dummyimage.com') && (
+                <div className="premium-card" style={{ padding: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1, marginBottom: 10 }}>
+                    📄 ẢNH HỢP ĐỒNG
+                  </div>
                   <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', border: '2px solid var(--border-color)' }}>
                     <img
                       src={detailRecord.contractPhotoUrl}
@@ -368,12 +373,8 @@ export const ManageDeals = () => {
                       Nhấn để xem đầy đủ
                     </div>
                   </div>
-                ) : (
-                  <div style={{ padding: '16px 12px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13, background: 'var(--bg-secondary)', borderRadius: 10 }}>
-                    Chưa có ảnh hợp đồng
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Customer Info */}
               <div className="premium-card" style={{ padding: 16 }}>
