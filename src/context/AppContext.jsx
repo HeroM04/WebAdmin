@@ -135,6 +135,12 @@ export const AppProvider = ({ children }) => {
       // .env.development → http://localhost:8088/ws
       let wsUrl = import.meta.env.VITE_WS_URL || 'https://kpi-backend-4xex.onrender.com/ws';
 
+      // Nếu cấu hình dạng tương đối (vd "/ws" khi chạy sau nginx/Docker)
+      // → ghép với origin hiện tại để SockJS có URL tuyệt đối hợp lệ
+      if (wsUrl.startsWith('/')) {
+        wsUrl = window.location.origin + wsUrl;
+      }
+
       // Đảm bảo dùng HTTPS nếu web đang chạy trên HTTPS
       if (window.location.protocol === 'https:') {
         wsUrl = wsUrl.replace('http://', 'https://');
