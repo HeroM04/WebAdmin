@@ -117,9 +117,16 @@ export const ManageTraining = () => {
   const handleAddSession = () => {
     addForm.validateFields().then(async values => {
       try {
-        const dateStr = values.date ? values.date.format('YYYY-MM-DD') : new Date().toISOString().split('T')[0];
-        const timeStr = values.startTime ? values.startTime.format('HH:mm') : '00:00';
-        const combinedStartTime = `${dateStr}T${timeStr}:00Z`;
+        // Ghép ngày + giờ thành 1 mốc theo múi giờ địa phương, gửi kèm offset (vd +07:00)
+        // — KHÔNG gắn cứng "Z" (UTC) để tránh lệch +7h khiến buổi tối nhảy sang hôm sau.
+        const baseDate = values.date ? dayjs(values.date) : dayjs();
+        const timePart = values.startTime ? dayjs(values.startTime) : dayjs().startOf('day');
+        const combinedStartTime = baseDate
+          .hour(timePart.hour())
+          .minute(timePart.minute())
+          .second(0)
+          .millisecond(0)
+          .format('YYYY-MM-DDTHH:mm:ssZ');
 
         const dto = {
           title: values.title,
@@ -147,9 +154,15 @@ export const ManageTraining = () => {
     editForm.validateFields().then(async values => {
       try {
         // values.date và values.startTime luôn là dayjs objects từ DatePicker/TimePicker
-        const dateStr = values.date ? dayjs(values.date).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD');
-        const timeStr = values.startTime ? dayjs(values.startTime).format('HH:mm') : '00:00';
-        const combinedStartTime = `${dateStr}T${timeStr}:00Z`;
+        // Ghép thành 1 mốc theo giờ địa phương, gửi kèm offset (vd +07:00) — KHÔNG gắn cứng "Z".
+        const baseDate = values.date ? dayjs(values.date) : dayjs();
+        const timePart = values.startTime ? dayjs(values.startTime) : dayjs().startOf('day');
+        const combinedStartTime = baseDate
+          .hour(timePart.hour())
+          .minute(timePart.minute())
+          .second(0)
+          .millisecond(0)
+          .format('YYYY-MM-DDTHH:mm:ssZ');
 
         const dto = {
           title: values.title,
