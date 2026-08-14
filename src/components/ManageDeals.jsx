@@ -326,7 +326,15 @@ export const ManageDeals = () => {
                 <Row gutter={[12, 12]}>
                   {[
                     { label: 'Giá giao dịch', value: `${(detailRecord.price / 1e9).toFixed(2)} Tỷ`, color: '#ec4899' },
-                    { label: 'Hoa hồng (3%)', value: `${(detailRecord.commission / 1e6).toFixed(0)} Triệu`, color: '#10b981' },
+                    {
+                      // Tính % hoa hồng THỰC TẾ từ dữ liệu thay vì ghi cứng một tỉ lệ,
+                      // vì mobile và web có thể áp mức khác nhau (mobile đang tính 1%).
+                      label: detailRecord.price > 0
+                        ? `Hoa hồng (${((detailRecord.commission / detailRecord.price) * 100).toFixed(1)}%)`
+                        : 'Hoa hồng',
+                      value: `${(detailRecord.commission / 1e6).toFixed(0)} Triệu`,
+                      color: '#10b981'
+                    },
                     { label: 'KPI Trigger', value: `+${detailRecord.kpiTriggered} pts`, color: '#8b5cf6' },
                   ].map((item, i) => (
                     <Col span={8} key={i}>
@@ -337,6 +345,34 @@ export const ManageDeals = () => {
                     </Col>
                   ))}
                 </Row>
+              </div>
+
+              {/* ẢNH HỢP ĐỒNG — bằng chứng để duyệt deal */}
+              <div className="premium-card" style={{ padding: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1, marginBottom: 10 }}>
+                  📄 ẢNH HỢP ĐỒNG
+                </div>
+                {detailRecord.contractPhotoUrl ? (
+                  <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', border: '2px solid var(--border-color)' }}>
+                    <img
+                      src={detailRecord.contractPhotoUrl}
+                      alt="Ảnh hợp đồng"
+                      style={{ width: '100%', maxHeight: 320, objectFit: 'cover', display: 'block', cursor: 'pointer' }}
+                      onClick={() => window.open(detailRecord.contractPhotoUrl, '_blank')}
+                      onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                    />
+                    <div style={{ display: 'none', alignItems: 'center', justifyContent: 'center', height: 120, color: 'var(--text-secondary)', fontSize: 13, background: 'var(--bg-secondary)', borderRadius: 10 }}>
+                      ⚠️ Không thể tải ảnh
+                    </div>
+                    <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 10, padding: '3px 8px', borderRadius: 6 }}>
+                      Nhấn để xem đầy đủ
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ padding: '16px 12px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13, background: 'var(--bg-secondary)', borderRadius: 10 }}>
+                    Chưa có ảnh hợp đồng
+                  </div>
+                )}
               </div>
 
               {/* Customer Info */}
