@@ -228,7 +228,7 @@ export const Dashboard = () => {
       key: 'action',
       align: 'right',
       render: () => (
-        <Button size="small" style={{ borderColor: '#ef4444', color: '#ef4444' }} onClick={() => navigate('/cham-cong')}>Chi tiết</Button>
+        <Button size="small" style={{ borderColor: '#ef4444', color: '#ef4444' }} onClick={() => navigate('/admin/cham-cong')}>Chi tiết</Button>
       )
     }
   ];
@@ -394,7 +394,7 @@ export const Dashboard = () => {
             color={totalPending > 0 ? '#ef4444' : '#10b981'}
             icon={<ThunderboltOutlined />}
             clickable={totalPending > 0}
-            onClick={() => totalPending > 0 && navigate('/cham-cong')}
+            onClick={() => totalPending > 0 && navigate('/admin/cham-cong')}
           />
         </Col>
       </Row>
