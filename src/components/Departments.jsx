@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { Table, Button, Space, Input, Popconfirm, message, Row, Col, Drawer, Modal, Form, Avatar, Select } from 'antd';
+import { Table, Button, Space, Input, InputNumber, Popconfirm, message, Row, Col, Drawer, Modal, Form, Avatar, Select } from 'antd';
 import {
   SearchOutlined, DeleteOutlined, EditOutlined, PlusOutlined,
   EyeOutlined, BankOutlined, TeamOutlined, UserDeleteOutlined, UserAddOutlined
@@ -47,6 +47,9 @@ export const Departments = () => {
     setEditingDept(dept);
     form.setFieldsValue({
       name: dept.name,
+      officeLat: dept.officeLat,
+      officeLng: dept.officeLng,
+      allowedRadius: dept.allowedRadius,
     });
     setModalOpen(true);
   };
@@ -280,6 +283,40 @@ export const Departments = () => {
           <Form.Item name="name" label="Tên phòng ban" rules={[{ required: true, message: 'Vui lòng nhập tên phòng ban' }]}>
             <Input placeholder="Ví dụ: Phòng Kinh Doanh 1" />
           </Form.Item>
+
+          {/* Vị trí văn phòng — dùng để chấm công GPS.
+              Sửa ở đây là app nhân viên áp dụng ngay, không cần cập nhật app. */}
+          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 14, marginTop: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1, marginBottom: 10 }}>
+              📍 VỊ TRÍ VĂN PHÒNG (dùng cho chấm công GPS)
+            </div>
+
+            <Row gutter={12}>
+              <Col span={12}>
+                <Form.Item name="officeLat" label="Vĩ độ (Latitude)">
+                  <InputNumber style={{ width: '100%' }} step={0.000001} placeholder="Ví dụ: 20.999042" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="officeLng" label="Kinh độ (Longitude)">
+                  <InputNumber style={{ width: '100%' }} step={0.000001} placeholder="Ví dụ: 105.806702" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Form.Item
+              name="allowedRadius"
+              label="Bán kính cho phép (mét)"
+              extra="Nhân viên chấm công trong bán kính này được duyệt tự động; ngoài phạm vi phải nhập lý do và chờ duyệt. Để trống sẽ dùng mặc định 2000m."
+            >
+              <InputNumber style={{ width: '100%' }} min={10} max={20000} step={10} placeholder="Ví dụ: 200" />
+            </Form.Item>
+
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              💡 Lấy tọa độ: mở <strong>Google Maps</strong> → bấm giữ vào vị trí văn phòng →
+              dãy số hiện ra có dạng <em>20.999042, 105.806702</em> — số đầu là Vĩ độ, số sau là Kinh độ.
+            </div>
+          </div>
         </Form>
       </Modal>
     </div>
