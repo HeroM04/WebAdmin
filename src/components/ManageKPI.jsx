@@ -3,7 +3,7 @@ import { Table, Button, Space, Avatar, Tag, Input, Select, DatePicker, Row, Col,
 import {
   SearchOutlined, FlagOutlined, TrophyOutlined,
   CheckCircleOutlined, WarningOutlined, EyeOutlined,
-  HomeOutlined, StarOutlined
+  HomeOutlined, StarOutlined, DownloadOutlined, FileExcelOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import dayjs from 'dayjs';
@@ -18,6 +18,52 @@ export const ManageKPI = () => {
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('ALL');
   const [monthFilter, setMonthFilter] = useState(() => dayjs().format('YYYY-MM'));
+  const [exporting, setExporting] = useState(null); // null | 'company' | userId
+
+  /**
+   * Tải file Excel do backend sinh ra.
+   * Không dùng apiClient vì hàm đó luôn parse JSON, còn đây là dữ liệu nhị phân.
+   */
+  const downloadReport = async (path, fallbackName, key) => {
+    setExporting(key);
+    try {
+      const base = import.meta.env.VITE_API_BASE_URL || 'https://kpi-backend-4xex.onrender.com/api/v1';
+      const token = localStorage.getItem('kpi_access_token');
+      const res = await fetch(`${base}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+
+      if (!res.ok) {
+        let msg = `Lỗi ${res.status}`;
+        try { const j = await res.json(); msg = j.message || msg; } catch { /* body không phải JSON */ }
+        throw new Error(msg);
+      }
+
+      // Lấy tên file server đặt (đã bỏ dấu), không có thì dùng tên dự phòng
+      let fileName = fallbackName;
+      const cd = res.headers.get('Content-Disposition');
+      const m = cd && cd.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+      if (m) { try { fileName = decodeURIComponent(m[1]); } catch { fileName = m[1]; } }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      message.success('Đã tải báo cáo về máy!');
+    } catch (e) {
+      message.error(e.message || 'Không tải được báo cáo');
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const exportCompany = () =>
+    downloadReport(`/kpi-scores/export/company?month=${monthFilter}`,
+      `KPI_TongHop_${monthFilter}.xlsx`, 'company');
+
+  const exportPersonal = (user) =>
+    downloadReport(`/kpi-scores/export/personal?userId=${user.id}&month=${monthFilter}`,
+      `KPI_${user.id}_${monthFilter}.xlsx`, user.id);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [detailUser, setDetailUser] = useState(null);
 
@@ -188,6 +234,15 @@ export const ManageKPI = () => {
             <Button size="small" type="text" icon={<EyeOutlined style={{ color: 'var(--info-color)' }} />} onClick={() => { setDetailUser(record); setDrawerOpen(true); }}>
               Chi tiết
             </Button>
+            <Tooltip title="Xuất báo cáo KPI cá nhân tháng này (Excel): điểm theo tuần, số liệu hoạt động và chi tiết từng bản ghi">
+              <Button
+                size="small"
+                type="text"
+                icon={<DownloadOutlined style={{ color: '#059669' }} />}
+                loading={exporting === record.id}
+                onClick={() => exportPersonal(record)}
+              />
+            </Tooltip>
             <Tooltip title={monthData.isFlagged ? "Gỡ cờ đỏ" : "Gắn cờ đỏ gian lận"}>
               <Popconfirm 
                 title={monthData.isFlagged ? "Bạn muốn gỡ cờ đỏ cho nhân sự này?" : "Gắn cờ đỏ sẽ đánh dấu KPI tháng này có dấu hiệu gian lận. Tiếp tục?"}
@@ -246,9 +301,20 @@ export const ManageKPI = () => {
               value={dayjs(monthFilter, 'YYYY-MM')} 
               onChange={(d, ds) => setMonthFilter(ds)} 
               disabledDate={current => current && current > dayjs().endOf('month')}
-              style={{ width: 130 }} 
-              allowClear={false} 
+              style={{ width: 130 }}
+              allowClear={false}
             />
+            <Tooltip title="Xuất bảng tổng hợp KPI của toàn bộ nhân sự trong tháng (Excel)">
+              <Button
+                type="primary"
+                icon={<FileExcelOutlined />}
+                loading={exporting === 'company'}
+                onClick={exportCompany}
+                style={{ backgroundColor: '#059669', borderColor: '#059669' }}
+              >
+                Xuất tổng hợp
+              </Button>
+            </Tooltip>
           </div>
         </div>
         
