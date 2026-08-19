@@ -1,5 +1,6 @@
 import React, { useContext, useState } from 'react';
-import { Table, Button, Space, Avatar, Tag, Modal, Form, Input, Select, Popconfirm, Card, Row, Col, Divider, message, Drawer, Descriptions, Progress, Upload } from 'antd';
+import { Table, Button, Space, Avatar, Tag, Modal, Form, Input, Select, Popconfirm, Card, Row, Col, Divider, message, Drawer, Descriptions, Progress, Upload, DatePicker } from 'antd';
+import dayjs from 'dayjs';
 import { AppContext } from '../context/AppContext';
 import { 
   PlusOutlined, 
@@ -14,7 +15,8 @@ import {
   TeamOutlined,
   TrophyOutlined,
   SearchOutlined,
-  LoadingOutlined
+  LoadingOutlined,
+  GiftOutlined
 } from '@ant-design/icons';
 import { apiClient } from '../utils/apiClient';
 
@@ -52,7 +54,9 @@ export const Personnel = () => {
       phone: record.phone,
       role: record.role,
       deptId: record.deptId,
-      status: record.status
+      status: record.status,
+      referrerId: record.referrerId ?? undefined,
+      joinedDate: record.joinedDate ? dayjs(record.joinedDate) : undefined
     });
     setIsModalOpen(true);
   };
@@ -63,7 +67,15 @@ export const Personnel = () => {
       .validateFields()
       .then(async values => {
         try {
-          const payload = { ...values, avatarUrl };
+          const payload = {
+            ...values,
+            avatarUrl,
+            // 0 báo cho backend biết là gỡ bỏ, khác với "không sửa"
+            referrerId: values.referrerId === undefined || values.referrerId === null
+              ? (editingUser ? 0 : null)
+              : values.referrerId,
+            joinedDate: values.joinedDate ? values.joinedDate.format('YYYY-MM-DD') : null
+          };
           if (editingUser) {
             await updateUser({ ...editingUser, ...payload });
             message.success('Cập nhật thông tin nhân viên thành công!');
@@ -115,6 +127,20 @@ export const Personnel = () => {
     }
   };
 
+  const handleRunReferrals = async () => {
+    try {
+      const res = await apiClient.post('/users/referrals/run', {});
+      const n = res?.granted ?? 0;
+      if (n === 0) {
+        message.info('Chưa có ai đủ điều kiện cộng điểm giới thiệu.');
+      } else {
+        message.success(`Đã cộng 15đ cho ${n} người giới thiệu.`);
+      }
+    } catch (e) {
+      message.error(e?.message || 'Lỗi khi soát điểm giới thiệu');
+    }
+  };
+
   const handleResetPassword = async (id) => {
     try {
       await apiClient.put(`/users/${id}/reset-password`, { newPassword: '123456' });
@@ -140,6 +166,19 @@ export const Personnel = () => {
       if (deptA !== deptB) return deptA.localeCompare(deptB);
       return String(a.name || '').localeCompare(String(b.name || ''));
     });
+
+  const getDeptName = (deptId) => {
+    const dept = departments.find(d => d.id === deptId);
+    return dept ? dept.name : 'Chưa phân phòng';
+  };
+
+  // Ngày tròn một tháng kể từ ngày vào làm — mốc người giới thiệu được +15đ
+  const matureInfo = (record) => {
+    const joined = record.joinedDate || (record.createdAt ? record.createdAt.substring(0, 10) : null);
+    if (!joined) return null;
+    const mature = dayjs(joined).add(1, 'month');
+    return { joined, mature, done: !mature.isAfter(dayjs(), 'day') };
+  };
 
   // User columns for Table
   const columns = [
@@ -175,6 +214,31 @@ export const Personnel = () => {
       render: (deptId) => {
         const dept = departments.find(d => d.id === deptId);
         return <Tag color="blue">{dept ? dept.name : 'Chưa phân phòng'}</Tag>;
+      }
+    },
+    {
+      title: 'Người giới thiệu',
+      key: 'referrer',
+      width: 190,
+      render: (_, record) => {
+        if (!record.referrerId) {
+          return <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Tự ứng tuyển</span>;
+        }
+        const info = matureInfo(record);
+        return (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
+              {record.referrerFullName || `#${record.referrerId}`}
+            </div>
+            {info && (
+              info.done
+                ? <Tag color="success" style={{ fontSize: 10, marginTop: 2 }}>Đã đủ tháng · +15đ</Tag>
+                : <Tag color="warning" style={{ fontSize: 10, marginTop: 2 }}>
+                    Đủ tháng {info.mature.format('DD/MM')}
+                  </Tag>
+            )}
+          </div>
+        );
       }
     },
     {
@@ -261,14 +325,25 @@ export const Personnel = () => {
         <div style={{ color: 'var(--text-secondary)' }}>
           Quản lý danh sách nhân sự, phân bổ sơ đồ phòng ban và cấp quyền vận hành hệ thống.
         </div>
-        <Button 
-          type="primary" 
-          icon={<PlusOutlined />} 
-          style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)', borderRadius: 8, height: 40 }}
-          onClick={showAddModal}
-        >
-          Thêm Nhân Viên
-        </Button>
+        <Space>
+          <Popconfirm
+            title="Soát điểm gieo hạt nhân sự mới?"
+            description="Cộng 15đ cho người giới thiệu khi nhân sự mới đã làm đủ một tháng. Hệ thống vẫn tự chạy lúc 23:20 mỗi ngày."
+            okText="Soát ngay" cancelText="Hủy" onConfirm={handleRunReferrals}
+          >
+            <Button icon={<GiftOutlined />} style={{ borderRadius: 8, height: 40 }}>
+              Soát điểm giới thiệu
+            </Button>
+          </Popconfirm>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)', borderRadius: 8, height: 40 }}
+            onClick={showAddModal}
+          >
+            Thêm Nhân Viên
+          </Button>
+        </Space>
       </div>
 
       <Row gutter={[16, 16]}>
@@ -433,6 +508,36 @@ export const Personnel = () => {
                     </Select.Option>
                   ))}
                 </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={14}>
+              <Form.Item
+                name="referrerId"
+                label="Người giới thiệu"
+                tooltip="Gieo hạt nhân sự mới: người giới thiệu được +15đ Lan tỏa, nhưng chỉ khi nhân sự này làm đủ một tháng."
+              >
+                <Select
+                  allowClear
+                  showSearch
+                  placeholder="Tự ứng tuyển (không có người giới thiệu)"
+                  optionFilterProp="label"
+                  options={users
+                    .filter(u => u.status === 'ACTIVE' && (!editingUser || u.id !== editingUser.id))
+                    .map(u => ({ value: u.id, label: `${u.name} — ${getDeptName(u.deptId)}` }))}
+                />
+              </Form.Item>
+            </Col>
+
+            <Col span={10}>
+              <Form.Item
+                name="joinedDate"
+                label="Ngày vào làm"
+                tooltip="Mốc để tính tròn một tháng cho điểm giới thiệu. Bỏ trống thì lấy ngày tạo tài khoản."
+              >
+                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" placeholder="Chọn ngày" />
               </Form.Item>
             </Col>
           </Row>

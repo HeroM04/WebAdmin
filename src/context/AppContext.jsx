@@ -463,9 +463,11 @@ export const AppProvider = ({ children }) => {
         role: userData.role,
         departmentId: userData.deptId,
         avatarUrl: userData.avatarUrl,
-        basicSalary: userData.basicSalary || 10000000
+        basicSalary: userData.basicSalary || 10000000,
+        referrerId: userData.referrerId ?? null,
+        joinedDate: userData.joinedDate || null
       };
-      await apiClient.post('/users', dto); 
+      await apiClient.post('/users', dto);
       await fetchInitialData(); 
     } catch (e) { throw e; }
   };
@@ -479,9 +481,14 @@ export const AppProvider = ({ children }) => {
         departmentId: updatedUser.deptId,
         basicSalary: updatedUser.basicSalary,
         avatarUrl: updatedUser.avatarUrl,
-        password: updatedUser.password
+        password: updatedUser.password,
+        // 0 = gỡ người giới thiệu; bỏ trống = giữ nguyên
+        referrerId: updatedUser.referrerId === null || updatedUser.referrerId === undefined
+          ? undefined
+          : updatedUser.referrerId,
+        joinedDate: updatedUser.joinedDate || undefined
       };
-      await apiClient.put(`/users/${updatedUser.id}`, dto); 
+      await apiClient.put(`/users/${updatedUser.id}`, dto);
       await fetchInitialData(); 
     } catch (e) { throw e; }
   };
