@@ -153,10 +153,11 @@ export const ManageMeetings = () => {
       title: 'Nội dung báo cáo',
       dataIndex: 'content',
       key: 'content',
-      width: 220,
+      width: 300,
       render: (text) => (
-        <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', whiteSpace: 'normal', wordBreak: 'break-word' }}>
-          <FileTextOutlined style={{ marginRight: 4, color: 'var(--primary-color)', flexShrink: 0 }} />{text}
+        // Một dòng, dài quá cắt bằng dấu ba chấm — bấm vào dòng xem đầy đủ
+        <div title={text} style={{ fontSize: 13, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 300 }}>
+          <FileTextOutlined style={{ marginRight: 4, color: 'var(--primary-color)' }} />{text}
         </div>
       )
     },

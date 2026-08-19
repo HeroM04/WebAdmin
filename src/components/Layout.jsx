@@ -287,8 +287,10 @@ export const AppLayout = () => {
     <Layout style={{ minHeight: '100vh' }}>
       <Sider width={240} theme="dark" style={{ borderRight: '1px solid var(--border-color)', position: 'fixed', height: '100vh', left: 0, top: 0, bottom: 0, zIndex: 100, overflowY: 'auto', overflowX: 'hidden' }}>
         <div style={{ height: 64, display: 'flex', alignItems: 'center', padding: '0 18px', borderBottom: '1px solid var(--border-color)' }}>
-          <div style={{ color: '#fff', fontWeight: 700, fontSize: 15, letterSpacing: '.02em', whiteSpace: 'nowrap' }}>
-            Trí Long Land <span style={{ color: '#D4AF37', fontWeight: 800 }}>KPI</span>
+          {/* Nền thanh bên là màu nền chung (sáng), nên chữ phải dùng biến màu
+              chữ chứ không để trắng — để trắng là mất hút trên nền sáng. */}
+          <div style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: 15, letterSpacing: '.02em', whiteSpace: 'nowrap' }}>
+            Trí Long Land <span style={{ color: '#8A6A18', fontWeight: 800 }}>KPI</span>
           </div>
         </div>
 

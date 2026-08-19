@@ -236,14 +236,18 @@ export const ManageTraining = () => {
     {
       title: 'Buổi đào tạo',
       key: 'title',
+      width: 300,
       render: (_, record) => (
-        <div>
-          <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14, marginBottom: 2 }}>{record.title}</div>
-          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-            <CalendarOutlined style={{ marginRight: 4 }} />{record.startTime ? new Date(record.startTime).toLocaleString('vi-VN') : 'Chưa xếp lịch'}
+        // Ngày giờ và địa điểm gộp vào một dòng phụ để dòng bảng còn hai dòng
+        <div style={{ maxWidth: 300 }}>
+          <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={record.title}>
+            {record.title}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-            <EnvironmentOutlined style={{ color: '#ef4444', marginRight: 4 }} />{record.location}
+          <div style={{ fontSize: 11, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <CalendarOutlined style={{ marginRight: 3 }} />
+            {record.startTime ? new Date(record.startTime).toLocaleString('vi-VN') : 'Chưa xếp lịch'}
+            <EnvironmentOutlined style={{ color: '#ef4444', margin: '0 3px 0 8px' }} />
+            {record.location}
           </div>
         </div>
       )
@@ -257,9 +261,11 @@ export const ManageTraining = () => {
         const attendeesCount = (record.attendees || []).length;
         const pct = record.maxSlots > 0 ? Math.round((attendeesCount / record.maxSlots) * 100) : 0;
         return (
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}><TeamOutlined style={{ marginRight: 4, color: 'var(--primary-color)' }} />{attendeesCount}/{record.maxSlots}</div>
-            <Progress percent={pct} size="small" showInfo={false} strokeColor="var(--primary-color)" railColor="var(--border-color)" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+              <TeamOutlined style={{ marginRight: 4, color: 'var(--primary-color)' }} />{attendeesCount}/{record.maxSlots}
+            </span>
+            <Progress percent={pct} size="small" showInfo={false} strokeColor="var(--primary-color)" railColor="var(--border-color)" style={{ flex: 1, margin: 0, minWidth: 40 }} />
           </div>
         );
       }

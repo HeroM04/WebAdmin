@@ -188,10 +188,15 @@ export const ManagePosts = () => {
     {
       title: 'Nội dung bài đăng',
       key: 'caption',
-      width: 240,
+      width: 300,
       render: (_, record) => (
         <div>
-          <div style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', whiteSpace: 'normal', wordBreak: 'break-word', marginBottom: 4 }}>
+          {/* Chỉ một dòng, dài quá thì cắt bằng dấu ba chấm — bấm vào dòng để
+              mở ô chi tiết là thấy đầy đủ nội dung. */}
+          <div
+            title={record.caption}
+            style={{ fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 300 }}
+          >
             {record.caption}
           </div>
           <a href={record.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: 'var(--primary-color)' }}>
