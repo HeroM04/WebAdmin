@@ -1,5 +1,5 @@
-import React, { useContext, useState } from 'react';
-import { Table, Button, Space, Avatar, Tag, Modal, Form, Input, Select, Popconfirm, Card, Row, Col, Divider, message, Drawer, Descriptions, Progress, Upload, DatePicker } from 'antd';
+import React, { useContext, useEffect, useState } from 'react';
+import { Table, Button, Space, Avatar, Tag, Modal, Form, Input, Select, Popconfirm, Card, Row, Col, Divider, message, Drawer, Descriptions, Progress, Upload, DatePicker, Tabs, Badge } from 'antd';
 import dayjs from 'dayjs';
 import { AppContext } from '../context/AppContext';
 import { 
@@ -19,11 +19,12 @@ import {
   GiftOutlined
 } from '@ant-design/icons';
 import { apiClient } from '../utils/apiClient';
+import { ReferralSubmissions } from './ReferralSubmissions';
 
 // Wait, the React Context import is correct. Let's make sure there is no react-redux import.
 // Yes! I'll write the code correctly without react-redux.
 
-export const Personnel = () => {
+const PersonnelList = () => {
   const { departments, users, addUser, updateUser, deleteUser } = useContext(AppContext);
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('ALL');
@@ -686,5 +687,41 @@ export const Personnel = () => {
       </Drawer>
 
     </div>
+  );
+};
+
+export const Personnel = () => {
+  const { users } = useContext(AppContext);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  // Đếm đơn chờ duyệt để gắn badge lên tab, tránh đơn nằm im không ai biết
+  useEffect(() => {
+    let alive = true;
+    apiClient.get('/referral-submissions/pending')
+      .then(d => { if (alive) setPendingCount(Array.isArray(d) ? d.length : 0); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [users]);
+
+  return (
+    <Tabs
+      defaultActiveKey="list"
+      items={[
+        {
+          key: 'list',
+          label: <span><TeamOutlined /> Danh sách nhân sự</span>,
+          children: <PersonnelList />
+        },
+        {
+          key: 'referrals',
+          label: (
+            <Badge count={pendingCount} size="small" offset={[8, -2]}>
+              <span><GiftOutlined /> Đơn giới thiệu</span>
+            </Badge>
+          ),
+          children: <ReferralSubmissions />
+        },
+      ]}
+    />
   );
 };

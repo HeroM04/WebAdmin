@@ -651,6 +651,8 @@ export const AppProvider = ({ children }) => {
         currentUser,
         setCurrentUser,
         isAuthenticated,
+        // Tải lại toàn bộ dữ liệu — dùng sau khi tạo nhân sự từ luồng ngoài trang Nhân sự
+        refreshData: fetchInitialData,
         login,
         loginPublic,
         logout,
