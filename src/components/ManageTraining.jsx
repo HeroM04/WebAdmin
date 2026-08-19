@@ -9,6 +9,7 @@ import {
   YoutubeOutlined, LinkOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
+import { rowClick } from '../utils/tableRow';
 import { exportToCSV } from '../utils/exportCsv';
 
 const { Search } = Input;
@@ -300,9 +301,9 @@ export const ManageTraining = () => {
       key: 'actions',
       width: 200,
       fixed: 'right',
+      className: 'no-row-click',
       render: (_, record) => (
         <Space size={4} wrap>
-          <Button size="small" type="text" icon={<EyeOutlined style={{ color: 'var(--info-color)' }} />} onClick={() => openDetail(record)}>Chi tiết</Button>
           <Button size="small" type="text" icon={<EditOutlined style={{ color: 'var(--primary-color)' }} />} onClick={() => openEdit(record)}>Sửa</Button>
           <Button size="small" type="primary" icon={<QrcodeOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={() => setQrSessionId(record.id === qrSessionId ? null : record.id)}>QR</Button>
           <Popconfirm title="Xóa buổi đào tạo?" onConfirm={() => handleDelete(record.id)} okText="Xóa" cancelText="Hủy" okButtonProps={{ danger: true }}>
@@ -487,7 +488,9 @@ export const ManageTraining = () => {
                   columns={columns}
                   dataSource={filtered}
                   rowKey="id"
-                  pagination={{ pageSize: 10 }}
+                  size="small"
+                  onRow={rowClick(openDetail)}
+                  pagination={{ pageSize: 15, showSizeChanger: true }}
                   scroll={{ x: 'max-content' }}
                 />
               </div>
@@ -525,7 +528,7 @@ export const ManageTraining = () => {
             <div style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)', padding: '28px', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', letterSpacing: 1, marginBottom: 8 }}>BUỔI ĐÀO TẠO</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif', marginBottom: 6 }}>{detailSession.title}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: 'Inter, sans-serif', marginBottom: 6 }}>{detailSession.title}</div>
               <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>Giảng viên: <strong>{detailSession.trainer}</strong></div>
               <div style={{ marginTop: 10 }}>
                 <Tag color={STATUS_CONFIG[detailSession.status]?.color || 'default'}>{STATUS_CONFIG[detailSession.status]?.label}</Tag>

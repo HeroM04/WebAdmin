@@ -86,24 +86,19 @@ export const Login = () => {
           .tl-brand{padding:36px 28px 30px; gap:22px;}
         }
 
-        .tl-mark{display:flex; align-items:center; gap:16px;}
-        .tl-mark img{
-          width:56px; height:56px; border-radius:14px; display:block;
-          box-shadow:0 10px 26px rgba(0,0,0,.34);
-        }
         .tl-wordmark{
-          font-family:'Outfit','Roboto',sans-serif;
-          font-size:23px; font-weight:800; letter-spacing:.055em;
-          line-height:1.15; text-transform:uppercase; margin:0;
+          font-family:'Inter',sans-serif;
+          font-size:24px; font-weight:700; letter-spacing:-.005em;
+          line-height:1.2; margin:0;
         }
-        .tl-wordmark span{color:var(--gold);}
+        .tl-wordmark span{color:var(--gold); font-weight:800;}
         .tl-sub{
           font-size:11.5px; letter-spacing:.19em; text-transform:uppercase;
           color:rgba(255,255,255,.5); margin-top:5px;
         }
 
         .tl-pitch h2{
-          font-family:'Outfit','Roboto',sans-serif;
+          font-family:'Inter',sans-serif;
           font-size:clamp(26px,2.7vw,36px); font-weight:700;
           line-height:1.2; letter-spacing:-.018em; margin:0 0 14px;
           text-wrap:balance; max-width:15ch;
@@ -134,7 +129,7 @@ export const Login = () => {
         .tl-form{width:100%; max-width:376px;}
 
         .tl-form h1{
-          font-family:'Outfit','Roboto',sans-serif;
+          font-family:'Inter',sans-serif;
           font-size:27px; font-weight:700; letter-spacing:-.015em;
           color:var(--text-primary); margin:0 0 7px;
         }
@@ -218,12 +213,9 @@ export const Login = () => {
 
       {/* Cột trái — thương hiệu */}
       <aside className="tl-brand">
-        <div className="tl-mark">
-          <img src="/logo.svg" alt="" />
-          <div>
-            <p className="tl-wordmark">KPI <span>Trí Long</span></p>
-            <div className="tl-sub">Kiến tạo sự bền vững</div>
-          </div>
+        <div>
+          <p className="tl-wordmark">Trí Long Land <span>KPI</span></p>
+          <div className="tl-sub">Kiến tạo sự bền vững</div>
         </div>
 
         <div className="tl-pitch">

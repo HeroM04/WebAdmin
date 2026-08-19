@@ -180,6 +180,7 @@ export const ReferralSubmissions = () => {
       key: 'actions',
       width: 190,
       fixed: 'right',
+      className: 'no-row-click',
       render: (_, r) => {
         if (r.status !== 'PENDING') {
           return <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>

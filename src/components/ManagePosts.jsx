@@ -7,6 +7,7 @@ import {
   VideoCameraOutlined, FileTextOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
+import { rowClick } from '../utils/tableRow';
 import { scanPostContent } from '../utils/aiScanner';
 
 const { Search } = Input;
@@ -238,9 +239,9 @@ export const ManagePosts = () => {
       key: 'actions',
       width: 180,
       fixed: 'right',
+      className: 'no-row-click',
       render: (_, record) => (
         <Space size={4}>
-          <Button size="small" type="text" icon={<EyeOutlined style={{ color: 'var(--info-color)' }} />} onClick={() => openDetail(record)}>Chi tiết</Button>
           <Button size="small" type="text" icon={<EditOutlined style={{ color: 'var(--primary-color)' }} />} onClick={() => openEdit(record)}>Sửa</Button>
           {record.status === 'PENDING' && (
             <>
@@ -296,7 +297,7 @@ export const ManagePosts = () => {
           <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Danh sách Bài đăng Lan tỏa BĐS</h3>
           <Tag color="blue" style={{ marginLeft: 8, fontSize: 11 }}><ScanOutlined /> AI Scanner</Tag>
         </div>
-        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" pagination={{ pageSize: 6 }} scroll={{ x: 800 }} style={{ padding: '8px' }} />
+        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ pageSize: 15, showSizeChanger: true }} scroll={{ x: 800 }} style={{ padding: '8px' }} />
       </div>
 
       {/* Detail Drawer */}
@@ -309,7 +310,7 @@ export const ManagePosts = () => {
               <Space size={14} align="start">
                 <Avatar src={detailUser.avatar} size={56} style={{ border: '3px solid rgba(255,255,255,0.5)' }} />
                 <div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>{detailUser.name}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontFamily: 'Inter, sans-serif' }}>{detailUser.name}</div>
                   <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>Chia sẻ trên <strong>{detailRecord.platform}</strong></div>
                   <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11 }}>{new Date(detailRecord.submittedAt).toLocaleString('vi-VN')}</div>
                   <div style={{ marginTop: 8 }}>

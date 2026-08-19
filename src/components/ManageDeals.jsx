@@ -7,6 +7,7 @@ import {
   TrophyOutlined, FireOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
+import { rowClick } from '../utils/tableRow';
 import confetti from 'canvas-confetti';
 
 const { Search } = Input;
@@ -224,9 +225,9 @@ export const ManageDeals = () => {
       key: 'actions',
       width: 200,
       fixed: 'right',
+      className: 'no-row-click',
       render: (_, record) => (
         <Space size={4}>
-          <Button size="small" type="text" icon={<EyeOutlined style={{ color: 'var(--info-color)' }} />} onClick={() => openDetail(record)}>Chi tiết</Button>
           <Button size="small" type="text" icon={<EditOutlined style={{ color: 'var(--primary-color)' }} />} onClick={() => openEdit(record)}>Sửa</Button>
           {record.status === 'PENDING' && (
             <>
@@ -291,7 +292,7 @@ export const ManageDeals = () => {
           <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Danh sách Giao dịch Chốt căn</h3>
           <Tag color="pink" style={{ marginLeft: 8, fontSize: 11 }}>🎉 Pháo hoa khi duyệt</Tag>
         </div>
-        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" pagination={{ pageSize: 8 }} scroll={{ x: 'max-content' }} style={{ padding: '8px' }} />
+        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ pageSize: 15, showSizeChanger: true }} scroll={{ x: 'max-content' }} style={{ padding: '8px' }} />
       </div>
 
       {/* Detail Drawer */}
@@ -301,8 +302,8 @@ export const ManageDeals = () => {
             <div style={{ background: 'linear-gradient(135deg, #ec4899 0%, #f97316 100%)', padding: '28px', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', letterSpacing: 1, marginBottom: 8 }}>GIAO DỊCH BẤT ĐỘNG SẢN</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif', marginBottom: 4 }}>{detailRecord.projectName}</div>
-              <div style={{ fontSize: 28, fontWeight: 900, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>{(detailRecord.price / 1e9).toFixed(2)} Tỷ đồng</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: 'Inter, sans-serif', marginBottom: 4 }}>{detailRecord.projectName}</div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: '#fff', fontFamily: 'Inter, sans-serif' }}>{(detailRecord.price / 1e9).toFixed(2)} Tỷ đồng</div>
               <div style={{ marginTop: 10 }}><StatusTag status={detailRecord.status} /></div>
             </div>
 

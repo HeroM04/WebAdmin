@@ -5,6 +5,7 @@ import {
   EyeOutlined, BankOutlined, TeamOutlined, UserDeleteOutlined, UserAddOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
+import { rowClick } from '../utils/tableRow';
 
 const { Search } = Input;
 
@@ -122,9 +123,9 @@ export const Departments = () => {
       title: 'Hành động',
       key: 'actions',
       width: 250,
+      className: 'no-row-click',
       render: (_, record) => (
         <Space size={4}>
-          <Button size="small" type="text" icon={<EyeOutlined style={{ color: 'var(--info-color)' }} />} onClick={() => openDetail(record)}>Chi tiết</Button>
           <Button size="small" type="text" icon={<EditOutlined style={{ color: 'var(--primary-color)' }} />} onClick={() => openEdit(record)}>Sửa</Button>
           <Popconfirm title="Bạn có chắc muốn xóa phòng ban này?" description="Nhân sự trong phòng sẽ chuyển về 'Chưa phân phòng'." onConfirm={() => handleDelete(record.id)} okText="Xóa" cancelText="Hủy" okButtonProps={{ danger: true }}>
             <Button size="small" type="text" icon={<DeleteOutlined style={{ color: 'var(--danger-color)' }} />} />
@@ -197,7 +198,7 @@ export const Departments = () => {
           <BankOutlined style={{ color: 'var(--primary-color)', fontSize: 16 }} />
           <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Danh sách Phòng ban</h3>
         </div>
-        <Table dataSource={filteredDepartments} columns={columns} rowKey="id" size="small" pagination={{ pageSize: 8 }} />
+        <Table dataSource={filteredDepartments} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ pageSize: 15, showSizeChanger: true }} />
       </div>
 
       {/* Detail Drawer */}
@@ -214,7 +215,7 @@ export const Departments = () => {
             {/* Header */}
             <div style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)', padding: '32px 28px', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-              <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>{detailDept.name}</div>
+              <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', fontFamily: 'Inter, sans-serif' }}>{detailDept.name}</div>
               <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 4 }}>
                 <TeamOutlined style={{ marginRight: 6 }} /> {getDeptUsers(detailDept.id).length} nhân sự
               </div>

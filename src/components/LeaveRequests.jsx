@@ -144,6 +144,7 @@ export const LeaveRequests = () => {
       key: 'actions',
       width: 170,
       fixed: 'right',
+      className: 'no-row-click',
       render: (_, r) => {
         if (r.status === 'UNEXCUSED') {
           return <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Hệ thống tự chấm</span>;

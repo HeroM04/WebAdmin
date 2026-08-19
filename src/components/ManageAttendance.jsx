@@ -8,6 +8,7 @@ import {
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import { exportToCSV } from '../utils/exportCsv';
+import { rowClick } from '../utils/tableRow';
 import { LeaveRequests } from './LeaveRequests';
 
 const { Search } = Input;
@@ -335,11 +336,11 @@ const AttendanceLogs = () => {
     {
       title: 'Hành động',
       key: 'actions',
-      width: 200,
+      width: 132,
       fixed: 'right',
+      className: 'no-row-click',
       render: (_, record) => (
-        <Space size={4}>
-          <Button size="small" type="text" icon={<EyeOutlined style={{ color: 'var(--info-color)' }} />} onClick={() => openDetail(record)}>Chi tiết</Button>
+        <Space size={2}>
           <Button size="small" type="text" icon={<EditOutlined style={{ color: 'var(--primary-color)' }} />} onClick={() => openEdit(record.checkinRecord || record.checkoutRecord)}>Sửa</Button>
           {record.status === 'PENDING' && (
             <>
@@ -400,7 +401,7 @@ const AttendanceLogs = () => {
           <ClockCircleOutlined style={{ color: 'var(--primary-color)', fontSize: 16 }} />
           <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Danh sách Chấm công Ngoại tuyến</h3>
         </div>
-        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" pagination={{ pageSize: 8, showSizeChanger: true }} scroll={{ x: 'max-content' }} style={{ padding: '8px' }} />
+        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ pageSize: 15, showSizeChanger: true }} scroll={{ x: 'max-content' }} style={{ padding: '8px' }} />
       </div>
 
       {/* Detail Drawer */}
@@ -420,7 +421,7 @@ const AttendanceLogs = () => {
               <Space size={16} align="start">
                 <Avatar src={detailUser.avatar} size={64} style={{ border: '3px solid rgba(255,255,255,0.5)' }} />
                 <div>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>{detailUser.name}</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: 'Inter, sans-serif' }}>{detailUser.name}</div>
                   <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>{detailUser.role} • {getDeptName(detailUser.deptId)}</div>
                 </div>
               </Space>

@@ -54,7 +54,7 @@
 }
 
 body {
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.5;
@@ -65,7 +65,7 @@ body {
 
 /* Custom Typography classes */
 h1, h2, h3, h4, .outfit-font {
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 /* Premium Glassmorphism Card Style */
@@ -139,16 +139,35 @@ h1, h2, h3, h4, .outfit-font {
   color: var(--text-secondary) !important;
   border-bottom: 1px solid var(--border-color) !important;
   font-weight: 600;
+  /* Tiêu đề cột luôn nằm một dòng — trước đây "Ảnh Check-in" bị bẻ đôi
+     làm hàng tiêu đề cao gấp đôi các cột còn lại. */
+  white-space: nowrap;
+  padding: 10px 12px !important;
+  font-size: 13px;
 }
 
 .ant-table-tbody > tr > td {
   border-bottom: 1px solid var(--border-color) !important;
   background: transparent !important;
+  /* Thu gọn chiều cao dòng: mặc định antd để 16px trên dưới, quá thoáng
+     với bảng nhiều cột như ở đây. */
+  padding: 8px 12px !important;
 }
 
 .ant-table-row:hover > td {
   background: rgba(16, 185, 129, 0.05) !important;
 }
+
+/* Dòng bấm được để mở chi tiết — thay cho nút "Chi tiết" ở cột Hành động */
+.ant-table-tbody > tr.clickable-row {
+  cursor: pointer;
+}
+.ant-table-tbody > tr.clickable-row:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}
+
+/* Ô chứa nút thao tác — chỉ là dấu nhận biết cho rowClick, không đổi giao diện */
 
 /* Modals & Inputs Custom */
 .ant-modal-content {
@@ -167,7 +186,7 @@ h1, h2, h3, h4, .outfit-font {
 
 .ant-modal-title {
   color: var(--text-primary) !important;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 20px !important;
   font-weight: 600 !important;
 }

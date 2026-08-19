@@ -286,10 +286,9 @@ export const AppLayout = () => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider width={240} theme="dark" style={{ borderRight: '1px solid var(--border-color)', position: 'fixed', height: '100vh', left: 0, top: 0, bottom: 0, zIndex: 100, overflowY: 'auto', overflowX: 'hidden' }}>
-        <div style={{ height: 64, display: 'flex', alignItems: 'center', gap: 10, padding: '0 18px', borderBottom: '1px solid var(--border-color)' }}>
-          <img src="/logo.svg" alt="" style={{ width: 30, height: 30, borderRadius: 7, objectFit: 'contain', flex: 'none' }} />
-          <div className="outfit-font" style={{ color: '#fff', fontWeight: 800, fontSize: 15, letterSpacing: '.04em', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>
-            KPI <span style={{ color: '#D4AF37' }}>Trí Long</span>
+        <div style={{ height: 64, display: 'flex', alignItems: 'center', padding: '0 18px', borderBottom: '1px solid var(--border-color)' }}>
+          <div style={{ color: '#fff', fontWeight: 700, fontSize: 15, letterSpacing: '.02em', whiteSpace: 'nowrap' }}>
+            Trí Long Land <span style={{ color: '#D4AF37', fontWeight: 800 }}>KPI</span>
           </div>
         </div>
 
@@ -311,7 +310,7 @@ export const AppLayout = () => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <h2 className="outfit-font" style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-              {PAGE_TITLES[activeTab] || 'KPI Trí Long'}
+              {PAGE_TITLES[activeTab] || 'Trí Long Land KPI'}
             </h2>
             {totalPending > 0 && (
               <Badge 
@@ -373,7 +372,7 @@ export const AppLayout = () => {
           </div>
         </Content>
         <Footer style={{ textAlign: 'center', background: 'var(--bg-container)', color: 'var(--text-secondary)', borderTop: '1px solid var(--border-color)' }}>
-          KPI Trí Long ©{new Date().getFullYear()} — Hệ thống quản trị nhân sự và KPI, Trí Long Land
+          Trí Long Land KPI ©{new Date().getFullYear()} — Hệ thống quản trị nhân sự và KPI
         </Footer>
       </Layout>
     </Layout>

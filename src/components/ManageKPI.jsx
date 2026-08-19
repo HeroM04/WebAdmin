@@ -6,6 +6,7 @@ import {
   HomeOutlined, StarOutlined, DownloadOutlined, FileExcelOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
+import { rowClick } from '../utils/tableRow';
 import dayjs from 'dayjs';
 
 const { Search } = Input;
@@ -227,13 +228,11 @@ export const ManageKPI = () => {
       title: 'Thao tác',
       key: 'actions',
       align: 'center',
+      className: 'no-row-click',
       render: (_, record) => {
         const monthData = getMonthlyKPI(record.id, monthFilter);
         return (
           <Space>
-            <Button size="small" type="text" icon={<EyeOutlined style={{ color: 'var(--info-color)' }} />} onClick={() => { setDetailUser(record); setDrawerOpen(true); }}>
-              Chi tiết
-            </Button>
             <Tooltip title="Xuất báo cáo KPI cá nhân tháng này (Excel): điểm theo tuần, số liệu hoạt động và chi tiết từng bản ghi">
               <Button
                 size="small"
@@ -323,11 +322,13 @@ export const ManageKPI = () => {
             Chưa có dữ liệu cho tháng này (chưa tới).
           </div>
         ) : (
-          <Table 
-            dataSource={tableData} 
-            columns={columns} 
-            rowKey="id" 
-            pagination={{ pageSize: 10 }}
+          <Table
+            dataSource={tableData}
+            columns={columns}
+            rowKey="id"
+            size="small"
+            onRow={rowClick((record) => { setDetailUser(record); setDrawerOpen(true); })}
+            pagination={{ pageSize: 15, showSizeChanger: true }}
             locale={{ emptyText: 'Chưa có dữ liệu' }}
           />
         )}

@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Table, Button, Space, Avatar, Tag, Modal, Form, Input, Select, Popconfirm, Card, Row, Col, Divider, message, Drawer, Descriptions, Progress, Upload, DatePicker, Tabs, Badge } from 'antd';
 import dayjs from 'dayjs';
 import { AppContext } from '../context/AppContext';
+import { rowClick } from '../utils/tableRow';
 import { 
   PlusOutlined, 
   EditOutlined, 
@@ -276,9 +277,9 @@ const PersonnelList = () => {
       title: 'Thao tác',
       key: 'actions',
       align: 'center',
+      className: 'no-row-click',
       render: (_, record) => (
         <Space size="small">
-          <Button type="text" icon={<EyeOutlined style={{ color: 'var(--info-color)' }} />} onClick={() => { setDetailUser(record); setDrawerOpen(true); }}>Chi tiết</Button>
           <Button type="text" icon={<EditOutlined style={{ color: 'var(--primary-color)' }} />} onClick={() => showEditModal(record)}>Sửa</Button>
           <Popconfirm
             title="Xóa nhân viên"
@@ -366,7 +367,9 @@ const PersonnelList = () => {
               dataSource={filteredUsers}
               columns={columns}
               rowKey="id"
-              pagination={{ pageSize: 6 }}
+              size="small"
+              onRow={rowClick((record) => { setDetailUser(record); setDrawerOpen(true); })}
+              pagination={{ pageSize: 15, showSizeChanger: true }}
               scroll={{ x: 'max-content' }}
             />
           </div>
@@ -579,7 +582,7 @@ const PersonnelList = () => {
                 <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                   <Avatar src={detailUser.avatar} size={72} style={{ border: '4px solid rgba(255,255,255,0.5)', flexShrink: 0 }} />
                   <div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>{detailUser.name}</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: 'Inter, sans-serif' }}>{detailUser.name}</div>
                     <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14, marginTop: 2 }}>{detailUser.role}</div>
                     <div style={{ marginTop: 8 }}>
                       <Tag color={detailUser.status === 'ACTIVE' ? 'success' : 'error'}>{detailUser.status === 'ACTIVE' ? '● Đang hoạt động' : '○ Tạm khóa'}</Tag>
