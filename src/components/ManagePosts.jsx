@@ -3,7 +3,8 @@ import { Table, Button, Space, Avatar, Tag, Input, Select, Popconfirm, message, 
 import {
   SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined,
   ClockCircleOutlined, ShareAltOutlined, ScanOutlined, PlusOutlined, EditOutlined,
-  EyeOutlined, FileImageOutlined, LinkOutlined, RobotOutlined
+  EyeOutlined, FileImageOutlined, LinkOutlined, RobotOutlined,
+  VideoCameraOutlined, FileTextOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import { scanPostContent } from '../utils/aiScanner';
@@ -19,11 +20,25 @@ const StatusTag = ({ status }) => {
 const PLATFORM_COLORS = { Facebook: '#1877f2', Zalo: '#0068ff', TikTok: '#010101', Instagram: '#e1306c' };
 const PLATFORM_TAG_COLORS = { Facebook: 'blue', Zalo: 'cyan', TikTok: 'purple', Instagram: 'volcano' };
 
+// Cả hai loại đều thuộc nhóm "Lan tỏa giá trị" (5đ/lượt, trần 30đ/tuần),
+// tách ra để Admin theo dõi ai làm video xây kênh, ai chỉ đăng bài.
+const CONTENT_TYPES = { VIDEO: 'Video xây kênh', POST: 'Bài đăng / Story' };
+
+const contentTypeOf = (record) => (record?.contentType === 'VIDEO' ? 'VIDEO' : 'POST');
+
+const ContentTypeTag = ({ record }) => {
+  const type = contentTypeOf(record);
+  return type === 'VIDEO'
+    ? <Tag color="magenta" icon={<VideoCameraOutlined />}>{CONTENT_TYPES.VIDEO}</Tag>
+    : <Tag color="geekblue" icon={<FileTextOutlined />}>{CONTENT_TYPES.POST}</Tag>;
+};
+
 export const ManagePosts = () => {
   const { posts, users, departments, currentUser, approvePost, rejectPost, deletePost, updatePost, addPost } = useContext(AppContext);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [platformFilter, setPlatformFilter] = useState('ALL');
+  const [typeFilter, setTypeFilter] = useState('ALL');
   const [dateRange, setDateRange] = useState(null);
   const [deptFilter, setDeptFilter] = useState('ALL');
   const [detailRecord, setDetailRecord] = useState(null);
@@ -47,19 +62,22 @@ export const ManagePosts = () => {
       || (item.caption || '').toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'ALL' || item.status === statusFilter;
     const matchPlatform = platformFilter === 'ALL' || item.platform === platformFilter;
+    const matchType = typeFilter === 'ALL' || contentTypeOf(item) === typeFilter;
     const matchDept = deptFilter === 'ALL' || (user && user.deptId === deptFilter);
     let matchDate = true;
     if (dateRange && dateRange[0] && dateRange[1] && item.submittedAt) {
       const itemDateStr = item.submittedAt.substring(0, 10);
       matchDate = itemDateStr >= dateRange[0] && itemDateStr <= dateRange[1];
     }
-    return matchName && matchStatus && matchPlatform && matchDept && matchDate;
+    return matchName && matchStatus && matchPlatform && matchType && matchDept && matchDate;
   });
 
+  const approvedPosts = posts.filter(p => p.status === 'APPROVED');
   const stats = {
     total: posts.length,
     pending: posts.filter(p => p.status === 'PENDING').length,
-    approved: posts.filter(p => p.status === 'APPROVED').length,
+    video: approvedPosts.filter(p => contentTypeOf(p) === 'VIDEO').length,
+    post: approvedPosts.filter(p => contentTypeOf(p) === 'POST').length,
     rejected: posts.filter(p => p.status === 'REJECTED').length,
   };
 
@@ -82,13 +100,13 @@ export const ManagePosts = () => {
   const openAdd = () => {
     setEditingRecord(null);
     form.resetFields();
-    form.setFieldsValue({ userId: users.find(u => u.role === 'Nhân viên')?.id || users[0]?.id, platform: 'Facebook', status: 'PENDING' });
+    form.setFieldsValue({ userId: users.find(u => u.role === 'Nhân viên')?.id || users[0]?.id, platform: 'Facebook', contentType: 'POST', status: 'PENDING' });
     setModalOpen(true);
   };
 
   const openEdit = (record) => {
     setEditingRecord(record);
-    form.setFieldsValue({ userId: record.userId, platform: record.platform, link: record.link, caption: record.caption, status: record.status });
+    form.setFieldsValue({ userId: record.userId, platform: record.platform, contentType: contentTypeOf(record), link: record.link, caption: record.caption, status: record.status });
     setModalOpen(true);
   };
 
@@ -154,6 +172,17 @@ export const ManagePosts = () => {
           </Space>
         );
       }
+    },
+    {
+      title: 'Phân loại',
+      key: 'contentType',
+      width: 140,
+      filters: [
+        { text: CONTENT_TYPES.VIDEO, value: 'VIDEO' },
+        { text: CONTENT_TYPES.POST, value: 'POST' },
+      ],
+      onFilter: (value, record) => contentTypeOf(record) === value,
+      render: (_, record) => <ContentTypeTag record={record} />
     },
     {
       title: 'Nội dung bài đăng',
@@ -233,10 +262,10 @@ export const ManagePosts = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <Row gutter={[16, 16]}>
         {[
-          { label: 'Tổng bài đăng', value: stats.total, color: '#3b82f6' },
+          { label: 'Tổng nội dung', value: stats.total, color: '#3b82f6' },
           { label: 'Chờ duyệt', value: stats.pending, color: '#fbbf24' },
-          { label: 'Đã duyệt', value: stats.approved, color: '#10b981' },
-          { label: 'Đã từ chối', value: stats.rejected, color: '#ef4444' },
+          { label: 'Video xây kênh (đã duyệt)', value: stats.video, color: '#c026d3' },
+          { label: 'Bài đăng (đã duyệt)', value: stats.post, color: '#10b981' },
         ].map((s, i) => (
           <Col xs={12} md={6} key={i}>
             <div className="premium-card" style={{ padding: '16px 20px' }}>
@@ -253,6 +282,7 @@ export const ManagePosts = () => {
             <Search placeholder="Tìm theo nhân sự hoặc nội dung..." allowClear style={{ width: 220 }} onChange={e => setSearch(e.target.value)} prefix={<SearchOutlined style={{ color: 'var(--text-secondary)' }} />} />
             <Select value={deptFilter} onChange={setDeptFilter} style={{ width: 150 }} options={[{ value: 'ALL', label: 'Tất cả phòng ban' }, ...(departments || []).map(d => ({ value: d.id, label: d.name }))]} />
             <Select value={platformFilter} onChange={setPlatformFilter} style={{ width: 130 }} options={[{ value: 'ALL', label: 'Tất cả nền tảng' }, { value: 'Facebook', label: 'Facebook' }, { value: 'Zalo', label: 'Zalo' }, { value: 'TikTok', label: 'TikTok' }, { value: 'Instagram', label: 'Instagram' }]} />
+            <Select value={typeFilter} onChange={setTypeFilter} style={{ width: 160 }} options={[{ value: 'ALL', label: 'Tất cả phân loại' }, { value: 'VIDEO', label: CONTENT_TYPES.VIDEO }, { value: 'POST', label: CONTENT_TYPES.POST }]} />
             <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 130 }} options={[{ value: 'ALL', label: 'Trạng thái' }, { value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Từ chối' }]} />
             <DatePicker.RangePicker placeholder={['Từ ngày', 'Đến ngày']} onChange={(dates, dateStrings) => setDateRange(dateStrings)} style={{ width: 220 }} />
           </div>
@@ -282,7 +312,12 @@ export const ManagePosts = () => {
                   <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>{detailUser.name}</div>
                   <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>Chia sẻ trên <strong>{detailRecord.platform}</strong></div>
                   <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11 }}>{new Date(detailRecord.submittedAt).toLocaleString('vi-VN')}</div>
-                  <div style={{ marginTop: 8 }}><StatusTag status={detailRecord.status} /></div>
+                  <div style={{ marginTop: 8 }}>
+                    <Space size={4}>
+                      <StatusTag status={detailRecord.status} />
+                      <ContentTypeTag record={detailRecord} />
+                    </Space>
+                  </div>
                 </div>
               </Space>
             </div>
@@ -367,13 +402,17 @@ export const ManagePosts = () => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              {editingRecord && (
-                <Form.Item name="status" label="Trạng thái">
-                  <Select options={[{ value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }]} />
-                </Form.Item>
-              )}
+              <Form.Item name="contentType" label="Phân loại lan tỏa" rules={[{ required: true }]}
+                         tooltip="Cả hai đều được 5đ/lượt trong nhóm Lan tỏa (trần 30đ/tuần), tách ra để dễ theo dõi.">
+                <Select options={[{ value: 'POST', label: CONTENT_TYPES.POST }, { value: 'VIDEO', label: CONTENT_TYPES.VIDEO }]} />
+              </Form.Item>
             </Col>
           </Row>
+          {editingRecord && (
+            <Form.Item name="status" label="Trạng thái">
+              <Select options={[{ value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }]} />
+            </Form.Item>
+          )}
           <Form.Item name="link" label="Link bài viết" rules={[{ required: true }]}>
             <Input placeholder="https://facebook.com/..." prefix={<LinkOutlined />} />
           </Form.Item>

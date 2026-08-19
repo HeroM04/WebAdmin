@@ -1,12 +1,14 @@
 import React, { useContext, useState } from 'react';
-import { Table, Button, Space, Avatar, Tag, Input, Select, Popconfirm, message, Row, Col, Drawer, Modal, Form, Divider, Badge, Upload, DatePicker } from 'antd';
+import { Table, Button, Space, Avatar, Tag, Input, Select, Popconfirm, message, Row, Col, Drawer, Modal, Form, Divider, Badge, Upload, DatePicker, Tabs } from 'antd';
 import {
   SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined,
   ClockCircleOutlined, EnvironmentOutlined, FilterOutlined, PlusOutlined,
-  EditOutlined, EyeOutlined, ClockCircleFilled, CameraOutlined, UserOutlined, DownloadOutlined
+  EditOutlined, EyeOutlined, ClockCircleFilled, CameraOutlined, UserOutlined, DownloadOutlined,
+  CalendarOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import { exportToCSV } from '../utils/exportCsv';
+import { LeaveRequests } from './LeaveRequests';
 
 const { Search } = Input;
 
@@ -16,7 +18,7 @@ const StatusTag = ({ status }) => {
   return <Tag color="warning" icon={<ClockCircleOutlined />}>Chờ duyệt</Tag>;
 };
 
-export const ManageAttendance = () => {
+const AttendanceLogs = () => {
   const { attendance, users, departments, currentUser, approveAttendance, rejectAttendance, deleteAttendance, updateAttendance, addAttendance } = useContext(AppContext);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -160,7 +162,7 @@ export const ManageAttendance = () => {
         checkInLocation: cIn?.gpsLocation || cIn?.address || '',
         checkOutTime: cOut ? new Date(cOut.checkinTime).toLocaleString('vi-VN') : '',
         checkOutLocation: cOut?.gpsLocation || cOut?.address || '',
-        status: (cIn && cIn.status === 'APPROVED') ? 'Hợp lệ (+10 KPI)' : ((cIn && cIn.status === 'REJECTED') ? 'Từ chối' : 'Chờ duyệt')
+        status: (cIn && cIn.status === 'APPROVED') ? 'Hợp lệ' : ((cIn && cIn.status === 'REJECTED') ? 'Từ chối' : 'Chờ duyệt')
       };
     });
     exportToCSV(exportData, [
@@ -226,7 +228,7 @@ export const ManageAttendance = () => {
     try {
       if (record.checkinRecord && record.checkinRecord.status === 'PENDING') await approveAttendance(record.checkinRecord.id, currentUser.name);
       if (record.checkoutRecord && record.checkoutRecord.status === 'PENDING') await approveAttendance(record.checkoutRecord.id, currentUser.name);
-      message.success('Đã duyệt. (+10 KPI)');
+      message.success('Đã duyệt. Điểm KPI chấm theo giờ check-in: đúng giờ +5đ, muộn −5đ.');
       setDrawerOpen(false);
     } catch (e) {
       message.error(e.message || 'Lỗi hệ thống');
@@ -561,3 +563,13 @@ export const ManageAttendance = () => {
     </div>
   );
 };
+
+export const ManageAttendance = () => (
+  <Tabs
+    defaultActiveKey="logs"
+    items={[
+      { key: 'logs',  label: <span><ClockCircleOutlined /> Chấm công</span>,  children: <AttendanceLogs /> },
+      { key: 'leave', label: <span><CalendarOutlined /> Đơn xin vắng</span>, children: <LeaveRequests /> },
+    ]}
+  />
+);
