@@ -1,20 +1,33 @@
-import React, { useContext } from 'react';
-import { ConfigProvider, theme as antdTheme, message } from 'antd';
+import React, { useContext, lazy, Suspense } from 'react';
+import { ConfigProvider, theme as antdTheme, message, Spin } from 'antd';
 import { AppProvider, AppContext } from './context/AppContext';
 import { AppLayout } from './components/Layout';
-import { Dashboard } from './components/Dashboard';
-import { Personnel } from './components/Personnel';
-import { ManageAttendance } from './components/ManageAttendance';
-import { ManageMeetings } from './components/ManageMeetings';
-import { ManagePosts } from './components/ManagePosts';
-import { ManageTraining } from './components/ManageTraining';
-import { ManageDeals } from './components/ManageDeals';
-import { Feedback } from './components/Feedback';
-import { Departments } from './components/Departments';
-import { ManageKPI } from './components/ManageKPI';
 import { Login } from './components/Login';
-import Leaderboard from './components/Leaderboard';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+// Mỗi trang tải riêng khi người dùng bấm vào, thay vì gộp hết vào một gói.
+// Trước đây toàn bộ web nằm trong một file 2 MB, ai mở lần đầu cũng phải tải
+// đủ cả mười trang mới thấy được màn hình đăng nhập.
+//
+// Trang đăng nhập và khung giao diện vẫn nạp thẳng vì luôn cần tới ngay.
+const Dashboard        = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
+const Personnel        = lazy(() => import('./components/Personnel').then(m => ({ default: m.Personnel })));
+const ManageAttendance = lazy(() => import('./components/ManageAttendance').then(m => ({ default: m.ManageAttendance })));
+const ManageMeetings   = lazy(() => import('./components/ManageMeetings').then(m => ({ default: m.ManageMeetings })));
+const ManagePosts      = lazy(() => import('./components/ManagePosts').then(m => ({ default: m.ManagePosts })));
+const ManageTraining   = lazy(() => import('./components/ManageTraining').then(m => ({ default: m.ManageTraining })));
+const ManageDeals      = lazy(() => import('./components/ManageDeals').then(m => ({ default: m.ManageDeals })));
+const Feedback         = lazy(() => import('./components/Feedback').then(m => ({ default: m.Feedback })));
+const Departments      = lazy(() => import('./components/Departments').then(m => ({ default: m.Departments })));
+const ManageKPI        = lazy(() => import('./components/ManageKPI').then(m => ({ default: m.ManageKPI })));
+const Leaderboard      = lazy(() => import('./components/Leaderboard'));
+
+/** Hiện trong lúc trang đang được tải về lần đầu. */
+const DangTai = () => (
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 320 }}>
+    <Spin size="large" tip="Đang tải trang..." />
+  </div>
+);
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, currentUser } = useContext(AppContext);
@@ -73,6 +86,7 @@ const MainAppContent = () => {
         }
       }}
     >
+      <Suspense fallback={<DangTai />}>
       <Routes>
         {/* ĐĂNG NHẬP */}
         <Route path="/" element={<RootEntry />} />
@@ -101,6 +115,7 @@ const MainAppContent = () => {
         {/* FALLBACK */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </ConfigProvider>
   );
 };
