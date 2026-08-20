@@ -153,9 +153,21 @@ export const AppProvider = ({ children }) => {
         onConnect: (frame) => {
           console.log('✅ [STOMP] Connected to WebSocket successfully:', frame);
           client.subscribe('/topic/admin/requests', (msg) => {
+            // Máy chủ báo loại yêu cầu vừa gửi lên, nhờ đó chỉ tải lại đúng
+            // danh sách đó thay vì kéo lại toàn bộ dữ liệu công ty.
+            const THEO_LOAI = {
+              POST:     ['posts'],
+              DEAL:     ['deals'],
+              FEEDBACK: ['feedbacks'],
+              LEAVE:    [],        // tab Đơn xin vắng tự tải danh sách riêng
+              REFERRAL: [],        // tab Đơn giới thiệu cũng vậy
+            };
+            let canTai = null;
+
             if (msg.body) {
               try {
                 const data = JSON.parse(msg.body);
+                canTai = THEO_LOAI[data.type] ?? null;
                 if (data.message) {
                   notification.info({
                     message: 'Có cập nhật mới',
@@ -165,7 +177,7 @@ export const AppProvider = ({ children }) => {
                   });
                 }
               } catch (e) {
-                // If it's a string like "NEW_REQUEST"
+                // Thân tin nhắn không phải JSON (ví dụ chuỗi "NEW_REQUEST")
                 notification.info({
                   message: 'Có cập nhật mới',
                   description: 'Hệ thống vừa nhận được dữ liệu mới!',
@@ -174,9 +186,12 @@ export const AppProvider = ({ children }) => {
                 });
               }
             }
-            // Tự động kéo lại data mới nhất từ Backend sau 500ms (đảm bảo DB transaction đã commit xong)
+
+            // Chờ nửa giây cho máy chủ ghi xong rồi mới tải lại.
+            // Không nhận ra loại thì mới đành tải lại tất cả.
             setTimeout(() => {
-              fetchInitialData();
+              if (canTai === null) fetchInitialData();
+              else if (canTai.length > 0) refresh(...canTai);
             }, 500);
           });
 
@@ -283,6 +298,48 @@ export const AppProvider = ({ children }) => {
       console.error('Error fetching initial data:', err);
     }
   };
+
+  // ── Tải lại đúng phần cần thiết ─────────────────────────────────────────
+  //
+  // Trước đây mọi thao tác — duyệt một bài đăng, sửa một dòng chấm công — đều
+  // gọi lại fetchInitialData, tức là tải lại toàn bộ 10 nhóm dữ liệu của cả
+  // công ty. Bấm duyệt một bài mà kéo theo tải lại nhân sự, phòng ban, đào tạo,
+  // chốt căn... Trên máy chủ chậm thì mỗi lần bấm phải chờ vài giây.
+  //
+  // Nay chỉ tải lại danh sách vừa đổi, cộng thêm bảng điểm KPI khi thao tác đó
+  // có cộng hoặc trừ điểm.
+  const sortByDateDesc = (arr) => {
+    if (!Array.isArray(arr)) return arr;
+    return [...arr].sort((a, b) => {
+      const dateA = new Date(a.checkinTime || a.createdAt || a.time || a.date || 0).getTime();
+      const dateB = new Date(b.checkinTime || b.createdAt || b.time || b.date || 0).getTime();
+      return dateB - dateA;
+    });
+  };
+
+  const LOADERS = {
+    departments: async () => {
+      const d = await apiClient.get('/departments').catch(() => undefined);
+      if (d !== undefined) setDepartments(d.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })));
+    },
+    users: async () => {
+      const d = await apiClient.get('/users').catch(() => undefined);
+      if (d?.length > 0) setUsers(d.map(u => ({
+        ...u, name: u.fullName, phone: u.phoneNumber, avatar: u.avatarUrl, deptId: u.department?.id || null,
+      })));
+    },
+    deals:      async () => { const d = await apiClient.get('/deals').catch(() => undefined);            if (d !== undefined) setDeals(sortByDateDesc(d)); },
+    attendance: async () => { const d = await apiClient.get('/attendance').catch(() => undefined);       if (d !== undefined) setAttendance(sortByDateDesc(d)); },
+    posts:      async () => { const d = await apiClient.get('/social-posts').catch(() => undefined);     if (d !== undefined) setPosts(sortByDateDesc(d)); },
+    meetings:   async () => { const d = await apiClient.get('/field-battle').catch(() => undefined);     if (d !== undefined) setMeetings(sortByDateDesc(d)); },
+    feedbacks:  async () => { const d = await apiClient.get('/feedbacks').catch(() => undefined);        if (d !== undefined) setFeedbacks(sortByDateDesc(d)); },
+    training:   async () => { const d = await apiClient.get('/training-sessions').catch(() => undefined); if (d !== undefined) setTrainingSessions(sortByDateDesc(d)); },
+    oneOnOne:   async () => { const d = await apiClient.get('/training/1-on-1').catch(() => undefined);  if (d !== undefined) setOneOnOneTrainings(sortByDateDesc(d)); },
+    kpi:        async () => { const d = await apiClient.get('/kpi-scores').catch(() => undefined);       if (d !== undefined) setKpiScores(d); },
+  };
+
+  /** Tải lại vài nhóm dữ liệu, ví dụ refresh('posts', 'kpi'). */
+  const refresh = (...keys) => Promise.all(keys.filter(k => LOADERS[k]).map(k => LOADERS[k]()));
 
 
 
@@ -417,28 +474,28 @@ export const AppProvider = ({ children }) => {
   const addDepartment = async (deptData) => {
     try { 
       await apiClient.post('/departments', deptData); 
-      await fetchInitialData(); 
+      await refresh('departments'); 
     } catch (e) { throw e; }
   };
 
   const updateDepartment = async (updatedDept) => {
     try { 
       await apiClient.put(`/departments/${updatedDept.id}`, updatedDept); 
-      await fetchInitialData(); 
+      await refresh('departments'); 
     } catch (e) { throw e; }
   };
 
   const deleteDepartment = async (deptId) => {
     try { 
       await apiClient.delete(`/departments/${deptId}`); 
-      await fetchInitialData(); 
+      await refresh('departments'); 
     } catch (e) { throw e; }
   };
 
   const assignUserToDepartment = async (userId, deptId) => {
     try { 
-      await apiClient.put(`/users/${userId}`, { departmentId: deptId }); 
-      await fetchInitialData(); 
+      await apiClient.put(`/users/${userId}`, { departmentId: deptId });
+      await refresh('users', 'departments');
     } catch (e) { 
       console.error('assignUserToDepartment error:', e); throw e; 
     }
@@ -446,8 +503,8 @@ export const AppProvider = ({ children }) => {
 
   const removeUserFromDepartment = async (userId) => {
     try { 
-      await apiClient.put(`/users/${userId}`, { departmentId: null }); 
-      await fetchInitialData(); 
+      await apiClient.put(`/users/${userId}`, { departmentId: null });
+      await refresh('users', 'departments');
     } catch (e) { 
       console.error('removeUserFromDepartment error:', e); throw e; 
     }
@@ -468,7 +525,7 @@ export const AppProvider = ({ children }) => {
         joinedDate: userData.joinedDate || null
       };
       await apiClient.post('/users', dto);
-      await fetchInitialData(); 
+      await refresh('users', 'kpi'); 
     } catch (e) { throw e; }
   };
 
@@ -489,125 +546,125 @@ export const AppProvider = ({ children }) => {
         joinedDate: updatedUser.joinedDate || undefined
       };
       await apiClient.put(`/users/${updatedUser.id}`, dto);
-      await fetchInitialData(); 
+      await refresh('users'); 
     } catch (e) { throw e; }
   };
 
   const deleteUser = async (userId) => {
     try { 
       await apiClient.delete(`/users/${userId}`); 
-      await fetchInitialData(); 
+      await refresh('users', 'kpi'); 
     } catch (e) { throw e; }
   };
 
   // --- Approvals Workflows ---
   const approveDeal = async (dealId, approvedBy) => {
-    try { await apiClient.put(`/deals/${dealId}/approve`, {}); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.put(`/deals/${dealId}/approve`, {}); await refresh('deals', 'kpi'); } catch (e) { throw e; }
   };
 
   const rejectDeal = async (dealId, approvedBy) => {
-    try { await apiClient.put(`/deals/${dealId}/reject`, {}); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.put(`/deals/${dealId}/reject`, {}); await refresh('deals', 'kpi'); } catch (e) { throw e; }
   };
 
   const deleteDeal = async (dealId) => {
-    try { await apiClient.delete(`/deals/${dealId}`); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.delete(`/deals/${dealId}`); await refresh('deals', 'kpi'); } catch (e) { throw e; }
   };
 
   const updateDeal = async (updatedDeal) => {
-    try { await apiClient.put(`/deals/${updatedDeal.id}`, updatedDeal); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.put(`/deals/${updatedDeal.id}`, updatedDeal); await refresh('deals', 'kpi'); } catch (e) { throw e; }
   };
 
   const addDeal = async (dealData) => {
-    try { await apiClient.post('/deals', dealData); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.post('/deals', dealData); await refresh('deals', 'kpi'); } catch (e) { throw e; }
   };
 
 
   // 2. Chấm Công (Attendance)
   const approveAttendance = async (attId, approvedBy) => {
-    try { await apiClient.put(`/attendance/${attId}/status?status=APPROVED`); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.put(`/attendance/${attId}/status?status=APPROVED`); await refresh('attendance', 'kpi'); } catch (e) { throw e; }
   };
 
   const rejectAttendance = async (attId, approvedBy) => {
-    try { await apiClient.put(`/attendance/${attId}/status?status=REJECTED`); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.put(`/attendance/${attId}/status?status=REJECTED`); await refresh('attendance', 'kpi'); } catch (e) { throw e; }
   };
 
   const deleteAttendance = async (attId) => {
-    try { await apiClient.delete(`/attendance/${attId}`); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.delete(`/attendance/${attId}`); await refresh('attendance', 'kpi'); } catch (e) { throw e; }
   };
 
   const updateAttendance = async (updatedAtt) => {
-    try { await apiClient.put(`/attendance/${updatedAtt.id}/status?status=${updatedAtt.status}`); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.put(`/attendance/${updatedAtt.id}/status?status=${updatedAtt.status}`); await refresh('attendance', 'kpi'); } catch (e) { throw e; }
   };
 
 
   // 3. Bài Post (Social Posts)
   const approvePost = async (postId, approvedBy) => {
-    try { await apiClient.put(`/social-posts/${postId}/approve`, {}); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.put(`/social-posts/${postId}/approve`, {}); await refresh('posts', 'kpi'); } catch (e) { throw e; }
   };
 
   const rejectPost = async (postId, approvedBy) => {
-    try { await apiClient.put(`/social-posts/${postId}/reject`, {}); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.put(`/social-posts/${postId}/reject`, {}); await refresh('posts', 'kpi'); } catch (e) { throw e; }
   };
 
   const deletePost = async (postId) => {
-    try { await apiClient.delete(`/social-posts/${postId}`); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.delete(`/social-posts/${postId}`); await refresh('posts', 'kpi'); } catch (e) { throw e; }
   };
 
   const updatePost = async (updatedPost) => {
-    try { await apiClient.put(`/social-posts/${updatedPost.id}`, updatedPost); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.put(`/social-posts/${updatedPost.id}`, updatedPost); await refresh('posts', 'kpi'); } catch (e) { throw e; }
   };
 
 
   // 4. Thực Chiến (Meetings)
   const approveMeeting = async (meetId, approvedBy) => {
-    try { await apiClient.put(`/field-battle/${meetId}/approve`, {}); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.put(`/field-battle/${meetId}/approve`, {}); await refresh('meetings', 'kpi'); } catch (e) { throw e; }
   };
 
   const rejectMeeting = async (meetId, approvedBy) => {
-    try { await apiClient.put(`/field-battle/${meetId}/reject`, {}); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.put(`/field-battle/${meetId}/reject`, {}); await refresh('meetings', 'kpi'); } catch (e) { throw e; }
   };
 
   const deleteMeeting = async (meetId) => {
-    try { await apiClient.delete(`/field-battle/${meetId}`); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.delete(`/field-battle/${meetId}`); await refresh('meetings', 'kpi'); } catch (e) { throw e; }
   };
 
   const updateMeeting = async (updatedMeeting) => {
-    try { await apiClient.put(`/field-battle/${updatedMeeting.id}`, updatedMeeting); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.put(`/field-battle/${updatedMeeting.id}`, updatedMeeting); await refresh('meetings', 'kpi'); } catch (e) { throw e; }
   };
 
 
   // --- Training Sessions CRUD ---
   const addTrainingSession = async (sessionData) => {
-    try { await apiClient.post('/training-sessions', sessionData); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.post('/training-sessions', sessionData); await refresh('training', 'kpi'); } catch (e) { throw e; }
   };
 
   const updateTrainingSession = async (sessionId, updates) => {
-    try { await apiClient.put(`/training-sessions/${sessionId}`, updates); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.put(`/training-sessions/${sessionId}`, updates); await refresh('training', 'kpi'); } catch (e) { throw e; }
   };
 
   const deleteTrainingSession = async (sessionId) => {
-    try { await apiClient.delete(`/training-sessions/${sessionId}`); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.delete(`/training-sessions/${sessionId}`); await refresh('training', 'kpi'); } catch (e) { throw e; }
   };
 
   const addAttendeeToSession = async (sessionId, userId) => {
-    try { await apiClient.post(`/training-sessions/${sessionId}/attendees/${userId}`); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.post(`/training-sessions/${sessionId}/attendees/${userId}`); await refresh('training', 'kpi'); } catch (e) { throw e; }
   };
 
   const removeAttendeeFromSession = async (sessionId, userId) => {
-    try { await apiClient.delete(`/training-sessions/${sessionId}/attendees/${userId}`); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.delete(`/training-sessions/${sessionId}/attendees/${userId}`); await refresh('training', 'kpi'); } catch (e) { throw e; }
   };
 
   // --- Feedback (Employee Feedback) ---
   const addFeedback = async (feedbackData) => {
-    try { await apiClient.post('/feedbacks', feedbackData); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.post('/feedbacks', feedbackData); await refresh('feedbacks'); } catch (e) { throw e; }
   };
 
   const replyToFeedback = async (fbId, replyText, resolvedBy) => {
-    try { await apiClient.put(`/feedbacks/${fbId}/reply`, { replyText }); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.put(`/feedbacks/${fbId}/reply`, { replyText }); await refresh('feedbacks'); } catch (e) { throw e; }
   };
 
   const deleteFeedback = async (fbId) => {
-    try { await apiClient.delete(`/feedbacks/${fbId}`); await fetchInitialData(); } catch (e) { throw e; }
+    try { await apiClient.delete(`/feedbacks/${fbId}`); await refresh('feedbacks'); } catch (e) { throw e; }
   };
 
   const resetAllData = () => {
@@ -693,10 +750,10 @@ export const AppProvider = ({ children }) => {
         updateKpiPoints,
         flagKpiRecord,
         // Add new records
-        addAttendance: async (record) => { try { await apiClient.post('/attendance/checkin', record); fetchInitialData(); } catch (e) { console.error(e); } },
-        addMeeting: async (record) => { try { await apiClient.post('/field-battle/submit', record); fetchInitialData(); } catch (e) { console.error(e); } },
-        addPost: async (record) => { try { await apiClient.post('/social-posts/submit', record); fetchInitialData(); } catch (e) { console.error(e); } },
-        addDeal: async (record) => { try { await apiClient.post('/deals/submit', record); fetchInitialData(); } catch (e) { console.error(e); } },
+        addAttendance: async (record) => { try { await apiClient.post('/attendance/checkin', record); refresh('attendance', 'kpi'); } catch (e) { console.error(e); } },
+        addMeeting: async (record) => { try { await apiClient.post('/field-battle/submit', record); refresh('meetings', 'kpi'); } catch (e) { console.error(e); } },
+        addPost: async (record) => { try { await apiClient.post('/social-posts/submit', record); refresh('posts', 'kpi'); } catch (e) { console.error(e); } },
+        addDeal: async (record) => { try { await apiClient.post('/deals/submit', record); refresh('deals', 'kpi'); } catch (e) { console.error(e); } },
       }}
     >
       {children}
