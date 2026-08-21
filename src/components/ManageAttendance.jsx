@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Table, Button, Space, Avatar, Tag, Input, Select, Popconfirm, message, Row, Col, Drawer, Modal, Form, Divider, Badge, Upload, DatePicker, Tabs } from 'antd';
 import {
   SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined,
@@ -7,6 +7,7 @@ import {
   CalendarOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
+import { apiClient } from '../utils/apiClient';
 import { exportToCSV } from '../utils/exportCsv';
 import { rowClick } from '../utils/tableRow';
 import { LeaveRequests } from './LeaveRequests';
@@ -20,7 +21,7 @@ const StatusTag = ({ status }) => {
 };
 
 const AttendanceLogs = () => {
-  const { attendance, users, departments, currentUser, approveAttendance, rejectAttendance, deleteAttendance, updateAttendance, addAttendance } = useContext(AppContext);
+  const { users, departments, currentUser, approveAttendance, rejectAttendance, deleteAttendance, updateAttendance, addAttendance } = useContext(AppContext);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [dateRange, setDateRange] = useState(null);
@@ -32,26 +33,62 @@ const AttendanceLogs = () => {
   const [editingRecord, setEditingRecord] = useState(null);
   const [form] = Form.useForm();
 
+  // ── Dữ liệu lấy theo trang từ máy chủ ───────────────────────────────────
+  //
+  // Bảng chấm công là bảng lớn nhất hệ thống. Trước đây trang này đọc mảng
+  // `attendance` mà AppContext kéo về sẵn, nhưng từ khi máy chủ phân trang thì
+  // mảng đó chỉ còn một phần nhỏ — bảng hiện thiếu dữ liệu mà không báo gì.
+  // Nay trang tự gọi máy chủ với đúng bộ lọc và đúng trang đang xem.
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [trang, setTrang] = useState(1);      // antd đếm trang từ 1
+  const [coSo, setCoSo] = useState(15);
+  const [tongNgayCong, setTongNgayCong] = useState(0);
+  const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
+
   const getUserById = (id) => users.find(u => u.id === id);
   const getDeptName = (deptId) => {
     const dept = departments.find(d => d.id === deptId);
     return dept ? dept.name : 'Chưa phân phòng';
   };
 
-  const baseFiltered = attendance.filter(item => {
-    const user = getUserById(item.userId);
-    const matchName = !search || (user?.name || '').toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === 'ALL' || item.status === statusFilter;
-    const matchDept = deptFilter === 'ALL' || (user && user.deptId === deptFilter);
-    let matchDate = true;
-    if (dateRange && dateRange[0] && dateRange[1] && item.checkinTime) {
-      const itemDateStr = item.checkinTime.substring(0, 10);
-      matchDate = itemDateStr >= dateRange[0] && itemDateStr <= dateRange[1];
-    }
-    return matchName && matchStatus && matchDept && matchDate;
-  });
+  // Gõ tìm kiếm liên tục thì chờ người dùng ngừng gõ rồi mới gọi máy chủ
+  const [timTre, setTimTre] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setTimTre(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
 
-  const filtered = Object.values(baseFiltered.reduce((acc, curr) => {
+  // Đổi bộ lọc thì phải quay về trang 1, không thì đang ở trang 12 mà lọc còn
+  // 3 trang sẽ hiện bảng rỗng.
+  useEffect(() => { setTrang(1); }, [timTre, statusFilter, deptFilter, dateRange]);
+
+  const taiDuLieu = useCallback(async () => {
+    setLoading(true);
+    try {
+      const q = new URLSearchParams({ page: String(trang - 1), size: String(coSo) });
+      if (timTre) q.set('search', timTre);
+      if (statusFilter !== 'ALL') q.set('status', statusFilter);
+      if (deptFilter !== 'ALL') q.set('departmentId', String(deptFilter));
+      if (dateRange && dateRange[0] && dateRange[1]) {
+        q.set('from', dateRange[0]);
+        q.set('to', dateRange[1]);
+      }
+      const res = await apiClient.getRaw(`/attendance?${q.toString()}`);
+      setRows(Array.isArray(res?.data) ? res.data : []);
+      setTongNgayCong(res?.page?.totalElements ?? 0);
+      if (res?.stats) setStats(res.stats);
+    } catch (e) {
+      message.error(e?.message || 'Không tải được danh sách chấm công');
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [trang, coSo, timTre, statusFilter, deptFilter, dateRange]);
+
+  useEffect(() => { taiDuLieu(); }, [taiDuLieu]);
+
+  const filtered = Object.values(rows.reduce((acc, curr) => {
     const dateStr = curr.checkinTime ? curr.checkinTime.substring(0, 10) : '';
     const key = `${curr.userId}_${dateStr}`;
     if (!acc[key]) {
@@ -87,12 +124,8 @@ const AttendanceLogs = () => {
     return acc;
   }, {})).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  const stats = {
-    total: attendance.length,
-    pending: attendance.filter(a => a.status === 'PENDING').length,
-    approved: attendance.filter(a => a.status === 'APPROVED').length,
-    rejected: attendance.filter(a => a.status === 'REJECTED').length,
-  };
+  // `stats` do máy chủ đếm trên toàn bộ dữ liệu, không phải đếm mảng đang cầm.
+  // Đếm tay chỉ ra đúng khi trình duyệt giữ cả bảng — điều không còn đúng nữa.
 
   const openDetail = (record) => {
     setDetailRecord(record);
@@ -145,6 +178,7 @@ const AttendanceLogs = () => {
           message.success('Đã thêm bản ghi chấm công mới!');
         }
         setModalOpen(false);
+        await taiDuLieu();
       } catch (e) {
         message.error(e.message || 'Lỗi hệ thống');
       }
@@ -220,6 +254,7 @@ const AttendanceLogs = () => {
       if (record.checkinRecord) await deleteAttendance(record.checkinRecord.id);
       if (record.checkoutRecord) await deleteAttendance(record.checkoutRecord.id);
       message.success('Đã xóa.');
+      await taiDuLieu();
     } catch (e) {
       message.error(e.message || 'Lỗi hệ thống');
     }
@@ -231,6 +266,7 @@ const AttendanceLogs = () => {
       if (record.checkoutRecord && record.checkoutRecord.status === 'PENDING') await approveAttendance(record.checkoutRecord.id, currentUser.name);
       message.success('Đã duyệt. Điểm KPI chấm theo giờ check-in: đúng giờ +5đ, muộn −5đ.');
       setDrawerOpen(false);
+      await taiDuLieu();
     } catch (e) {
       message.error(e.message || 'Lỗi hệ thống');
     }
@@ -242,6 +278,7 @@ const AttendanceLogs = () => {
       if (record.checkoutRecord && record.checkoutRecord.status === 'PENDING') await rejectAttendance(record.checkoutRecord.id, currentUser.name);
       message.warning('Đã từ chối.');
       setDrawerOpen(false);
+      await taiDuLieu();
     } catch (e) {
       message.error(e.message || 'Lỗi hệ thống');
     }
@@ -388,7 +425,7 @@ const AttendanceLogs = () => {
             <DatePicker.RangePicker placeholder={['Từ ngày', 'Đến ngày']} onChange={(dates, dateStrings) => setDateRange(dateStrings)} style={{ width: 220 }} />
             <Button type="primary" danger icon={<DownloadOutlined />} onClick={handleExportExcel}>Xuất báo cáo (Excel)</Button>
             <span style={{ fontSize: 13, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
-              Hiển thị <strong style={{ color: 'var(--text-primary)', margin: '0 4px' }}>{filtered.length}</strong> / {attendance.length}
+              Hiển thị <strong style={{ color: 'var(--text-primary)', margin: '0 4px' }}>{filtered.length}</strong> / {tongNgayCong} ngày công
             </span>
           </div>
           <Button type="primary" icon={<PlusOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={openAdd}>Thêm Chấm công</Button>
@@ -401,7 +438,27 @@ const AttendanceLogs = () => {
           <ClockCircleOutlined style={{ color: 'var(--primary-color)', fontSize: 16 }} />
           <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Danh sách Chấm công Ngoại tuyến</h3>
         </div>
-        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ pageSize: 15, showSizeChanger: true }} scroll={{ x: 'max-content' }} style={{ padding: '8px' }} />
+        <Table
+          dataSource={filtered}
+          columns={columns}
+          rowKey="id"
+          size="small"
+          loading={loading}
+          onRow={rowClick(openDetail)}
+          /* Phân trang do máy chủ quyết định: antd chỉ vẽ thanh điều hướng,
+             không tự cắt mảng — mảng nhận về đã là đúng một trang rồi. */
+          pagination={{
+            current: trang,
+            pageSize: coSo,
+            total: tongNgayCong,
+            showSizeChanger: true,
+            pageSizeOptions: [15, 30, 50, 100],
+            showTotal: (t) => `${t} ngày công`,
+            onChange: (p, s) => { setTrang(p); setCoSo(s); },
+          }}
+          scroll={{ x: 'max-content' }}
+          style={{ padding: '8px' }}
+        />
       </div>
 
       {/* Detail Drawer */}

@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Row, Col, Table, Avatar, Space, Progress, Tag, DatePicker, Button } from 'antd';
 import dayjs from 'dayjs';
 import {
@@ -34,6 +34,7 @@ import {
   PolarAngleAxis
 } from 'recharts';
 import { AppContext } from '../context/AppContext';
+import { apiClient } from '../utils/apiClient';
 import { calcSalary, formatVND } from '../utils/salaryUtils';
 import { useNavigate } from 'react-router-dom';
 import { exportToCSV } from '../utils/exportCsv';
@@ -138,8 +139,23 @@ export const Dashboard = () => {
   const meetingsCurr = filterByMonth(meetings, currentMonthStr);
   const meetingsPrev = filterByMonth(meetings, previousMonthStr);
 
-  const attCurr = filterByMonth(attendance, currentMonthStr);
-  const attPrev = filterByMonth(attendance, previousMonthStr);
+  // Chấm công do máy chủ đếm: trình duyệt không còn giữ cả bảng để đếm tay.
+  // Lấy theo đúng tháng đang chọn nên lật về tháng nào cũng ra số thật.
+  const [soChamCong, setSoChamCong] = useState({ nay: 0, truoc: 0 });
+  useEffect(() => {
+    let conHieuLuc = true;
+    const dem = async (m) => {
+      const r = await apiClient.getRaw(`/attendance?size=1&month=${m}`).catch(() => null);
+      return r?.stats?.total ?? 0;
+    };
+    Promise.all([dem(currentMonthStr), dem(previousMonthStr)]).then(([nay, truoc]) => {
+      if (conHieuLuc) setSoChamCong({ nay, truoc });
+    });
+    return () => { conHieuLuc = false; };
+  }, [currentMonthStr, previousMonthStr]);
+
+  const attCurrSo = soChamCong.nay;
+  const attPrevSo = soChamCong.truoc;
 
   const calcTrend = (curr, prev) => {
     if (prev === 0) return curr > 0 ? '+100%' : '0%';
@@ -328,7 +344,7 @@ export const Dashboard = () => {
               { metric: 'Bài viết PR', value: postsCurr.length, trend: calcTrend(postsCurr.length, postsPrev.length) },
               { metric: 'Thực chiến', value: meetingsCurr.length, trend: calcTrend(meetingsCurr.length, meetingsPrev.length) },
               { metric: 'Deal thành công', value: dealsCurr.length, trend: calcTrend(dealsCurr.length, dealsPrev.length) },
-              { metric: 'Lượt chấm công', value: attCurr.length, trend: calcTrend(attCurr.length, attPrev.length) }
+              { metric: 'Ngày công', value: attCurrSo, trend: calcTrend(attCurrSo, attPrevSo) }
             ];
             exportToCSV(exportData, [{ title: 'Chỉ số', key: 'metric' }, { title: 'Giá trị', key: 'value' }, { title: 'Tăng trưởng (%)', key: 'trend' }], `Bao_Cao_Tong_Quan_${currentMonthStr}.csv`);
           }}>Xuất báo cáo</Button>
@@ -379,10 +395,10 @@ export const Dashboard = () => {
         </Col>
         <Col xs={12} md={8} lg={4}>
           <StatCard
-            label="Lượt chấm công"
-            value={attCurr.length}
-            trend={calcTrend(attCurr.length, attPrev.length)}
-            trendColor={getTrendColor(attCurr.length, attPrev.length)}
+            label="Ngày công"
+            value={attCurrSo}
+            trend={calcTrend(attCurrSo, attPrevSo)}
+            trendColor={getTrendColor(attCurrSo, attPrevSo)}
             color="#8b5cf6"
             icon={<ClockCircleOutlined />}
           />

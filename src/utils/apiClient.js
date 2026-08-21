@@ -52,6 +52,24 @@ export const apiClient = {
     return handleResponse(response);
   },
 
+  /**
+   * Như get() nhưng KHÔNG bóc lớp bọc { status, data }.
+   *
+   * Cần cho các endpoint trả kèm thông tin ngoài `data` — ví dụ chấm công gửi
+   * thêm `page` (phân trang) và `stats` (thống kê). Dùng get() ở đó sẽ chỉ nhận
+   * được mảng bản ghi và mất sạch phần còn lại.
+   */
+  getRaw: async (endpoint) => {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    if (response.status === 401) return handleResponse(response); // để chung một chỗ xử lý hết hạn
+    const data = await response.json().catch(() => null);
+    if (!response.ok) return Promise.reject(data || response.statusText);
+    return data;
+  },
+
   post: async (endpoint, body) => {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'POST',

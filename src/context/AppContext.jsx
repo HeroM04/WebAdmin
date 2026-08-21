@@ -27,9 +27,22 @@ export const AppProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  /**
+   * Danh sách chấm công CHỜ DUYỆT (không phải toàn bộ bảng chấm công).
+   *
+   * Bảng chấm công là bảng lớn nhất hệ thống — 200 nhân sự chấm công hằng ngày
+   * là hơn 100.000 dòng một năm — nên không thể kéo hết lên trình duyệt. Trang
+   * Quản lý chấm công tự gọi bản phân trang riêng; ở đây chỉ giữ phần chờ duyệt
+   * để dựng huy hiệu đỏ và danh sách việc cần làm.
+   */
   const [attendance, setAttendance] = useState(() => {
     const saved = localStorage.getItem('kpi_attendance');
     return saved ? JSON.parse(saved) : [];
+  });
+
+  /** Số ngày công tháng này / tháng trước — máy chủ đếm sẵn cho bảng điều khiển. */
+  const [chamCongThongKe, setChamCongThongKe] = useState({
+    thangNay: 0, thangTruoc: 0, choDuyet: 0,
   });
 
   const [posts, setPosts] = useState(() => {
@@ -239,6 +252,28 @@ export const AppProvider = ({ children }) => {
     };
   }, [isAuthenticated]);
 
+  /**
+   * Số ngày công của tháng này và tháng trước, để bảng điều khiển vẽ xu hướng.
+   *
+   * Máy chủ đếm giúp bằng một câu GROUP BY, web không phải kéo bản ghi về đếm
+   * tay — chỗ này từng là lý do phải nạp cả bảng chấm công lên trình duyệt.
+   * Gọi với size=1 vì chỉ lấy phần `stats`, không quan tâm bản ghi.
+   */
+  const layThongKeChamCong = async () => {
+    const thang = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const nay = new Date();
+    const truoc = new Date(nay.getFullYear(), nay.getMonth() - 1, 1);
+    const [a, b] = await Promise.all([
+      apiClient.getRaw(`/attendance?size=1&month=${thang(nay)}`).catch(() => null),
+      apiClient.getRaw(`/attendance?size=1&month=${thang(truoc)}`).catch(() => null),
+    ]);
+    return {
+      thangNay: a?.stats?.total ?? 0,
+      thangTruoc: b?.stats?.total ?? 0,
+      choDuyet: a?.stats?.pending ?? 0,
+    };
+  };
+
   const fetchInitialData = async () => {
     try {
       const [
@@ -251,18 +286,23 @@ export const AppProvider = ({ children }) => {
         feedbacksData,
         trainingData,
         oneOnOneData,
-        kpiScoresData
+        kpiScoresData,
+        thongKeChamCong
       ] = await Promise.all([
         apiClient.get('/departments').catch(() => []),
         apiClient.get('/users').catch(() => []),
         apiClient.get('/deals').catch(() => []),
-        apiClient.get('/attendance').catch(() => []),
+        // Chấm công là bảng lớn nhất hệ thống nên KHÔNG kéo cả bảng về đây nữa.
+        // Trang Quản lý chấm công tự gọi bản phân trang của riêng nó; chỗ này chỉ
+        // cần danh sách CHỜ DUYỆT để dựng huy hiệu đỏ và bảng điều khiển.
+        apiClient.get('/attendance/pending').catch(() => []),
         apiClient.get('/social-posts').catch(() => []),
         apiClient.get('/field-battle').catch(() => []),
         apiClient.get('/feedbacks').catch(() => []),
         apiClient.get('/training-sessions').catch(() => []),
         apiClient.get('/training/1-on-1').catch(() => []),
-        apiClient.get('/kpi-scores').catch(() => [])
+        apiClient.get('/kpi-scores').catch(() => []),
+        layThongKeChamCong().catch(() => undefined)
       ]);
 
       const sortByDateDesc = (arr) => {
@@ -294,6 +334,7 @@ export const AppProvider = ({ children }) => {
       if (trainingData !== undefined) setTrainingSessions(sortByDateDesc(trainingData));
       if (oneOnOneData !== undefined) setOneOnOneTrainings(sortByDateDesc(oneOnOneData));
       if (kpiScoresData !== undefined) setKpiScores(kpiScoresData);
+      if (thongKeChamCong !== undefined) setChamCongThongKe(thongKeChamCong);
     } catch (err) {
       console.error('Error fetching initial data:', err);
     }
@@ -329,7 +370,16 @@ export const AppProvider = ({ children }) => {
       })));
     },
     deals:      async () => { const d = await apiClient.get('/deals').catch(() => undefined);            if (d !== undefined) setDeals(sortByDateDesc(d)); },
-    attendance: async () => { const d = await apiClient.get('/attendance').catch(() => undefined);       if (d !== undefined) setAttendance(sortByDateDesc(d)); },
+    // Chỉ tải lại phần chờ duyệt và các ô đếm. Bảng chấm công đầy đủ do trang
+    // Quản lý chấm công tự phân trang lấy về, không đi qua đây.
+    attendance: async () => {
+      const [cho, tk] = await Promise.all([
+        apiClient.get('/attendance/pending').catch(() => undefined),
+        layThongKeChamCong().catch(() => undefined),
+      ]);
+      if (cho !== undefined) setAttendance(sortByDateDesc(cho));
+      if (tk !== undefined) setChamCongThongKe(tk);
+    },
     posts:      async () => { const d = await apiClient.get('/social-posts').catch(() => undefined);     if (d !== undefined) setPosts(sortByDateDesc(d)); },
     meetings:   async () => { const d = await apiClient.get('/field-battle').catch(() => undefined);     if (d !== undefined) setMeetings(sortByDateDesc(d)); },
     feedbacks:  async () => { const d = await apiClient.get('/feedbacks').catch(() => undefined);        if (d !== undefined) setFeedbacks(sortByDateDesc(d)); },
@@ -703,7 +753,9 @@ export const AppProvider = ({ children }) => {
         users,
         kpiScores,
         deals,
+        // Chỉ chứa bản ghi CHỜ DUYỆT — xem chú thích ở chỗ khai báo state
         attendance,
+        chamCongThongKe,
         posts,
         meetings,
         feedbacks,
