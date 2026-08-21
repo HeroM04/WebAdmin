@@ -434,13 +434,17 @@ export const AppProvider = ({ children }) => {
       setIsAuthenticated(true);
       return true;
     } catch (err) {
+      // Vai trò ở đây phải VIẾT HOA đúng như danh sách quyền trong App.jsx
+      // ('ADMIN', 'VAN_PHONG'…). Trước đây ghi 'Admin' và 'HR' nên không khớp:
+      // ProtectedRoute đá về /admin/cham-cong, vào lại vẫn không khớp, đá tiếp —
+      // vòng lặp chuyển hướng vô tận và người dùng chỉ thấy trang trắng.
       if (username === 'admin' && password === 'admin123') {
-        setCurrentUser({ id: 'admin', name: 'Quản trị viên (Offline)', role: 'Admin', avatar: '' });
+        setCurrentUser({ id: 'admin', name: 'Quản trị viên (Offline)', role: 'ADMIN', avatar: '' });
         setIsAuthenticated(true);
         localStorage.setItem('kpi_is_auth', 'true');
         return true;
       } else if (username === 'hr' && password === '123456') {
-        setCurrentUser({ id: 'hr', name: 'Nhân sự (Offline)', role: 'HR', avatar: '' });
+        setCurrentUser({ id: 'hr', name: 'Nhân sự (Offline)', role: 'VAN_PHONG', avatar: '' });
         setIsAuthenticated(true);
         localStorage.setItem('kpi_is_auth', 'true');
         return true;

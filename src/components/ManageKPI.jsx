@@ -6,6 +6,7 @@ import {
   HomeOutlined, StarOutlined, DownloadOutlined, FileExcelOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
+import { KpiLedger } from './KpiLedger';
 import { rowClick } from '../utils/tableRow';
 import dayjs from 'dayjs';
 
@@ -141,7 +142,12 @@ export const ManageKPI = () => {
   };
 
   const filteredUsers = users.filter(u => {
-    const matchName = !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.id.toLowerCase().includes(search.toLowerCase());
+    // Bọc String(): mã nhân sự từ API là số, gọi thẳng toLowerCase() lên số sẽ
+    // ném lỗi và làm trắng cả trang ngay khi vừa gõ ký tự đầu vào ô tìm kiếm.
+    const tim = search.toLowerCase();
+    const matchName = !search
+      || String(u.name ?? '').toLowerCase().includes(tim)
+      || String(u.id ?? '').toLowerCase().includes(tim);
     const matchDept = deptFilter === 'ALL' || u.deptId === deptFilter;
     return matchName && matchDept;
   });
@@ -477,6 +483,19 @@ export const ManageKPI = () => {
                       </div>
                     </div>
                   </div>
+                </div>
+
+                <Divider style={{ margin: 0 }} />
+
+                {/* Nhật ký từng khoản điểm — trả lời được câu "điểm này ở đâu ra" */}
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
+                    NHẬT KÝ TỪNG KHOẢN ĐIỂM
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                    Đúng những gì nhân sự nhìn thấy ở mục Thông báo trên ứng dụng.
+                  </div>
+                  <KpiLedger userId={detailUser.id} />
                 </div>
 
               </div>

@@ -1,4 +1,4 @@
-import React, { useContext, lazy, Suspense } from 'react';
+import React, { useContext, useEffect, lazy, Suspense } from 'react';
 import { ConfigProvider, theme as antdTheme, message, Spin } from 'antd';
 import { AppProvider, AppContext } from './context/AppContext';
 import { AppLayout } from './components/Layout';
@@ -31,11 +31,21 @@ const DangTai = () => (
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, currentUser } = useContext(AppContext);
+  const thieuQuyen = isAuthenticated && currentUser
+    && allowedRoles && !allowedRoles.includes(currentUser.role);
+
+  // Báo lỗi phải nằm trong useEffect, không được gọi khi đang dựng giao diện:
+  // message.error() làm đổi trạng thái của antd ngay giữa lượt render, React
+  // coi đó là lỗi và nếu việc chuyển hướng lại quay về đúng route bị chặn thì
+  // thành vòng lặp bắn ra hàng nghìn thông báo.
+  useEffect(() => {
+    if (thieuQuyen) message.error('Bạn không có quyền truy cập vào trang này!');
+  }, [thieuQuyen]);
+
   if (!isAuthenticated || !currentUser) {
     return <Navigate to="/" replace />;
   }
-  if (allowedRoles && !allowedRoles.includes(currentUser.role)) {
-    message.error('Bạn không có quyền truy cập vào trang này!');
+  if (thieuQuyen) {
     return <Navigate to="/admin/cham-cong" replace />;
   }
   return children;
