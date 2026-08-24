@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Table, Button, Space, Avatar, Tag, Modal, Form, Input, Select, Popconfirm, Card, Row, Col, Divider, message, Drawer, Descriptions, Progress, Upload, DatePicker, Tabs, Badge } from 'antd';
+import { Table, Button, Space, Avatar, Tag, Modal, Form, Input, Select, Popconfirm, Card, Row, Col, Divider, message, Drawer, Descriptions, Progress, Upload, DatePicker, Tabs, Badge, Checkbox } from 'antd';
 import dayjs from 'dayjs';
 import { AppContext } from '../context/AppContext';
 import { rowClick } from '../utils/tableRow';
@@ -58,7 +58,8 @@ const PersonnelList = () => {
       deptId: record.deptId,
       status: record.status,
       referrerId: record.referrerId ?? undefined,
-      joinedDate: record.joinedDate ? dayjs(record.joinedDate) : undefined
+      joinedDate: record.joinedDate ? dayjs(record.joinedDate) : undefined,
+      allowCheckinUntil9: record.allowCheckinUntil9 === true
     });
     setIsModalOpen(true);
   };
@@ -76,7 +77,8 @@ const PersonnelList = () => {
             referrerId: values.referrerId === undefined || values.referrerId === null
               ? (editingUser ? 0 : null)
               : values.referrerId,
-            joinedDate: values.joinedDate ? values.joinedDate.format('YYYY-MM-DD') : null
+            joinedDate: values.joinedDate ? values.joinedDate.format('YYYY-MM-DD') : null,
+            allowCheckinUntil9: values.allowCheckinUntil9 === true
           };
           if (editingUser) {
             await updateUser({ ...editingUser, ...payload });
@@ -545,6 +547,15 @@ const PersonnelList = () => {
               </Form.Item>
             </Col>
           </Row>
+
+          <Form.Item
+            name="allowCheckinUntil9"
+            valuePropName="checked"
+            label="Giờ chấm công"
+            tooltip="Quy định chung là 08:45. Bật mục này cho những người được duyệt châm chước riêng (nhà xa, ca đặc thù) thì đến 09:00 mới tính đi muộn."
+          >
+            <Checkbox>Cho phép đến 09:00 mới tính đi muộn</Checkbox>
+          </Form.Item>
 
           {editingUser && (
             <Form.Item

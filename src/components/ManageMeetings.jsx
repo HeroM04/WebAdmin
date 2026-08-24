@@ -139,6 +139,16 @@ export const ManageMeetings = () => {
     },
 
     {
+      title: 'Loại',
+      key: 'battleType',
+      width: 120,
+      render: (_, record) => (
+        record.battleType === 'SUPPORT'
+          ? <Tag color="cyan" style={{ margin: 0 }}>Hỗ trợ khách · +5đ</Tag>
+          : <Tag color="blue" style={{ margin: 0 }}>Gặp khách · +10đ</Tag>
+      )
+    },
+    {
       title: 'Thời gian & Địa điểm',
       key: 'submittedAt',
       width: 200,
