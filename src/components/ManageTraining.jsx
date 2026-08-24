@@ -9,6 +9,7 @@ import {
   YoutubeOutlined, LinkOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
+import { TrainingRsvpRequests } from './TrainingRsvpRequests';
 import { rowClick } from '../utils/tableRow';
 import { exportToCSV } from '../utils/exportCsv';
 
@@ -532,6 +533,11 @@ export const ManageTraining = () => {
                 />
               </div>
             )
+          },
+          {
+            key: 'rsvp',
+            label: <><UserDeleteOutlined /> Đơn xin vắng đào tạo</>,
+            children: <TrainingRsvpRequests />
           }
         ]}
       />
