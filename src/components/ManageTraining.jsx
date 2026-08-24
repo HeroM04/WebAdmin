@@ -107,6 +107,9 @@ export const ManageTraining = () => {
       location: session.location,
       topic: session.description,
       maxSlots: session.maxSlots,
+      durationMinutes: session.durationMinutes ?? 120,
+      trainingType: session.trainingType || 'SKILL',
+      skillGroup: session.skillGroup || '',
       status: session.status,
       videoUrl: session.videoUrl || '',
       date: dateVal,
@@ -137,6 +140,9 @@ export const ManageTraining = () => {
           startTime: combinedStartTime,
           location: values.location || '',
           maxSlots: values.maxSlots || 50,
+          durationMinutes: values.durationMinutes ? Number(values.durationMinutes) : 120,
+          trainingType: values.trainingType || 'SKILL',
+          skillGroup: values.skillGroup?.trim() || null,
           photoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80',
           videoUrl: values.videoUrl || null
         };
@@ -173,6 +179,9 @@ export const ManageTraining = () => {
           startTime: combinedStartTime,
           location: values.location || '',
           maxSlots: values.maxSlots || 50,
+          durationMinutes: values.durationMinutes ? Number(values.durationMinutes) : 120,
+          trainingType: values.trainingType || 'SKILL',
+          skillGroup: values.skillGroup?.trim() || '',
           status: values.status || editingSession.status,
           photoUrl: editingSession.photoUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80',
           videoUrl: values.videoUrl ? values.videoUrl.trim() : ""
@@ -691,7 +700,28 @@ export const ManageTraining = () => {
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}><Form.Item name="maxSlots" label="Số slot tối đa" initialValue={20}><Input type="number" min={1} /></Form.Item></Col>
-            <Col span={12}><Form.Item name="status" label="Trạng thái" initialValue="UPCOMING"><Select options={[{ value: 'UPCOMING', label: 'Sắp diễn ra' }, { value: 'ONGOING', label: 'Đang diễn ra' }, { value: 'COMPLETED', label: 'Đã hoàn thành' }]} /></Form.Item></Col>
+            <Col span={12}>
+              <Form.Item name="durationMinutes" label="Thời lượng (phút)" initialValue={120}
+                         tooltip="Dùng để biết lúc nào buổi học tự chuyển từ Đang diễn ra sang Đã kết thúc.">
+                <Input type="number" min={15} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="trainingType" label="Loại đào tạo" initialValue="SKILL">
+                <Select options={[
+                  { value: 'SKILL', label: 'Đào tạo kỹ năng' },
+                  { value: 'PROJECT', label: 'Đào tạo dự án' },
+                ]} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="skillGroup" label="Nhóm kỹ năng"
+                         tooltip="Các buổi dạy cùng một kỹ năng thì đặt chung mã này. Ai học một buổi trong nhóm là xong cả nhóm, các buổi còn lại tự điểm danh và không cộng điểm thêm.">
+                <Input placeholder="VD: CHOT_SALE — để trống nếu buổi đứng riêng" />
+              </Form.Item>
+            </Col>
           </Row>
         </Form>
       </Modal>
@@ -742,8 +772,33 @@ export const ManageTraining = () => {
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}><Form.Item name="maxSlots" label="Số slot tối đa"><Input type="number" min={1} /></Form.Item></Col>
-            <Col span={12}><Form.Item name="status" label="Trạng thái"><Select options={[{ value: 'UPCOMING', label: 'Sắp diễn ra' }, { value: 'ONGOING', label: 'Đang diễn ra' }, { value: 'COMPLETED', label: 'Đã hoàn thành' }]} /></Form.Item></Col>
+            <Col span={12}>
+              <Form.Item name="durationMinutes" label="Thời lượng (phút)"
+                         tooltip="Dùng để biết lúc nào buổi học tự chuyển từ Đang diễn ra sang Đã kết thúc.">
+                <Input type="number" min={15} />
+              </Form.Item>
+            </Col>
           </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="trainingType" label="Loại đào tạo">
+                <Select options={[
+                  { value: 'SKILL', label: 'Đào tạo kỹ năng' },
+                  { value: 'PROJECT', label: 'Đào tạo dự án' },
+                ]} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="skillGroup" label="Nhóm kỹ năng"
+                         tooltip="Các buổi dạy cùng một kỹ năng thì đặt chung mã này. Ai học một buổi trong nhóm là xong cả nhóm.">
+                <Input placeholder="VD: CHOT_SALE — để trống nếu buổi đứng riêng" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="status" label="Trạng thái"
+                     tooltip="Đến giờ học hệ thống tự chuyển sang Đang diễn ra, hết giờ tự chuyển sang Đã kết thúc. Ô này chỉ dùng khi cần đóng sớm hoặc hủy buổi.">
+            <Select options={[{ value: 'UPCOMING', label: 'Sắp diễn ra' }, { value: 'COMPLETED', label: 'Đã hoàn thành' }, { value: 'CANCELLED', label: 'Đã hủy' }]} />
+          </Form.Item>
         </Form>
       </Modal>
     </div>
