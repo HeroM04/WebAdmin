@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Row, Col, List, Avatar, Button, Input, Space, Tag, Badge, notification, Select, Rate, Divider } from 'antd';
+import { Row, Col, List, Avatar, Button, Input, Space, Tag, Badge, notification, Select, Rate, Divider, DatePicker } from 'antd';
 import { 
   MessageOutlined, SendOutlined, PlayCircleOutlined, PauseCircleOutlined,
   CheckCircleOutlined, ClockCircleOutlined, SmileOutlined, ToolOutlined,
   BuildOutlined, DollarOutlined, ExclamationCircleOutlined, DeleteOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
+import { khopTen, khopNgay, doiKhoang } from '../utils/locBang';
 
 // Mock feedback bank removed
 
@@ -23,6 +24,8 @@ export const Feedback = () => {
   const [replyInputs, setReplyInputs] = useState({});
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [search, setSearch] = useState('');
+  const [dateRange, setDateRange] = useState(null);   // lọc theo ngày gửi góp ý
 
   // Stats
   const stats = {
@@ -62,7 +65,9 @@ export const Feedback = () => {
   const filteredFeedbacks = feedbacks.filter(f => {
     const matchCategory = categoryFilter === 'ALL' || f.category === categoryFilter;
     const matchStatus = statusFilter === 'ALL' || f.status === statusFilter;
-    return matchCategory && matchStatus;
+    return matchCategory && matchStatus
+      && khopTen(search, f.senderFullName, f.senderName, f.content, f.message)
+      && khopNgay(dateRange, f.createdAt);
   });
 
   const allCategories = [...new Set(feedbacks.map(f => f.category).filter(Boolean))];
@@ -106,6 +111,10 @@ export const Feedback = () => {
 
         <div className="premium-card" style={{ padding: '16px 20px' }}>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <Input.Search placeholder="Tìm người gửi, nội dung..." allowClear style={{ width: 230 }}
+                        onChange={e => setSearch(e.target.value)} />
+          <DatePicker.RangePicker placeholder={['Gửi từ ngày', 'Đến ngày']} format="DD/MM/YYYY"
+                                 onChange={(dates) => setDateRange(doiKhoang(dates))} style={{ width: 240 }} />
           <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 160 }}
             options={[
               { value: 'ALL', label: 'Tất cả trạng thái' },

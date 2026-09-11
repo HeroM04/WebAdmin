@@ -6,6 +6,7 @@ import {
   EditOutlined, EyeOutlined, SolutionOutlined, PhoneOutlined, CalendarOutlined, UserOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
+import { doiKhoang } from '../utils/locBang';
 import { rowClick } from '../utils/tableRow';
 
 const { Search } = Input;
@@ -231,7 +232,7 @@ export const ManageMeetings = () => {
             <Search placeholder="Tìm theo tên nhân sự hoặc khách hàng..." allowClear style={{ width: 260 }} onChange={e => setSearch(e.target.value)} prefix={<SearchOutlined style={{ color: 'var(--text-secondary)' }} />} />
             <Select value={deptFilter} onChange={setDeptFilter} style={{ width: 160 }} options={[{ value: 'ALL', label: 'Tất cả phòng ban' }, ...(departments || []).map(d => ({ value: d.id, label: d.name }))]} />
             <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 140 }} options={[{ value: 'ALL', label: 'Tất cả trạng thái' }, { value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }]} />
-            <DatePicker.RangePicker placeholder={['Từ ngày', 'Đến ngày']} onChange={(dates, dateStrings) => setDateRange(dateStrings)} style={{ width: 220 }} />
+            <DatePicker.RangePicker placeholder={['Từ ngày', 'Đến ngày']} format="DD/MM/YYYY" onChange={(dates) => setDateRange(doiKhoang(dates))} style={{ width: 240 }} />
           </div>
           <Button type="primary" icon={<PlusOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={openAdd}>Thêm Báo cáo</Button>
         </div>

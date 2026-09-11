@@ -7,6 +7,7 @@ import {
 import dayjs from 'dayjs';
 import { AppContext } from '../context/AppContext';
 import { apiClient } from '../utils/apiClient';
+import { khopTen, khopNgay, doiKhoang } from '../utils/locBang';
 
 const STATUS_META = {
   PENDING:  { color: 'warning', icon: <ClockCircleOutlined />, label: 'Chờ duyệt' },
@@ -27,6 +28,8 @@ export const ReferralSubmissions = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [search, setSearch] = useState('');
+  const [dateRange, setDateRange] = useState(null);   // lọc theo ngày gửi đơn
   const [approving, setApproving] = useState(null);
   const [rejecting, setRejecting] = useState(null);
   const [rejectNote, setRejectNote] = useState('');
@@ -90,7 +93,10 @@ export const ReferralSubmissions = () => {
     }
   };
 
-  const filtered = rows.filter(r => statusFilter === 'ALL' || r.status === statusFilter);
+  const filtered = rows.filter(r =>
+    (statusFilter === 'ALL' || r.status === statusFilter)
+    && khopTen(search, r.referrerFullName, r.candidateName, r.candidatePhone, r.referrerDepartmentName)
+    && khopNgay(dateRange, r.submittedAt));
   const stats = {
     pending:  rows.filter(r => r.status === 'PENDING').length,
     approved: rows.filter(r => r.status === 'APPROVED').length,
@@ -224,6 +230,10 @@ export const ReferralSubmissions = () => {
 
       <div className="premium-card" style={{ padding: '16px 20px' }}>
         <Space wrap>
+          <Input.Search placeholder="Tìm người giới thiệu, ứng viên, SĐT..." allowClear style={{ width: 260 }}
+                        onChange={e => setSearch(e.target.value)} />
+          <DatePicker.RangePicker placeholder={['Gửi từ ngày', 'Đến ngày']} format="DD/MM/YYYY"
+                                 onChange={(dates) => setDateRange(doiKhoang(dates))} style={{ width: 240 }} />
           <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 220 }} options={[
             { value: 'ALL', label: 'Tất cả trạng thái' },
             { value: 'PENDING', label: 'Chờ duyệt' },

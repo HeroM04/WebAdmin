@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Table, Button, Space, Tag, Empty, Modal, Input, message, Row, Col } from 'antd';
+import { Table, Button, Space, Tag, Empty, Modal, Input, message, Row, Col, DatePicker } from 'antd';
 import {
   CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, ReloadOutlined
 } from '@ant-design/icons';
 import { apiClient } from '../utils/apiClient';
+import { khopTen, khopNgay, doiKhoang } from '../utils/locBang';
 import { rowClick } from '../utils/tableRow';
 
 /**
@@ -28,6 +29,8 @@ const fmtLuc = (iso) => {
 export const TrainingRsvpRequests = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [dateRange, setDateRange] = useState(null);   // lọc theo ngày diễn ra buổi đào tạo
   const [dangXet, setDangXet] = useState(null);   // đơn đang mở hộp thoại
   const [chapNhan, setChapNhan] = useState(true);
   const [ghiChu, setGhiChu] = useState('');
@@ -70,6 +73,10 @@ export const TrainingRsvpRequests = () => {
       setDangGui(false);
     }
   };
+
+  const filtered = rows.filter(r =>
+    khopTen(search, r.userFullName, r.departmentName, r.sessionTitle)
+    && khopNgay(dateRange, r.sessionStartTime));
 
   const columns = [
     {
@@ -153,8 +160,16 @@ export const TrainingRsvpRequests = () => {
           </div>
         </Col>
         <Col>
+          <Input.Search placeholder="Tìm nhân sự, buổi đào tạo..." allowClear size="small" style={{ width: 220 }}
+                        onChange={e => setSearch(e.target.value)} />
+        </Col>
+        <Col>
+          <DatePicker.RangePicker placeholder={['Buổi từ ngày', 'Đến ngày']} format="DD/MM/YYYY" size="small"
+                                 onChange={(dates) => setDateRange(doiKhoang(dates))} style={{ width: 230 }} />
+        </Col>
+        <Col>
           <Tag color={rows.length ? 'warning' : 'default'} icon={<ClockCircleOutlined />}>
-            {rows.length} đơn chờ duyệt
+            {filtered.length !== rows.length ? filtered.length + ' / ' : ''}{rows.length} đơn chờ duyệt
           </Tag>
         </Col>
         <Col>
@@ -164,7 +179,7 @@ export const TrainingRsvpRequests = () => {
 
       <div className="premium-card" style={{ padding: 0, overflow: 'hidden' }}>
         <Table
-          dataSource={rows}
+          dataSource={filtered}
           columns={columns}
           rowKey="id"
           size="small"

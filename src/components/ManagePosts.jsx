@@ -7,6 +7,7 @@ import {
   VideoCameraOutlined, FileTextOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
+import { doiKhoang } from '../utils/locBang';
 import { rowClick } from '../utils/tableRow';
 import { scanPostContent } from '../utils/aiScanner';
 
@@ -290,7 +291,7 @@ export const ManagePosts = () => {
             <Select value={platformFilter} onChange={setPlatformFilter} style={{ width: 130 }} options={[{ value: 'ALL', label: 'Tất cả nền tảng' }, { value: 'Facebook', label: 'Facebook' }, { value: 'Zalo', label: 'Zalo' }, { value: 'TikTok', label: 'TikTok' }, { value: 'Instagram', label: 'Instagram' }]} />
             <Select value={typeFilter} onChange={setTypeFilter} style={{ width: 160 }} options={[{ value: 'ALL', label: 'Tất cả phân loại' }, { value: 'VIDEO', label: CONTENT_TYPES.VIDEO }, { value: 'POST', label: CONTENT_TYPES.POST }]} />
             <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 130 }} options={[{ value: 'ALL', label: 'Trạng thái' }, { value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Từ chối' }]} />
-            <DatePicker.RangePicker placeholder={['Từ ngày', 'Đến ngày']} onChange={(dates, dateStrings) => setDateRange(dateStrings)} style={{ width: 220 }} />
+            <DatePicker.RangePicker placeholder={['Từ ngày', 'Đến ngày']} format="DD/MM/YYYY" onChange={(dates) => setDateRange(doiKhoang(dates))} style={{ width: 240 }} />
           </div>
           <Button type="primary" icon={<PlusOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={openAdd}>Thêm Bài đăng</Button>
         </div>

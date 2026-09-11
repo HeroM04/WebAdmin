@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Table, Button, Space, Tag, Select, message, Row, Col, Modal, Input, Popconfirm, Empty } from 'antd';
+import { Table, Button, Space, Tag, Select, message, Row, Col, Modal, Input, Popconfirm, Empty, DatePicker } from 'antd';
 import {
   CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined,
   ReloadOutlined, CalendarOutlined, ExclamationCircleOutlined
 } from '@ant-design/icons';
 import { apiClient } from '../utils/apiClient';
+import { khopTen, khopNgay, doiKhoang } from '../utils/locBang';
 
 const STATUS_META = {
   PENDING:   { color: 'warning', icon: <ClockCircleOutlined />,  label: 'Chờ duyệt' },
@@ -30,6 +31,8 @@ export const LeaveRequests = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [search, setSearch] = useState('');
+  const [dateRange, setDateRange] = useState(null);   // [từ, đến] dạng yyyy-mm-dd, lọc theo NGÀY VẮNG
   const [noteModal, setNoteModal] = useState(null); // { record, action }
   const [note, setNote] = useState('');
 
@@ -71,7 +74,10 @@ export const LeaveRequests = () => {
     }
   };
 
-  const filtered = rows.filter(r => statusFilter === 'ALL' || r.status === statusFilter);
+  const filtered = rows.filter(r =>
+    (statusFilter === 'ALL' || r.status === statusFilter)
+    && khopTen(search, r.userFullName, r.departmentName)
+    && khopNgay(dateRange, r.leaveDate));
 
   const stats = {
     pending:   rows.filter(r => r.status === 'PENDING').length,
@@ -190,6 +196,10 @@ export const LeaveRequests = () => {
       <div className="premium-card" style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
           <Space wrap>
+            <Input.Search placeholder="Tìm tên nhân sự, phòng ban..." allowClear style={{ width: 230 }}
+                          onChange={e => setSearch(e.target.value)} />
+            <DatePicker.RangePicker placeholder={['Vắng từ ngày', 'Đến ngày']} format="DD/MM/YYYY"
+                                   onChange={(dates) => setDateRange(doiKhoang(dates))} style={{ width: 240 }} />
             <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 200 }} options={[
               { value: 'ALL', label: 'Tất cả trạng thái' },
               { value: 'PENDING', label: 'Chờ duyệt' },
