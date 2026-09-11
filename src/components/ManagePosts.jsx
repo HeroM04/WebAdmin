@@ -302,7 +302,7 @@ export const ManagePosts = () => {
           <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Danh sách Bài đăng Lan tỏa BĐS</h3>
           <Tag color="blue" style={{ marginLeft: 8, fontSize: 11 }}><ScanOutlined /> AI Scanner</Tag>
         </div>
-        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ pageSize: 15, showSizeChanger: true }} scroll={{ x: 800 }} style={{ padding: '8px' }} />
+        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ defaultPageSize: 15, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }} scroll={{ x: 800 }} style={{ padding: '8px' }} />
       </div>
 
       {/* Detail Drawer */}

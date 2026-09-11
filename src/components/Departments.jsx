@@ -199,7 +199,7 @@ export const Departments = () => {
           <BankOutlined style={{ color: 'var(--primary-color)', fontSize: 16 }} />
           <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Danh sách Phòng ban</h3>
         </div>
-        <Table dataSource={filteredDepartments} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ pageSize: 15, showSizeChanger: true }} />
+        <Table dataSource={filteredDepartments} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ defaultPageSize: 15, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }} />
       </div>
 
       {/* Detail Drawer */}

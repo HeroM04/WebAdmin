@@ -251,7 +251,7 @@ export const ReferralSubmissions = () => {
           rowKey="id"
           size="small"
           loading={loading}
-          pagination={{ pageSize: 10, showSizeChanger: true }}
+          pagination={{ defaultPageSize: 10, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }}
           scroll={{ x: 'max-content' }}
           style={{ padding: 8 }}
           locale={{ emptyText: <Empty description="Chưa có đơn giới thiệu nào" /> }}

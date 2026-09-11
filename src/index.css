@@ -208,6 +208,22 @@ h1, h2, h3, h4, .outfit-font {
   background: rgba(16, 185, 129, 0.05) !important;
 }
 
+/* Cột cố định (fixed: 'left' / 'right') là ô dính, nằm ĐÈ lên các cột đang cuộn
+   bên dưới nó. Quy tắc "nền trong suốt" ở trên làm chữ của cột bên dưới xuyên
+   qua và đè lên chữ cột cố định — ví dụ "−15đ" lòi ra giữa "Hệ thống tự chấm".
+   Ô cố định phải có nền đục; khi rê chuột thì pha 5% xanh lên nền đục cho khớp
+   màu hover của các ô còn lại (trình duyệt cũ không hiểu color-mix thì giữ nền
+   thường, vẫn không bị xuyên). */
+.ant-table-tbody > tr > td.ant-table-cell-fix-left,
+.ant-table-tbody > tr > td.ant-table-cell-fix-right {
+  background: var(--bg-card) !important;
+}
+.ant-table-row:hover > td.ant-table-cell-fix-left,
+.ant-table-row:hover > td.ant-table-cell-fix-right {
+  background: var(--bg-card) !important;
+  background: color-mix(in srgb, var(--bg-card), #10b981 5%) !important;
+}
+
 /* Dòng bấm được để mở chi tiết — thay cho nút "Chi tiết" ở cột Hành động */
 .ant-table-tbody > tr.clickable-row {
   cursor: pointer;

@@ -371,7 +371,7 @@ const PersonnelList = () => {
               rowKey="id"
               size="small"
               onRow={rowClick((record) => { setDetailUser(record); setDrawerOpen(true); })}
-              pagination={{ pageSize: 15, showSizeChanger: true }}
+              pagination={{ defaultPageSize: 15, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }}
               scroll={{ x: 'max-content' }}
             />
           </div>

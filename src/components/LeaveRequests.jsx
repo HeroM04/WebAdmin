@@ -131,15 +131,6 @@ export const LeaveRequests = () => {
       )
     },
     {
-      title: 'KPI',
-      dataIndex: 'kpiPoints',
-      key: 'kpiPoints',
-      width: 80,
-      align: 'center',
-      render: (p) => p ? <span style={{ fontWeight: 700, color: 'var(--danger-color)' }}>{p}đ</span>
-                       : <span style={{ color: '#cbd5e1' }}>—</span>
-    },
-    {
       title: 'Hành động',
       key: 'actions',
       width: 170,
@@ -156,7 +147,7 @@ export const LeaveRequests = () => {
                       onClick={() => { setNoteModal({ record: r, action: 'reject' }); setNote(''); }}>
                 Từ chối
               </Button>
-              <Popconfirm title="Duyệt vắng có phép?" description="Nhân sự sẽ bị trừ 10đ KPI tuần đó."
+              <Popconfirm title="Duyệt vắng có phép?" description="Ngày này được tính là vắng có phép."
                           okText="Duyệt" cancelText="Hủy" onConfirm={() => doReview(r, 'approve')}>
                 <Button size="small" type="primary" icon={<CheckCircleOutlined />}
                         style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }}>
@@ -213,7 +204,7 @@ export const LeaveRequests = () => {
           </Space>
           <Popconfirm
             title="Chốt chấm công hôm nay?"
-            description="Ai không chấm công và không có đơn được duyệt sẽ bị trừ 15đ (vắng không phép). Hệ thống vẫn tự chạy lúc 23:30 mỗi ngày."
+            description="Ai không chấm công và không có đơn được duyệt sẽ bị ghi vắng không phép. Hệ thống vẫn tự chạy lúc 23:30 mỗi ngày."
             okText="Chốt ngay" cancelText="Hủy" onConfirm={closeDay}>
             <Button icon={<CalendarOutlined />}>Chốt vắng mặt hôm nay</Button>
           </Popconfirm>
@@ -231,7 +222,7 @@ export const LeaveRequests = () => {
           rowKey="id"
           size="small"
           loading={loading}
-          pagination={{ pageSize: 10, showSizeChanger: true }}
+          pagination={{ defaultPageSize: 10, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }}
           scroll={{ x: 'max-content' }}
           style={{ padding: 8 }}
           locale={{ emptyText: <Empty description="Chưa có đơn xin vắng nào" /> }}

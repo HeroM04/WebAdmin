@@ -242,7 +242,7 @@ export const ManageMeetings = () => {
           <SolutionOutlined style={{ color: 'var(--primary-color)', fontSize: 16 }} />
           <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Danh sách Báo cáo Thực chiến</h3>
         </div>
-        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ pageSize: 15, showSizeChanger: true }} scroll={{ x: 'max-content' }} style={{ padding: '8px' }} />
+        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ defaultPageSize: 15, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }} scroll={{ x: 'max-content' }} style={{ padding: '8px' }} />
       </div>
 
       {/* Detail Drawer */}

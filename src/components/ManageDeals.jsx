@@ -292,7 +292,7 @@ export const ManageDeals = () => {
           <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Danh sách Giao dịch Chốt căn</h3>
           <Tag color="pink" style={{ marginLeft: 8, fontSize: 11 }}>🎉 Pháo hoa khi duyệt</Tag>
         </div>
-        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ pageSize: 15, showSizeChanger: true }} scroll={{ x: 'max-content' }} style={{ padding: '8px' }} />
+        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ defaultPageSize: 15, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }} scroll={{ x: 'max-content' }} style={{ padding: '8px' }} />
       </div>
 
       {/* Detail Drawer */}
