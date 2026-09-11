@@ -166,7 +166,7 @@ export const ReferralSubmissions = () => {
       render: (_, r) => {
         if (r.status !== 'APPROVED') return <span style={{ color: '#cbd5e1' }}>—</span>;
         if (r.rewardGranted) {
-          return <Tag color="success">Đã cộng +15đ</Tag>;
+          return <Tag color="success">Đã cộng điểm</Tag>;
         }
         return (
           <Tag color="processing">
@@ -210,7 +210,7 @@ export const ReferralSubmissions = () => {
         {[
           { label: 'Chờ duyệt', value: stats.pending, color: '#fbbf24' },
           { label: 'Đã mở tài khoản', value: stats.approved, color: '#10b981' },
-          { label: 'Đã cộng +15đ', value: stats.rewarded, color: '#c026d3' },
+          { label: 'Đã cộng điểm', value: stats.rewarded, color: '#c026d3' },
           { label: 'Đã từ chối', value: stats.rejected, color: '#94a3b8' },
         ].map((s, i) => (
           <Col xs={12} md={6} key={i}>
@@ -310,7 +310,7 @@ export const ReferralSubmissions = () => {
                     name="joinedDate"
                     label="Ngày vào làm"
                     rules={[{ required: true, message: 'Chọn ngày vào làm' }]}
-                    tooltip="Người giới thiệu được +15đ sau ngày này đúng một tháng, nếu nhân sự mới vẫn còn làm."
+                    tooltip="Người giới thiệu được cộng điểm sau ngày này đúng một tháng, nếu nhân sự mới vẫn còn làm."
                   >
                     <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
                   </Form.Item>
@@ -331,7 +331,7 @@ export const ReferralSubmissions = () => {
                 const d = form.getFieldValue('joinedDate');
                 return d ? (
                   <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                    {approving.referrerFullName} sẽ được <strong>+15đ Lan tỏa</strong> từ ngày{' '}
+                    {approving.referrerFullName} sẽ được <strong>cộng điểm Lan tỏa</strong> từ ngày{' '}
                     <strong>{d.add(1, 'month').format('DD/MM/YYYY')}</strong> nếu {approving.candidateName} vẫn còn làm.
                   </div>
                 ) : null;

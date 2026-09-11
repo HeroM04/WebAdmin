@@ -264,7 +264,7 @@ const AttendanceLogs = () => {
     try {
       if (record.checkinRecord && record.checkinRecord.status === 'PENDING') await approveAttendance(record.checkinRecord.id, currentUser.name);
       if (record.checkoutRecord && record.checkoutRecord.status === 'PENDING') await approveAttendance(record.checkoutRecord.id, currentUser.name);
-      message.success('Đã duyệt. Điểm KPI chấm theo giờ check-in: đúng giờ +5đ, muộn −5đ.');
+      message.success('Đã duyệt.');
       setDrawerOpen(false);
       await taiDuLieu();
     } catch (e) {

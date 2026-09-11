@@ -139,7 +139,7 @@ export const ManagePosts = () => {
   const handleApprove = async (id) => {
     try {
       await approvePost(id, currentUser.name);
-      message.success('Đã duyệt. (+15 KPI)');
+      message.success('Đã duyệt.');
       setDrawerOpen(false);
     } catch (e) {
       message.error(e.message || 'Lỗi hệ thống');

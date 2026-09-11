@@ -106,7 +106,8 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const {
     departments,
-    users,
+    users,          // đầy đủ, kể cả người đã nghỉ — chỉ để tra tên trên việc cũ
+    activeUsers,    // người đang làm — dùng cho xếp hạng và biểu đồ
     kpiScores,
     deals,
     attendance,
@@ -177,23 +178,28 @@ export const Dashboard = () => {
   const sumPost = scoresCurr.reduce((sum, s) => sum + (s.post || 0), 0);
   const sumDeal = scoresCurr.reduce((sum, s) => sum + (s.deal || 0), 0);
 
+  // Trước đây mỗi nhóm có `|| 10` để biểu đồ không trống — tức là tháng chưa có
+  // điểm thì vẽ ra 4 miếng bằng nhau như thể mỗi nhóm được 10 điểm. Số bịa trên
+  // dashboard quản trị là thứ tệ nhất có thể có; trống thì nói là trống.
+  // Tên nhóm gọi đúng như bảng tiêu chí công ty (KpiLedgerService.nhanNhom).
   const pieData = [
-    { name: 'Chấm công', value: sumAtt || 10, color: '#64748b' },
-    { name: 'Thực chiến', value: sumMeet || 10, color: '#f59e0b' },
-    { name: 'Bài post', value: sumPost || 10, color: '#3b82f6' },
-    { name: 'Chốt căn', value: sumDeal || 10, color: '#ef4444' } // Red to match design
+    { name: 'Phát triển cá nhân', value: sumAtt,  color: '#64748b' },
+    { name: 'Thực chiến',         value: sumMeet, color: '#f59e0b' },
+    { name: 'Lan tỏa',            value: sumPost, color: '#3b82f6' },
+    { name: 'Chốt căn',           value: sumDeal, color: '#ef4444' }
   ];
+  const pieTrong = pieData.every(p => !p.value);
 
   // Combo Chart Data (Doanh số & hoạt động)
   const comboChartData = departments.map(dept => {
-    const deptUsers = users.filter(u => u.deptId === dept.id);
+    const deptUsers = activeUsers.filter(u => u.deptId === dept.id);
     const userIds = deptUsers.map(u => u.id);
     const scoresCurrDept = kpiScores.filter(s => s.month === currentMonthStr && userIds.includes(s.userId));
     return {
       name: dept.name.replace('Phòng ', ''),
-      'Chấm công': scoresCurrDept.reduce((sum, s) => sum + (s.attendance || 0), 0),
+      'Phát triển cá nhân': scoresCurrDept.reduce((sum, s) => sum + (s.attendance || 0), 0),
       'Thực chiến': scoresCurrDept.reduce((sum, s) => sum + (s.meeting || 0), 0),
-      'Bài post': scoresCurrDept.reduce((sum, s) => sum + (s.post || 0), 0),
+      'Lan tỏa': scoresCurrDept.reduce((sum, s) => sum + (s.post || 0), 0),
       'Tổng KPI (Line)': scoresCurrDept.reduce((sum, s) => sum + (s.total || 0), 0)
     };
   });
@@ -249,8 +255,8 @@ export const Dashboard = () => {
     }
   ];
 
-  // Leaderboard
-  const leaderboardData = users
+  // Leaderboard — chỉ người đang làm; người đã xóa mềm không xếp hạng
+  const leaderboardData = activeUsers
     .map(user => {
       const score = kpiScores.find(s => s.userId === user.id && s.month === currentMonthStr) || { attendance: 0, meeting: 0, post: 0, deal: 0, total: 0 };
       const dept = departments.find(d => d.id === user.deptId);
@@ -432,9 +438,9 @@ export const Dashboard = () => {
                   <YAxis stroke="var(--text-secondary)" fontSize={11} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
-                  <Bar dataKey="Chấm công" stackId="a" fill="#64748b" barSize={12} />
+                  <Bar dataKey="Phát triển cá nhân" stackId="a" fill="#64748b" barSize={12} />
                   <Bar dataKey="Thực chiến" stackId="a" fill="#f59e0b" barSize={12} />
-                  <Bar dataKey="Bài post" stackId="a" fill="#ef4444" barSize={12} radius={[4,4,0,0]} />
+                  <Bar dataKey="Lan tỏa" stackId="a" fill="#ef4444" barSize={12} radius={[4,4,0,0]} />
                   <Line type="monotone" dataKey="Tổng KPI (Line)" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
                 </ComposedChart>
               </ResponsiveContainer>
@@ -445,12 +451,18 @@ export const Dashboard = () => {
         {/* KPI Category Donut */}
         <Col xs={24} lg={6}>
           <div className="premium-card" style={{ height: 380, padding: 20 }}>
-            <h3 style={{ marginBottom: 16, color: 'var(--text-primary)', fontWeight: 700, fontSize: 16 }}>Cơ cấu Lead (KPI)</h3>
+            <h3 style={{ marginBottom: 16, color: 'var(--text-primary)', fontWeight: 700, fontSize: 16 }}>Cơ cấu điểm KPI</h3>
             <div style={{ height: 220, position: 'relative' }}>
+              {pieTrong && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              textAlign: 'center', fontSize: 12, color: 'var(--text-secondary)', padding: '0 12px', zIndex: 1 }}>
+                  Tháng này chưa có điểm KPI nào được ghi nhận.
+                </div>
+              )}
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={pieData}
+                    data={pieTrong ? [] : pieData}
                     cx="50%" cy="50%"
                     innerRadius={65} outerRadius={90}
                     paddingAngle={4} dataKey="value"
@@ -468,10 +480,12 @@ export const Dashboard = () => {
                   />
                 </PieChart>
               </ResponsiveContainer>
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                <span className="outfit-font" style={{ fontSize: 13, fontWeight: 800, color: 'var(--primary-color)', display: 'block' }}>KPI</span>
-                <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>{currentMonthLabel}</span>
-              </div>
+              {!pieTrong && (
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                  <span className="outfit-font" style={{ fontSize: 13, fontWeight: 800, color: 'var(--primary-color)', display: 'block' }}>KPI</span>
+                  <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>{currentMonthLabel}</span>
+                </div>
+              )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {pieData.map((entry, i) => (
@@ -480,7 +494,7 @@ export const Dashboard = () => {
                     <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: entry.color, flexShrink: 0 }} />
                     <span style={{ color: 'var(--text-secondary)' }}>{entry.name}</span>
                   </div>
-                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{entry.value} pts</span>
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{entry.value} đ</span>
                 </div>
               ))}
             </div>

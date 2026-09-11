@@ -236,7 +236,7 @@ const PersonnelList = () => {
             </div>
             {info && (
               info.done
-                ? <Tag color="success" style={{ fontSize: 10, marginTop: 2 }}>Đã đủ tháng · +15đ</Tag>
+                ? <Tag color="success" style={{ fontSize: 10, marginTop: 2 }}>Đã đủ tháng · đã cộng điểm giới thiệu</Tag>
                 : <Tag color="warning" style={{ fontSize: 10, marginTop: 2 }}>
                     Đủ tháng {info.mature.format('DD/MM')}
                   </Tag>
@@ -523,7 +523,7 @@ const PersonnelList = () => {
               <Form.Item
                 name="referrerId"
                 label="Người giới thiệu"
-                tooltip="Gieo hạt nhân sự mới: người giới thiệu được +15đ Lan tỏa, nhưng chỉ khi nhân sự này làm đủ một tháng."
+                tooltip="Gieo hạt nhân sự mới: người giới thiệu được cộng điểm Lan tỏa, nhưng chỉ khi nhân sự này làm đủ một tháng."
               >
                 <Select
                   allowClear

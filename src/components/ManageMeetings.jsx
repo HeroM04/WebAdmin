@@ -102,7 +102,7 @@ export const ManageMeetings = () => {
   const handleApprove = async (id) => {
     try {
       await approveMeeting(id, currentUser.name);
-      message.success('Đã duyệt. (+20 KPI)');
+      message.success('Đã duyệt.');
       setDrawerOpen(false);
     } catch (e) {
       message.error(e.message || 'Lỗi hệ thống');
@@ -144,8 +144,8 @@ export const ManageMeetings = () => {
       width: 120,
       render: (_, record) => (
         record.battleType === 'SUPPORT'
-          ? <Tag color="cyan" style={{ margin: 0 }}>Hỗ trợ khách · +5đ</Tag>
-          : <Tag color="blue" style={{ margin: 0 }}>Gặp khách · +10đ</Tag>
+          ? <Tag color="cyan" style={{ margin: 0 }}>Hỗ trợ khách</Tag>
+          : <Tag color="blue" style={{ margin: 0 }}>Gặp khách</Tag>
       )
     },
     {

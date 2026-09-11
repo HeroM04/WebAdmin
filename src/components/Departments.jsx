@@ -11,7 +11,7 @@ const { Search } = Input;
 
 export const Departments = () => {
   const {
-    departments, users,
+    departments, activeUsers,
     addDepartment, updateDepartment, deleteDepartment,
     assignUserToDepartment, removeUserFromDepartment
   } = useContext(AppContext);
@@ -29,11 +29,7 @@ export const Departments = () => {
     !search || d.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Chỉ tính người đang làm. "Xóa nhân sự" là xóa mềm (status → INACTIVE, giữ lại
-  // lịch sử chấm công/KPI/lương) nên bản ghi vẫn còn trong `users` và vẫn mang
-  // deptId cũ. Không lọc thì người đã nghỉ vẫn được đếm vào phòng, còn tab
-  // Nhân sự (mặc định lọc "Hoạt động") lại không thấy họ đâu — hai trang lệch số.
-  const activeUsers = users.filter(u => (u.status || 'ACTIVE') === 'ACTIVE');
+  // activeUsers (từ context) đã loại người xóa mềm — xem chú thích ở AppContext
   const getDeptUsers = (deptId) => activeUsers.filter(u => u.deptId === deptId);
   const getUnassignedUsers = () => activeUsers.filter(u => !u.deptId);
 

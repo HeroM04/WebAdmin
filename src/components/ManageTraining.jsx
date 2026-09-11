@@ -239,7 +239,7 @@ export const ManageTraining = () => {
     const session = trainingSessions.find(s => s.id === sessionId);
     if ((session?.attendees || []).some(a => a.userId === scanUserId)) { message.warning('Nhân viên đã điểm danh rồi!'); return; }
     addAttendeeToSession(sessionId, scanUserId);
-    message.success('Điểm danh thành công! (+5 KPI)');
+    message.success('Điểm danh thành công!');
   };
 
   const columns = [
@@ -367,7 +367,7 @@ export const ManageTraining = () => {
     {
       title: 'Trạng thái',
       key: 'status',
-      render: (_, record) => <Tag color="success">Đã duyệt (+5 KPI)</Tag>
+      render: (_, record) => <Tag color="success">Đã duyệt</Tag>
     }
   ];
 
@@ -396,7 +396,7 @@ export const ManageTraining = () => {
       userName: o.userName,
       content: o.content,
       submittedAt: new Date(o.submittedAt).toLocaleString(),
-      status: 'Đã duyệt (+5 KPI)'
+      status: 'Đã duyệt'
     }));
     exportToCSV(exportData, [
       { title: 'Nhân sự', key: 'userName' },

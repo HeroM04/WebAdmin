@@ -748,11 +748,18 @@ export const AppProvider = ({ children }) => {
     setOneOnOneTrainings([]);
   };
 
+  // "Xóa nhân sự" là xóa mềm (status → INACTIVE) để giữ lịch sử chấm công, KPI,
+  // lương — nên `users` vẫn chứa người đã nghỉ. Mọi chỗ hiển thị "nhân sự hiện
+  // tại" (bảng xếp hạng, đếm theo phòng, biểu đồ) phải dùng `activeUsers`;
+  // chỉ trang Nhân sự (có ô lọc trạng thái) mới cần `users` đầy đủ.
+  const activeUsers = users.filter(u => (u.status || 'ACTIVE') === 'ACTIVE');
+
   return (
     <AppContext.Provider
       value={{
         departments,
         users,
+        activeUsers,
         kpiScores,
         deals,
         // Chỉ chứa bản ghi CHỜ DUYỆT — xem chú thích ở chỗ khai báo state

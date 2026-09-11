@@ -8,9 +8,9 @@ import { apiClient } from '../utils/apiClient';
 
 const STATUS_META = {
   PENDING:   { color: 'warning', icon: <ClockCircleOutlined />,  label: 'Chờ duyệt' },
-  APPROVED:  { color: 'success', icon: <CheckCircleOutlined />,  label: 'Vắng có phép (−10đ)' },
+  APPROVED:  { color: 'success', icon: <CheckCircleOutlined />,  label: 'Vắng có phép' },
   REJECTED:  { color: 'error',   icon: <CloseCircleOutlined />,  label: 'Đã từ chối' },
-  UNEXCUSED: { color: 'error',   icon: <ExclamationCircleOutlined />, label: 'Vắng không phép (−15đ)' },
+  UNEXCUSED: { color: 'error',   icon: <ExclamationCircleOutlined />, label: 'Vắng không phép' },
 };
 
 const StatusTag = ({ status }) => {
@@ -51,7 +51,7 @@ export const LeaveRequests = () => {
     try {
       await apiClient.put(`/leave-requests/${record.id}/${action}`, { note: reviewNote || null });
       message.success(action === 'approve'
-        ? 'Đã duyệt vắng có phép (−10đ KPI).'
+        ? 'Đã duyệt vắng có phép.'
         : 'Đã từ chối đơn xin vắng.');
       setNoteModal(null);
       setNote('');
@@ -243,7 +243,7 @@ export const LeaveRequests = () => {
         open={!!noteModal}
         onOk={() => doReview(noteModal.record, noteModal.action, note)}
         onCancel={() => { setNoteModal(null); setNote(''); }}
-        okText={noteModal?.action === 'approve' ? 'Duyệt (−10đ KPI)' : 'Từ chối'}
+        okText={noteModal?.action === 'approve' ? 'Duyệt' : 'Từ chối'}
         cancelText="Hủy"
         okButtonProps={noteModal?.action === 'approve'
           ? { style: { backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' } }
