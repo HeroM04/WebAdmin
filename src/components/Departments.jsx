@@ -29,8 +29,13 @@ export const Departments = () => {
     !search || d.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const getDeptUsers = (deptId) => users.filter(u => u.deptId === deptId);
-  const getUnassignedUsers = () => users.filter(u => !u.deptId);
+  // Chỉ tính người đang làm. "Xóa nhân sự" là xóa mềm (status → INACTIVE, giữ lại
+  // lịch sử chấm công/KPI/lương) nên bản ghi vẫn còn trong `users` và vẫn mang
+  // deptId cũ. Không lọc thì người đã nghỉ vẫn được đếm vào phòng, còn tab
+  // Nhân sự (mặc định lọc "Hoạt động") lại không thấy họ đâu — hai trang lệch số.
+  const activeUsers = users.filter(u => (u.status || 'ACTIVE') === 'ACTIVE');
+  const getDeptUsers = (deptId) => activeUsers.filter(u => u.deptId === deptId);
+  const getUnassignedUsers = () => activeUsers.filter(u => !u.deptId);
 
   const openDetail = (dept) => {
     setDetailDept(dept);
@@ -181,7 +186,7 @@ export const Departments = () => {
         <Col xs={12} md={8}>
           <div className="premium-card" style={{ padding: '16px 20px' }}>
             <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>Tổng nhân sự</div>
-            <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: '#10b981' }}>{users.length}</div>
+            <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: '#10b981' }}>{activeUsers.length}</div>
           </div>
         </Col>
       </Row>

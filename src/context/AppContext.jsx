@@ -556,8 +556,10 @@ export const AppProvider = ({ children }) => {
   };
 
   const removeUserFromDepartment = async (userId) => {
-    try { 
-      await apiClient.put(`/users/${userId}`, { departmentId: null });
+    try {
+      // 0 = gỡ khỏi phòng. Gửi null thì máy chủ hiểu là "không sửa" và bỏ qua
+      // (cùng quy ước với referrerId = 0 để gỡ người giới thiệu).
+      await apiClient.put(`/users/${userId}`, { departmentId: 0 });
       await refresh('users', 'departments');
     } catch (e) { 
       console.error('removeUserFromDepartment error:', e); throw e; 
