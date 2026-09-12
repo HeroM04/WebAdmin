@@ -6,7 +6,7 @@ import {
   PlusOutlined, EditOutlined, EyeOutlined, BookOutlined, TeamOutlined,
   CalendarOutlined, EnvironmentOutlined, UserAddOutlined, UserDeleteOutlined,
   CheckCircleOutlined, CloseCircleOutlined, DownloadOutlined,
-  YoutubeOutlined, LinkOutlined
+  YoutubeOutlined, LinkOutlined, FacebookOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import { TrainingRsvpRequests } from './TrainingRsvpRequests';
@@ -17,6 +17,76 @@ const { Search } = Input;
 
 // Regex validate URL YouTube hợp lệ (youtube.com hoặc youtu.be)
 const YOUTUBE_URL_REGEX = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([\w\-]{11})(.*)?$/;
+// Link Facebook: video trên trang/nhóm, fb.watch, link chia sẻ, link rút gọn
+const FACEBOOK_URL_REGEX = /^(https?:\/\/)?(www\.|m\.|web\.|mbasic\.)?(facebook\.com|fb\.com|fb\.watch)\/.+$/i;
+
+const loaiLink = (url) => {
+  const u = String(url || '').trim();
+  if (!u) return '';
+  if (YOUTUBE_URL_REGEX.test(u)) return 'youtube';
+  if (FACEBOOK_URL_REGEX.test(u)) return 'facebook';
+  return 'khac';
+};
+
+/**
+ * Ô nhập link video bài giảng — dùng chung cho form thêm và form sửa.
+ *
+ * Nhận cả YouTube lẫn Facebook. Trước đây chỉ nhận YouTube nên quyết định
+ * "đăng video lên nhóm Facebook công ty" không thực hiện được: dán link vào là
+ * bị báo "không hợp lệ", trong khi app điện thoại và máy chủ đều đã nhận
+ * Facebook từ lâu.
+ *
+ * Nhóm Facebook là nhóm KÍN, chỉ thành viên xem được — nên khi nhận ra link
+ * Facebook thì nhắc ngay dưới ô, để người nhập nhớ kiểm tra nhân sự mới đã
+ * được thêm vào nhóm chưa. Đây là lỗi lộ ra ở máy nhân viên ("nội dung không
+ * khả dụng"), admin không nhìn thấy được, nên phải nhắc ở chỗ nhập.
+ */
+const VideoLinkField = ({ form }) => {
+  const url = Form.useWatch('videoUrl', form);
+  const loai = loaiLink(url);
+  const goiY = {
+    facebook: {
+      mau: '#b45309',
+      chu: 'Link Facebook — nếu là nhóm kín thì chỉ THÀNH VIÊN nhóm xem được. Nhân sự mới phải được thêm vào nhóm trước, không thì họ mở ra chỉ thấy "Nội dung không khả dụng".',
+    },
+    youtube: {
+      mau: 'var(--text-secondary)',
+      chu: 'Link YouTube — nên để chế độ "Không công khai" (Unlisted): ai có link đều xem được, không cần đăng nhập, không hiện khi tìm kiếm.',
+    },
+    khac: {
+      mau: 'var(--danger-color)',
+      chu: 'Chỉ nhận link YouTube (youtube.com, youtu.be) hoặc Facebook (facebook.com, fb.watch).',
+    },
+  }[loai];
+
+  return (
+    <Form.Item
+      name="videoUrl"
+      label={
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <YoutubeOutlined style={{ color: '#ff0000', fontSize: 16 }} />
+          Link Video Bài Giảng (YouTube hoặc Facebook)
+        </span>
+      }
+      extra={goiY ? <span style={{ fontSize: 12, color: goiY.mau }}>{goiY.chu}</span> : null}
+      rules={[
+        {
+          validator: (_, value) => {
+            const l = loaiLink(value);
+            if (l === '' || l === 'youtube' || l === 'facebook') return Promise.resolve();
+            return Promise.reject(new Error('Link không hợp lệ. Nhập URL YouTube (youtube.com / youtu.be) hoặc Facebook (facebook.com / fb.watch).'));
+          }
+        }
+      ]}
+    >
+      <Input
+        placeholder="https://www.youtube.com/watch?v=... hoặc https://www.facebook.com/..."
+        prefix={<LinkOutlined style={{ color: 'var(--text-secondary)' }} />}
+        allowClear
+      />
+    </Form.Item>
+  );
+};
 
 const generateQRToken = () => {
   const now = Math.floor(Date.now() / 10000);
@@ -286,20 +356,22 @@ export const ManageTraining = () => {
       width: 160,
       render: (_, record) => record.videoUrl ? (
         <a href={record.videoUrl} target="_blank" rel="noopener noreferrer">
+          {/* Nút đổi màu theo nơi đăng để admin nhìn là biết video này ai xem được:
+              Facebook (nhóm kín, cần là thành viên) hay YouTube (ai có link đều xem). */}
           <Button
             size="small"
             style={{
-              backgroundColor: '#ff0000',
-              borderColor: '#cc0000',
+              backgroundColor: loaiLink(record.videoUrl) === 'facebook' ? '#1877f2' : '#ff0000',
+              borderColor: loaiLink(record.videoUrl) === 'facebook' ? '#1877f2' : '#cc0000',
               color: '#fff',
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
               gap: 4
             }}
-            icon={<YoutubeOutlined style={{ fontSize: 14 }} />}
+            icon={loaiLink(record.videoUrl) === 'facebook' ? <FacebookOutlined style={{ fontSize: 14 }} /> : <YoutubeOutlined style={{ fontSize: 14 }} />}
           >
-            Xem Video
+            {loaiLink(record.videoUrl) === 'facebook' ? 'Xem trên Facebook' : 'Xem Video'}
           </Button>
         </a>
       ) : (
@@ -680,30 +752,7 @@ export const ManageTraining = () => {
           <Form.Item name="topic" label="Nội dung chủ đề">
             <Input.TextArea rows={2} placeholder="Mô tả nội dung..." />
           </Form.Item>
-          <Form.Item
-            name="videoUrl"
-            label={
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <YoutubeOutlined style={{ color: '#ff0000', fontSize: 16 }} />
-                Link Video Bài Giảng (YouTube)
-              </span>
-            }
-            rules={[
-              {
-                validator: (_, value) => {
-                  if (!value || value.trim() === '') return Promise.resolve();
-                  if (YOUTUBE_URL_REGEX.test(value.trim())) return Promise.resolve();
-                  return Promise.reject(new Error('Link không hợp lệ. Vui lòng nhập URL YouTube (youtube.com hoặc youtu.be).'));
-                }
-              }
-            ]}
-          >
-            <Input
-              placeholder="https://www.youtube.com/watch?v=... hoặc https://youtu.be/..."
-              prefix={<LinkOutlined style={{ color: 'var(--text-secondary)' }} />}
-              allowClear
-            />
-          </Form.Item>
+          <VideoLinkField form={addForm} />
           <Row gutter={16}>
             <Col span={12}><Form.Item name="maxSlots" label="Số slot tối đa" initialValue={20}><Input type="number" min={1} /></Form.Item></Col>
             <Col span={12}>
@@ -752,30 +801,7 @@ export const ManageTraining = () => {
           <Form.Item name="topic" label="Nội dung chủ đề">
             <Input.TextArea rows={2} />
           </Form.Item>
-          <Form.Item
-            name="videoUrl"
-            label={
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <YoutubeOutlined style={{ color: '#ff0000', fontSize: 16 }} />
-                Link Video Bài Giảng (YouTube)
-              </span>
-            }
-            rules={[
-              {
-                validator: (_, value) => {
-                  if (!value || value.trim() === '') return Promise.resolve();
-                  if (YOUTUBE_URL_REGEX.test(value.trim())) return Promise.resolve();
-                  return Promise.reject(new Error('Link không hợp lệ. Vui lòng nhập URL YouTube (youtube.com hoặc youtu.be).'));
-                }
-              }
-            ]}
-          >
-            <Input
-              placeholder="https://www.youtube.com/watch?v=..."
-              prefix={<LinkOutlined style={{ color: 'var(--text-secondary)' }} />}
-              allowClear
-            />
-          </Form.Item>
+          <VideoLinkField form={editForm} />
           <Row gutter={16}>
             <Col span={12}><Form.Item name="maxSlots" label="Số slot tối đa"><Input type="number" min={1} /></Form.Item></Col>
             <Col span={12}>
