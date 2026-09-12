@@ -145,10 +145,18 @@ const PersonnelList = () => {
     }
   };
 
-  const handleResetPassword = async (id) => {
+  // Đặt lại mật khẩu: Admin tự gõ mật khẩu mới rồi nhắn riêng cho nhân sự.
+  // Trước đây gán cứng 123456 — ai cũng đoán được, và chính con số này từng
+  // hiện công khai trên màn hình đăng nhập của app.
+  const [resetPw, setResetPw] = useState(null);   // { id, name }
+  const [resetPwValue, setResetPwValue] = useState('');
+  const handleResetPassword = async () => {
+    const pw = resetPwValue.trim();
+    if (pw.length < 6) { message.warning('Mật khẩu mới phải từ 6 ký tự.'); return; }
     try {
-      await apiClient.put(`/users/${id}/reset-password`, { newPassword: '123456' });
-      message.success('Đã đặt lại mật khẩu thành 123456 thành công!');
+      await apiClient.put(`/users/${resetPw.id}/reset-password`, { newPassword: pw });
+      message.success(`Đã đặt lại mật khẩu cho ${resetPw.name}. Nhắn riêng cho nhân sự, không gửi vào nhóm.`);
+      setResetPw(null); setResetPwValue('');
     } catch (e) {
       message.error(e.message || 'Lỗi hệ thống khi đặt lại mật khẩu');
     }
@@ -478,9 +486,11 @@ const PersonnelList = () => {
           {!editingUser && (
             <Form.Item
               name="password"
-              label="Mật khẩu"
+              label="Mật khẩu ban đầu"
+              rules={editingUser ? [] : [{ required: true, message: 'Nhập mật khẩu ban đầu' }, { min: 6, message: 'Ít nhất 6 ký tự' }]}
+              tooltip="Nhắn riêng cho nhân sự và yêu cầu đổi ngay ngày đầu. Không dùng một mật khẩu chung cho nhiều người."
             >
-              <Input.Password placeholder="Mặc định: 123456 (nếu để trống)" />
+              <Input.Password placeholder={editingUser ? 'Để trống nếu không đổi' : 'Ít nhất 6 ký tự'} />
             </Form.Item>
           )}
 
@@ -573,6 +583,29 @@ const PersonnelList = () => {
       </Modal>
 
       {/* Personnel Detail Drawer */}
+      <Modal
+        title={resetPw ? `Đặt lại mật khẩu — ${resetPw.name}` : 'Đặt lại mật khẩu'}
+        open={!!resetPw}
+        onOk={handleResetPassword}
+        onCancel={() => { setResetPw(null); setResetPwValue(''); }}
+        okText="Đặt lại"
+        cancelText="Hủy"
+        destroyOnClose
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
+          <Input.Password
+            autoFocus
+            placeholder="Mật khẩu mới, ít nhất 6 ký tự"
+            value={resetPwValue}
+            onChange={e => setResetPwValue(e.target.value)}
+            onPressEnter={handleResetPassword}
+          />
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+            Nhắn mật khẩu này riêng cho nhân sự và yêu cầu đổi ngay sau khi đăng nhập.
+          </div>
+        </div>
+      </Modal>
+
       <Drawer
         title={null}
         placement="right"
@@ -682,13 +715,8 @@ const PersonnelList = () => {
                     icon={<KeyOutlined />}
                     block
                     onClick={() => {
-                      Modal.confirm({
-                        title: 'Đặt lại mật khẩu',
-                        content: 'Bạn có chắc chắn muốn đặt lại mật khẩu của nhân viên này về mặc định (123456)?',
-                        onOk: () => handleResetPassword(detailUser.id),
-                        okText: 'Đặt lại',
-                        cancelText: 'Hủy'
-                      });
+                      setResetPwValue('');
+                      setResetPw({ id: detailUser.id, name: detailUser.name });
                     }}
                   >
                     Khôi phục mật khẩu mặc định (123456)

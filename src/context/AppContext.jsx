@@ -484,21 +484,10 @@ export const AppProvider = ({ children }) => {
       setIsAuthenticated(true);
       return true;
     } catch (err) {
-      // Vai trò ở đây phải VIẾT HOA đúng như danh sách quyền trong App.jsx
-      // ('ADMIN', 'VAN_PHONG'…). Trước đây ghi 'Admin' và 'HR' nên không khớp:
-      // ProtectedRoute đá về /admin/cham-cong, vào lại vẫn không khớp, đá tiếp —
-      // vòng lặp chuyển hướng vô tận và người dùng chỉ thấy trang trắng.
-      if (username === 'admin' && password === 'admin123') {
-        setCurrentUser({ id: 'admin', name: 'Quản trị viên (Offline)', role: 'ADMIN', avatar: '' });
-        setIsAuthenticated(true);
-        localStorage.setItem('kpi_is_auth', 'true');
-        return true;
-      } else if (username === 'hr' && password === '123456') {
-        setCurrentUser({ id: 'hr', name: 'Nhân sự (Offline)', role: 'VAN_PHONG', avatar: '' });
-        setIsAuthenticated(true);
-        localStorage.setItem('kpi_is_auth', 'true');
-        return true;
-      }
+      // Không còn "đăng nhập offline" bằng admin/admin123 hay hr/123456. Nó chỉ
+      // mở được giao diện (không có token nên không đọc được dữ liệu), nhưng là
+      // một cặp mật khẩu viết cứng nằm trong bản build công khai — không có lý
+      // do gì để giữ. Máy chủ không trả lời thì báo đúng như vậy.
       throw err;
     }
   };
@@ -572,7 +561,7 @@ export const AppProvider = ({ children }) => {
       const dto = {
         fullName: userData.name,
         phoneNumber: userData.phone,
-        password: userData.password || '123456',
+        password: userData.password,   // form đã bắt buộc nhập, không còn mặc định 123456
         role: userData.role,
         departmentId: userData.deptId,
         avatarUrl: userData.avatarUrl,

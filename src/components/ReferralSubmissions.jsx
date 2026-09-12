@@ -326,8 +326,10 @@ export const ReferralSubmissions = () => {
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item name="password" label="Mật khẩu ban đầu">
-                    <Input.Password placeholder="Để trống = 123456" />
+                  <Form.Item name="password" label="Mật khẩu ban đầu"
+                             rules={[{ required: true, message: 'Nhập mật khẩu ban đầu' }, { min: 6, message: 'Ít nhất 6 ký tự' }]}
+                             tooltip="Nhắn riêng cho nhân sự mới, yêu cầu đổi ngay ngày đầu.">
+                    <Input.Password placeholder="Ít nhất 6 ký tự" />
                   </Form.Item>
                 </Col>
               </Row>
