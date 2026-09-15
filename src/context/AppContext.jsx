@@ -576,8 +576,11 @@ export const AppProvider = ({ children }) => {
 
   const updateUser = async (updatedUser) => {
     try { 
+      // Form Sửa nhân sự có 10 ô; trước đây hàm này gửi thiếu `phone` và
+      // `allowCheckinUntil9` nên bấm Lưu báo thành công mà hai thứ đó không đổi.
       const dto = {
         fullName: updatedUser.name,
+        phoneNumber: updatedUser.phone ? String(updatedUser.phone).trim() : undefined,
         role: updatedUser.role,
         status: updatedUser.status,
         departmentId: updatedUser.deptId,
@@ -588,7 +591,10 @@ export const AppProvider = ({ children }) => {
         referrerId: updatedUser.referrerId === null || updatedUser.referrerId === undefined
           ? undefined
           : updatedUser.referrerId,
-        joinedDate: updatedUser.joinedDate || undefined
+        joinedDate: updatedUser.joinedDate || undefined,
+        allowCheckinUntil9: typeof updatedUser.allowCheckinUntil9 === 'boolean'
+          ? updatedUser.allowCheckinUntil9
+          : undefined
       };
       await apiClient.put(`/users/${updatedUser.id}`, dto);
       await refresh('users'); 
