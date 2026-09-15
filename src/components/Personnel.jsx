@@ -3,6 +3,7 @@ import { Table, Button, Space, Avatar, Tag, Modal, Form, Input, Select, Popconfi
 import dayjs from 'dayjs';
 import { AppContext } from '../context/AppContext';
 import { rowClick } from '../utils/tableRow';
+import { NhapNhanSu } from './NhapNhanSu';
 import { 
   PlusOutlined, 
   EditOutlined, 
@@ -17,7 +18,7 @@ import {
   TrophyOutlined,
   SearchOutlined,
   LoadingOutlined,
-  GiftOutlined
+  GiftOutlined, FileExcelOutlined
 } from '@ant-design/icons';
 import { apiClient } from '../utils/apiClient';
 import { ReferralSubmissions } from './ReferralSubmissions';
@@ -31,6 +32,7 @@ const PersonnelList = () => {
   const [deptFilter, setDeptFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ACTIVE');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [moNhapExcel, setMoNhapExcel] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [detailUser, setDetailUser] = useState(null);
@@ -340,13 +342,16 @@ const PersonnelList = () => {
         <Space>
           <Popconfirm
             title="Soát điểm gieo hạt nhân sự mới?"
-            description="Cộng 15đ cho người giới thiệu khi nhân sự mới đã làm đủ một tháng. Hệ thống vẫn tự chạy lúc 23:20 mỗi ngày."
+            description="Cộng điểm giới thiệu cho người giới thiệu khi nhân sự mới đã làm đủ một tháng. Hệ thống vẫn tự chạy lúc 23:20 mỗi ngày."
             okText="Soát ngay" cancelText="Hủy" onConfirm={handleRunReferrals}
           >
             <Button icon={<GiftOutlined />} style={{ borderRadius: 8, height: 40 }}>
               Soát điểm giới thiệu
             </Button>
           </Popconfirm>
+          <Button icon={<FileExcelOutlined />} style={{ borderRadius: 8, height: 40 }} onClick={() => setMoNhapExcel(true)}>
+            Nhập từ Excel
+          </Button>
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -425,6 +430,8 @@ const PersonnelList = () => {
       </div>
 
       {/* Add/Edit Modal */}
+      <NhapNhanSu open={moNhapExcel} onClose={() => setMoNhapExcel(false)} />
+
       <Modal
         title={editingUser ? 'Cập Nhật Thông Tin Nhân Viên' : 'Thêm Nhân Viên Mới'}
         open={isModalOpen}
