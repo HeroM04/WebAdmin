@@ -601,6 +601,14 @@ export const AppProvider = ({ children }) => {
     } catch (e) { throw e; }
   };
 
+  // Xóa VĨNH VIỄN người đã khóa cùng toàn bộ dữ liệu — dành cho tài khoản thử
+  // nghiệm gieo sẵn. Máy chủ chỉ cho xóa khi status đã INACTIVE.
+  const purgeUser = async (userId) => {
+    const daXoa = await apiClient.delete(`/users/${userId}/purge`);
+    await refresh('users', 'kpi', 'departments');
+    return daXoa;
+  };
+
   const deleteUser = async (userId) => {
     try { 
       await apiClient.delete(`/users/${userId}`); 
@@ -782,6 +790,7 @@ export const AppProvider = ({ children }) => {
         addUser,
         updateUser,
         deleteUser,
+        purgeUser,
         approveDeal,
         rejectDeal,
         deleteDeal,

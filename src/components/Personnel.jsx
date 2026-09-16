@@ -27,7 +27,7 @@ import { ReferralSubmissions } from './ReferralSubmissions';
 // Yes! I'll write the code correctly without react-redux.
 
 const PersonnelList = () => {
-  const { departments, users, addUser, updateUser, deleteUser } = useContext(AppContext);
+  const { departments, users, addUser, updateUser, deleteUser, purgeUser } = useContext(AppContext);
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ACTIVE');
@@ -122,6 +122,19 @@ const PersonnelList = () => {
 
   const handleCancel = () => {
     setIsModalOpen(false);
+  };
+
+  const handlePurge = async (record) => {
+    try {
+      const daXoa = await purgeUser(record.id);
+      const tom = daXoa && typeof daXoa === 'object'
+        ? Object.entries(daXoa).filter(([b]) => b !== 'users').map(([b, n]) => n + ' ' + b).join(', ')
+        : '';
+      message.success('Đã xóa vĩnh viễn ' + record.name + (tom ? ' cùng ' + tom : '') + '.');
+      setDrawerOpen(false);
+    } catch (e) {
+      message.error(e?.message || 'Không xóa được');
+    }
   };
 
   const handleDelete = async (id) => {
@@ -293,16 +306,31 @@ const PersonnelList = () => {
       render: (_, record) => (
         <Space size="small">
           <Button type="text" icon={<EditOutlined style={{ color: 'var(--primary-color)' }} />} onClick={() => showEditModal(record)}>Sửa</Button>
-          <Popconfirm
-            title="Xóa nhân viên"
-            description="Bạn có chắc chắn muốn xóa nhân sự này và các lịch sử KPI liên quan?"
-            okText="Xóa"
-            cancelText="Hủy"
-            onConfirm={() => handleDelete(record.id)}
-            okButtonProps={{ danger: true }}
-          >
-            <Button type="text" icon={<DeleteOutlined style={{ color: 'var(--danger-color)' }} />} />
-          </Popconfirm>
+          {record.status === 'INACTIVE' ? (
+            /* Đã khóa rồi → bước hai: xóa hẳn. Dành cho tài khoản thử nghiệm;
+               người thật nghỉ việc thì cứ để khóa, giữ lịch sử để tính lương. */
+            <Popconfirm
+              title="Xóa vĩnh viễn?"
+              description={<span>Mất toàn bộ chấm công, điểm KPI, giao dịch, bài đăng, lương của <b>{record.name}</b>.<br />Không khôi phục được. Chỉ dùng cho tài khoản thử nghiệm.</span>}
+              okText="Xóa vĩnh viễn"
+              cancelText="Hủy"
+              onConfirm={() => handlePurge(record)}
+              okButtonProps={{ danger: true }}
+            >
+              <Button type="text" danger icon={<DeleteOutlined />}>Xóa vĩnh viễn</Button>
+            </Popconfirm>
+          ) : (
+            <Popconfirm
+              title="Khóa tài khoản"
+              description="Nhân sự bị khóa, không đăng nhập được nữa. Lịch sử chấm công, KPI, lương vẫn giữ."
+              okText="Khóa"
+              cancelText="Hủy"
+              onConfirm={() => handleDelete(record.id)}
+              okButtonProps={{ danger: true }}
+            >
+              <Button type="text" icon={<DeleteOutlined style={{ color: 'var(--danger-color)' }} />} />
+            </Popconfirm>
+          )}
         </Space>
       )
     }
@@ -375,7 +403,7 @@ const PersonnelList = () => {
               <div style={{ display: 'flex', gap: 12 }}>
                 <Input.Search placeholder="Tìm mã, tên nhân viên..." allowClear style={{ width: 200 }} onChange={e => setSearch(e.target.value)} />
                 <Select value={deptFilter} onChange={setDeptFilter} style={{ width: 160 }} options={[{ value: 'ALL', label: 'Tất cả phòng ban' }, ...[...departments].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })).map(d => ({ value: d.id, label: d.name }))]} />
-                <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 140 }} options={[{ value: 'ALL', label: 'Tất cả trạng thái' }, { value: 'ACTIVE', label: 'Hoạt động' }, { value: 'INACTIVE', label: 'Tạm khóa' }]} />
+                <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 140 }} options={[{ value: 'ALL', label: 'Tất cả trạng thái' }, { value: 'ACTIVE', label: 'Hoạt động' }, { value: 'INACTIVE', label: 'Đã khóa / đã nghỉ' }]} />
               </div>
             </div>
             <Table

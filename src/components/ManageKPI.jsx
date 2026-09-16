@@ -14,7 +14,7 @@ const { Search } = Input;
 
 export const ManageKPI = () => {
   const {
-    users, kpiScores, departments, deals, attendance, posts, meetings, trainingSessions, flagKpiRecord
+    activeUsers: users, kpiScores, departments, deals, attendance, posts, meetings, trainingSessions, flagKpiRecord
   } = useContext(AppContext);
 
   const [search, setSearch] = useState('');
