@@ -449,6 +449,14 @@ const AttendanceLogs = () => {
           size="small"
           loading={loading}
           onRow={rowClick(openDetail)}
+          /* Bảng trống vì đang lọc "Chờ duyệt" trong khi ô thống kê vẫn đếm bản
+             ghi đã duyệt — người xem tưởng chấm công không vào. Nói rõ ngay tại chỗ. */
+          locale={{ emptyText: (statusFilter === 'PENDING' && !loading && stats.total > 0)
+            ? <div style={{ padding: '24px 0', color: 'var(--text-secondary)' }}>
+                Không có bản ghi nào chờ duyệt. {stats.total} bản ghi khác đã duyệt hoặc từ chối nên không hiện ở bộ lọc này.
+                <div style={{ marginTop: 8 }}><Button size="small" onClick={() => setStatusFilter('ALL')}>Xem tất cả trạng thái</Button></div>
+              </div>
+            : undefined }}
           /* Phân trang do máy chủ quyết định: antd chỉ vẽ thanh điều hướng,
              không tự cắt mảng — mảng nhận về đã là đúng một trang rồi. */
           pagination={{
