@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import { AppContext } from '../context/AppContext';
 import { rowClick } from '../utils/tableRow';
 import { NhapNhanSu } from './NhapNhanSu';
+import { nenAnh } from '../utils/nenAnh';
 import { 
   PlusOutlined, 
   EditOutlined, 
@@ -103,7 +104,10 @@ const PersonnelList = () => {
     const { file, onSuccess, onError } = options;
     try {
       setUploadingAvatar(true);
-      const res = await apiClient.upload('/upload/image', file);
+      // Ảnh điện thoại 5–15 MB vượt trần Cloudinary (10 MB) / máy chủ (15 MB).
+      // Ảnh đại diện chỉ cần 800px, thu nhỏ ngay ở đây rồi mới gửi.
+      const anhNho = await nenAnh(file, 800, 0.85);
+      const res = await apiClient.upload('/upload/image', anhNho);
       if (res && res.url) {
         setAvatarUrl(res.url);
         onSuccess("Ok");
@@ -114,7 +118,8 @@ const PersonnelList = () => {
     } catch (err) {
       console.error(err);
       onError({ err });
-      message.error('Tải ảnh lên thất bại');
+      // Nói đúng lý do máy chủ trả về thay vì "thất bại" chung chung
+      message.error(err?.message || (typeof err === 'string' ? err : 'Tải ảnh lên thất bại'));
     } finally {
       setUploadingAvatar(false);
     }
@@ -153,7 +158,7 @@ const PersonnelList = () => {
       if (n === 0) {
         message.info('Chưa có ai đủ điều kiện cộng điểm giới thiệu.');
       } else {
-        message.success(`Đã cộng 15đ cho ${n} người giới thiệu.`);
+        message.success(`Đã cộng điểm giới thiệu cho ${n} người.`);
       }
     } catch (e) {
       message.error(e?.message || 'Lỗi khi soát điểm giới thiệu');
