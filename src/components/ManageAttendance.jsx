@@ -4,7 +4,7 @@ import {
   SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined,
   ClockCircleOutlined, EnvironmentOutlined, FilterOutlined, PlusOutlined,
   EditOutlined, EyeOutlined, ClockCircleFilled, CameraOutlined, UserOutlined, DownloadOutlined,
-  CalendarOutlined
+  CalendarOutlined, TableOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import { doiKhoang } from '../utils/locBang';
@@ -12,6 +12,7 @@ import { apiClient } from '../utils/apiClient';
 import { exportToCSV } from '../utils/exportCsv';
 import { rowClick } from '../utils/tableRow';
 import { LeaveRequests } from './LeaveRequests';
+import { BangCongThang } from './BangCongThang';
 
 const { Search } = Input;
 
@@ -24,7 +25,9 @@ const StatusTag = ({ status }) => {
 const AttendanceLogs = () => {
   const { users, departments, currentUser, approveAttendance, rejectAttendance, deleteAttendance, updateAttendance, addAttendance } = useContext(AppContext);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  // Mặc định 'Chờ duyệt': mở trang là thấy đúng việc phải làm. Toàn bộ chấm công
+  // thường ngày xem ở tab Bảng công tháng, không lật danh sách.
+  const [statusFilter, setStatusFilter] = useState('PENDING');
   const [dateRange, setDateRange] = useState(null);
   const [deptFilter, setDeptFilter] = useState('ALL');
   const [previewImg, setPreviewImg] = useState(null);
@@ -625,9 +628,10 @@ const AttendanceLogs = () => {
 
 export const ManageAttendance = () => (
   <Tabs
-    defaultActiveKey="logs"
+    defaultActiveKey="bang"
     items={[
-      { key: 'logs',  label: <span><ClockCircleOutlined /> Chấm công</span>,  children: <AttendanceLogs /> },
+      { key: 'bang',  label: <span><TableOutlined /> Bảng công tháng</span>, children: <BangCongThang /> },
+      { key: 'logs',  label: <span><ClockCircleOutlined /> Duyệt chấm công</span>,  children: <AttendanceLogs /> },
       { key: 'leave', label: <span><CalendarOutlined /> Đơn xin vắng</span>, children: <LeaveRequests /> },
     ]}
   />

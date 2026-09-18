@@ -414,3 +414,14 @@ h1, h2, h3, h4, .outfit-font {
 
 /* Dòng lỗi trong bảng xem trước Nhập nhân sự từ Excel */
 .ant-table-tbody > tr.nhap-loi > td { background: rgba(239, 68, 68, 0.06) !important; }
+
+/* Bảng công tháng — lưới người × ngày. Cột tên dính bên trái, hàng tiêu đề
+   dính bên trên, để cuộn 31 cột và 100 hàng vẫn biết đang nhìn ai, ngày nào. */
+.bang-cong th, .bang-cong td { border-bottom: 1px solid var(--border-color); background: var(--bg-card); }
+.bang-cong thead th { position: sticky; top: 0; z-index: 2; background: var(--bg-secondary); border-bottom: 2px solid var(--border-color); }
+.bang-cong .bc-ten { position: sticky; left: 0; z-index: 1; background: var(--bg-card); padding: 4px 10px; min-width: 170px;
+                     border-right: 2px solid var(--border-color); text-align: left; }
+.bang-cong thead .bc-ten { background: var(--bg-secondary); }
+.bang-cong .bc-tong { text-align: center; padding: 4px 8px; min-width: 44px; border-left: 1px solid var(--border-color); }
+.bang-cong tbody tr:hover td { background: rgba(16, 185, 129, 0.05); }
+.bang-cong tbody tr:hover td.bc-ten { background: color-mix(in srgb, var(--bg-card), #10b981 5%); }
