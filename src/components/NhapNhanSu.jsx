@@ -80,6 +80,9 @@ export const NhapNhanSu = ({ open, onClose }) => {
   const [matKhau, setMatKhau] = useState('123456');
   const [ngayMacDinh, setNgayMacDinh] = useState(dayjs('2026-07-01'));
   const [chamChuoc9h, setChamChuoc9h] = useState(false);
+  // Tọa độ + bán kính gán cho phòng ban TẠO MỚI trong lượt nhập — công ty một
+  // văn phòng nên điền sẵn Khu đô thị Trung Văn, Đại Mỗ (Plus Code XQRP+RWX).
+  const [toaDo, setToaDo] = useState({ lat: 20.9921125, lng: 105.7873594, banKinh: 5000 });
   const [dangNhap, setDangNhap] = useState(false);
   const [tienDo, setTienDo] = useState({ xong: 0, tong: 0 });
   const [ketQua, setKetQua] = useState(null);
@@ -177,7 +180,7 @@ export const NhapNhanSu = ({ open, onClose }) => {
     const idPhong = new Map(departments.map(d => [khoaPhong(d.name), d.id]));
     for (const tenPhong of phongMoi) {
       try {
-        const p = await apiClient.post('/departments', { name: tenPhong });
+        const p = await apiClient.post('/departments', { name: tenPhong, officeLat: toaDo.lat, officeLng: toaDo.lng, allowedRadius: toaDo.banKinh });
         idPhong.set(khoaPhong(tenPhong), p?.id ?? p?.data?.id);
         kq.phongTao.push(tenPhong);
       } catch (e) {
@@ -273,6 +276,14 @@ export const NhapNhanSu = ({ open, onClose }) => {
             <span>Ngày vào làm mặc định <DatePicker value={ngayMacDinh} onChange={d => d && setNgayMacDinh(d)} format="DD/MM/YYYY" allowClear={false} size="small" /></span>
             <Checkbox checked={chamChuoc9h} onChange={e => setChamChuoc9h(e.target.checked)}>Cho phép đến 09:00 mới tính đi muộn</Checkbox>
           </Space>
+          {phongMoi.length > 0 && (
+            <Space wrap size={[16, 8]} style={{ padding: '10px 12px', background: 'var(--bg-secondary)', borderRadius: 8 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Phòng tạo mới nhận tọa độ:</span>
+              <span>Vĩ độ <Input value={toaDo.lat} onChange={e => setToaDo({ ...toaDo, lat: parseFloat(e.target.value) || 0 })} style={{ width: 120 }} size="small" /></span>
+              <span>Kinh độ <Input value={toaDo.lng} onChange={e => setToaDo({ ...toaDo, lng: parseFloat(e.target.value) || 0 })} style={{ width: 120 }} size="small" /></span>
+              <span>Bán kính (m) <Input value={toaDo.banKinh} onChange={e => setToaDo({ ...toaDo, banKinh: parseInt(e.target.value, 10) || 0 })} style={{ width: 80 }} size="small" /></span>
+            </Space>
+          )}
 
           {dangNhap && <Progress percent={Math.round(tienDo.xong / Math.max(tienDo.tong, 1) * 100)} status="active"
                                  format={() => tienDo.xong + ' / ' + tienDo.tong} />}
@@ -287,7 +298,7 @@ export const NhapNhanSu = ({ open, onClose }) => {
           <Alert type={ketQua.loi.length ? 'warning' : 'success'} showIcon
                  message={`Đã tạo ${ketQua.tao.length} nhân sự` + (ketQua.phongTao.length ? `, ${ketQua.phongTao.length} phòng ban mới` : '') + (ketQua.loi.length ? `, ${ketQua.loi.length} dòng lỗi` : '')}
                  description={ketQua.phongTao.length
-                   ? 'Phòng mới chưa có tọa độ văn phòng và bán kính chấm công — vào Quản lý Phòng ban → Sửa để điền, nếu không nhân sự phòng đó chấm công tại chỗ sẽ bị tính là ngoài văn phòng.'
+                   ? 'Phòng mới đã nhận tọa độ và bán kính đặt ở trên. Muốn đổi thì vào Quản lý Phòng ban → Sửa.'
                    : null} />
           {ketQua.loi.length > 0 && (
             <Table size="small" pagination={false} rowKey={(r, i) => i} dataSource={ketQua.loi}

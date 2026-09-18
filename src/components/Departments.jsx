@@ -2,16 +2,17 @@ import React, { useContext, useState } from 'react';
 import { Table, Button, Space, Input, InputNumber, Popconfirm, message, Row, Col, Drawer, Modal, Form, Avatar, Select } from 'antd';
 import {
   SearchOutlined, DeleteOutlined, EditOutlined, PlusOutlined,
-  EyeOutlined, BankOutlined, TeamOutlined, UserDeleteOutlined, UserAddOutlined
+  EyeOutlined, BankOutlined, TeamOutlined, UserDeleteOutlined, UserAddOutlined, EnvironmentOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import { rowClick } from '../utils/tableRow';
+import { apiClient } from '../utils/apiClient';
 
 const { Search } = Input;
 
 export const Departments = () => {
   const {
-    departments, activeUsers,
+    departments, activeUsers, refreshData,
     addDepartment, updateDepartment, deleteDepartment,
     assignUserToDepartment, removeUserFromDepartment
   } = useContext(AppContext);
@@ -20,6 +21,9 @@ export const Departments = () => {
   const [detailDept, setDetailDept] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [toaDoChung, setToaDoChung] = useState(false);   // hộp thoại áp tọa độ cho tất cả phòng
+  const [dangAp, setDangAp] = useState(false);
+  const [formChung] = Form.useForm();
   const [editingDept, setEditingDept] = useState(null);
   const [selectedUserToAdd, setSelectedUserToAdd] = useState(null);
   const [form] = Form.useForm();
@@ -37,6 +41,25 @@ export const Departments = () => {
     setDetailDept(dept);
     setSelectedUserToAdd(null);
     setDrawerOpen(true);
+  };
+
+  // Công ty một văn phòng: mọi phòng ban cùng tọa độ. Điền tay 12 lần cùng một
+  // số là việc máy nên làm — và làm tay dễ gõ lệch một chữ số, phòng đó chấm
+  // công tại chỗ bị tính ngoài văn phòng mà không ai hiểu vì sao.
+  const apToaDoChung = async () => {
+    const v = await formChung.validateFields();
+    setDangAp(true);
+    let ok = 0, loi = [];
+    for (const d of departments) {
+      try {
+        await apiClient.put(`/departments/${d.id}`, { officeLat: v.officeLat, officeLng: v.officeLng, allowedRadius: v.allowedRadius });
+        ok++;
+      } catch (e) { loi.push(d.name + ': ' + (e?.message || 'lỗi')); }
+    }
+    await refreshData?.();
+    setDangAp(false);
+    if (loi.length) message.warning(`Đã áp cho ${ok} phòng, lỗi ${loi.length}: ${loi.join('; ')}`);
+    else { message.success(`Đã áp tọa độ và bán kính ${v.allowedRadius}m cho ${ok} phòng ban.`); setToaDoChung(false); }
   };
 
   const openAdd = () => {
@@ -190,7 +213,12 @@ export const Departments = () => {
       <div className="premium-card" style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
           <Search placeholder="Tìm tên phòng ban..." allowClear style={{ width: 260 }} onChange={e => setSearch(e.target.value)} prefix={<SearchOutlined style={{ color: 'var(--text-secondary)' }} />} />
-          <Button type="primary" icon={<PlusOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={openAdd}>Thêm Phòng ban</Button>
+          <Space>
+            <Button icon={<EnvironmentOutlined />} onClick={() => { formChung.setFieldsValue({ officeLat: 20.9921125, officeLng: 105.7873594, allowedRadius: 5000 }); setToaDoChung(true); }}>
+              Đặt tọa độ chung cho tất cả phòng
+            </Button>
+            <Button type="primary" icon={<PlusOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={openAdd}>Thêm Phòng ban</Button>
+          </Space>
         </div>
       </div>
 
@@ -201,6 +229,25 @@ export const Departments = () => {
         </div>
         <Table dataSource={filteredDepartments} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ defaultPageSize: 15, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }} />
       </div>
+
+      <Modal
+        title="Đặt tọa độ chung cho tất cả phòng ban"
+        open={toaDoChung} onCancel={() => setToaDoChung(false)} onOk={apToaDoChung}
+        okText={'Áp cho ' + departments.length + ' phòng'} cancelText="Hủy" confirmLoading={dangAp}
+        okButtonProps={{ style: { backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' } }}
+      >
+        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
+          Ghi đè tọa độ văn phòng và bán kính chấm công của <b>mọi</b> phòng ban đang có. Tên phòng và nhân sự giữ nguyên.
+          Điền sẵn: Khu đô thị Trung Văn, Đại Mỗ (Plus Code XQRP+RWX).
+        </div>
+        <Form form={formChung} layout="vertical">
+          <Row gutter={12}>
+            <Col span={12}><Form.Item name="officeLat" label="Vĩ độ (Latitude)" rules={[{ required: true, message: 'Nhập vĩ độ' }]}><InputNumber style={{ width: '100%' }} step={0.000001} /></Form.Item></Col>
+            <Col span={12}><Form.Item name="officeLng" label="Kinh độ (Longitude)" rules={[{ required: true, message: 'Nhập kinh độ' }]}><InputNumber style={{ width: '100%' }} step={0.000001} /></Form.Item></Col>
+          </Row>
+          <Form.Item name="allowedRadius" label="Bán kính cho phép (mét)" rules={[{ required: true, message: 'Nhập bán kính' }]}><InputNumber style={{ width: '100%' }} min={10} step={100} /></Form.Item>
+        </Form>
+      </Modal>
 
       {/* Detail Drawer */}
       <Drawer
