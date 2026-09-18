@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { Table, Button, Space, Input, InputNumber, Popconfirm, message, Row, Col, Drawer, Modal, Form, Avatar, Select } from 'antd';
+import { Table, Button, Space, Input, InputNumber, Popconfirm, message, Row, Col, Drawer, Modal, Form, Avatar, Select, Tag } from 'antd';
 import {
   SearchOutlined, DeleteOutlined, EditOutlined, PlusOutlined,
   EyeOutlined, BankOutlined, TeamOutlined, UserDeleteOutlined, UserAddOutlined, EnvironmentOutlined
@@ -142,6 +142,13 @@ export const Departments = () => {
         const count = getDeptUsers(record.id).length;
         return <span style={{ color: 'var(--text-secondary)' }}><TeamOutlined style={{ marginRight: 6 }} />{count} nhân sự</span>;
       }
+    },
+    {
+      title: 'Vị trí chấm công',
+      key: 'viTri',
+      render: (_, d) => (d.officeLat && d.officeLng)
+        ? <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{Number(d.officeLat).toFixed(6)}, {Number(d.officeLng).toFixed(6)} · {d.allowedRadius || 2000} m</span>
+        : <Tag color="error">Chưa có tọa độ — bán kính không có tác dụng</Tag>
     },
     {
       title: 'Hành động',
@@ -340,15 +347,18 @@ export const Departments = () => {
               📍 VỊ TRÍ VĂN PHÒNG (dùng cho chấm công GPS)
             </div>
 
+            {/* Bắt buộc có tọa độ: thiếu là máy chủ lẫn app bỏ qua luôn bán kính,
+                đo từ một điểm mặc định cách văn phòng 2 km với bán kính 2000 m —
+                Admin đặt 5000 m mà nhân viên vẫn bị báo ngoài phạm vi. */}
             <Row gutter={12}>
               <Col span={12}>
-                <Form.Item name="officeLat" label="Vĩ độ (Latitude)">
-                  <InputNumber style={{ width: '100%' }} step={0.000001} placeholder="Ví dụ: 20.999042" />
+                <Form.Item name="officeLat" label="Vĩ độ (Latitude)" rules={[{ required: true, message: 'Nhập vĩ độ' }]}>
+                  <InputNumber style={{ width: '100%' }} step={0.000001} placeholder="Ví dụ: 20.9921125" />
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item name="officeLng" label="Kinh độ (Longitude)">
-                  <InputNumber style={{ width: '100%' }} step={0.000001} placeholder="Ví dụ: 105.806702" />
+                <Form.Item name="officeLng" label="Kinh độ (Longitude)" rules={[{ required: true, message: 'Nhập kinh độ' }]}>
+                  <InputNumber style={{ width: '100%' }} step={0.000001} placeholder="Ví dụ: 105.7873594" />
                 </Form.Item>
               </Col>
             </Row>
@@ -356,7 +366,7 @@ export const Departments = () => {
             <Form.Item
               name="allowedRadius"
               label="Bán kính cho phép (mét)"
-              extra="Nhân viên chấm công trong bán kính này được duyệt tự động; ngoài phạm vi phải nhập lý do và chờ duyệt. Để trống sẽ dùng mặc định 2000m."
+              extra="Nhân viên chấm công trong bán kính này được duyệt tự động; ngoài phạm vi phải nhập lý do và chờ duyệt. Bán kính chỉ có tác dụng khi đã điền tọa độ."
             >
               <InputNumber style={{ width: '100%' }} min={10} max={20000} step={10} placeholder="Ví dụ: 200" />
             </Form.Item>
