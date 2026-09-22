@@ -377,7 +377,7 @@ const AttendanceLogs = () => {
     {
       title: 'Hành động',
       key: 'actions',
-      width: 132,
+      width: 160,   // Sửa + từ chối + duyệt + xóa: khai đúng bề rộng thật để cột không tự nới
       fixed: 'right',
       className: 'no-row-click',
       render: (_, record) => (
