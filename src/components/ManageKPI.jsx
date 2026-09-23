@@ -8,6 +8,7 @@ import {
 import { AppContext } from '../context/AppContext';
 import { KpiLedger } from './KpiLedger';
 import { rowClick } from '../utils/tableRow';
+import { locNguoiChamKpi } from '../utils/vaiTro';
 import dayjs from 'dayjs';
 
 const { Search } = Input;
@@ -141,7 +142,12 @@ export const ManageKPI = () => {
     message.success('Đã thay đổi cờ trạng thái KPI cho nhân sự!');
   };
 
-  const filteredUsers = users.filter(u => {
+  // Màn hình chấm KPI chỉ liệt kê người thuộc diện chấm KPI. Văn phòng
+  // (Back-Office) và Admin chấm công bình thường nhưng không có điểm — để họ ở
+  // đây thì Admin phải lướt qua cả chục dòng 0đ không bao giờ đổi.
+  const nhanSuKpi = locNguoiChamKpi(users);
+
+  const filteredUsers = nhanSuKpi.filter(u => {
     // Bọc String(): mã nhân sự từ API là số, gọi thẳng toLowerCase() lên số sẽ
     // ném lỗi và làm trắng cả trang ngay khi vừa gõ ký tự đầu vào ô tìm kiếm.
     const tim = search.toLowerCase();
@@ -269,15 +275,15 @@ export const ManageKPI = () => {
       <Row gutter={[16, 16]}>
         <Col xs={12} md={8}>
           <div className="premium-card" style={{ padding: '16px 20px', borderLeft: '4px solid #3b82f6' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>TỔNG NHÂN SỰ</div>
-            <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: '#3b82f6' }}>{users.length}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>NHÂN SỰ CHẤM KPI</div>
+            <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: '#3b82f6' }}>{nhanSuKpi.length}</div>
           </div>
         </Col>
         <Col xs={12} md={8}>
           <div className="premium-card" style={{ padding: '16px 20px', borderLeft: '4px solid #10b981' }}>
             <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>ĐẠT KPI TUẦN</div>
             <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: '#10b981' }}>
-              {users.filter(u => calculateWeeklyKPI(u.id).total >= 100).length}
+              {nhanSuKpi.filter(u => calculateWeeklyKPI(u.id).total >= 100).length}
             </div>
           </div>
         </Col>

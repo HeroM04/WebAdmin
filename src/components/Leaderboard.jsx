@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import { AppContext } from '../context/AppContext';
 import { exportToCSV } from '../utils/exportCsv';
 import { khopTen } from '../utils/locBang';
+import { locNguoiChamKpi } from '../utils/vaiTro';
 
 const { Title, Text } = Typography;
 
@@ -15,8 +16,10 @@ const Leaderboard = () => {
   const [search, setSearch] = useState('');
   const currentMonthStr = selectedMonth.format('YYYY-MM');
 
-  // Tính tổng điểm cho từng user trong tháng
-  const leaderboardData = activeUsers
+  // Tính tổng điểm cho từng user trong tháng.
+  // Chỉ khối kinh doanh: Văn phòng và Admin không bị chấm KPI nên không thể
+  // đứng chung một bảng xếp hạng — họ luôn 0đ và nằm chót, như thể làm kém.
+  const leaderboardData = locNguoiChamKpi(activeUsers)
     .map(user => {
       const score = kpiScores.find(s => s.userId === user.id && s.month === currentMonthStr);
       return {

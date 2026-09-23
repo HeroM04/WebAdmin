@@ -38,6 +38,7 @@ import { apiClient } from '../utils/apiClient';
 import { calcSalary, formatVND } from '../utils/salaryUtils';
 import { useNavigate } from 'react-router-dom';
 import { exportToCSV } from '../utils/exportCsv';
+import { locNguoiChamKpi } from '../utils/vaiTro';
 
 // Premium CRM Stat Card
 const StatCard = ({ label, value, trend, trendColor, color, icon, onClick, clickable }) => (
@@ -190,9 +191,13 @@ export const Dashboard = () => {
   ];
   const pieTrong = pieData.every(p => !p.value);
 
+  // Biểu đồ theo phòng và bảng xếp hạng chỉ tính khối kinh doanh — Văn phòng và
+  // Admin không bị chấm KPI, đưa vào thì phòng nào có họ cũng bị kéo tụt.
+  const nhanSuKpi = locNguoiChamKpi(activeUsers);
+
   // Combo Chart Data (Doanh số & hoạt động)
   const comboChartData = departments.map(dept => {
-    const deptUsers = activeUsers.filter(u => u.deptId === dept.id);
+    const deptUsers = nhanSuKpi.filter(u => u.deptId === dept.id);
     const userIds = deptUsers.map(u => u.id);
     const scoresCurrDept = kpiScores.filter(s => s.month === currentMonthStr && userIds.includes(s.userId));
     return {
@@ -255,8 +260,8 @@ export const Dashboard = () => {
     }
   ];
 
-  // Leaderboard — chỉ người đang làm; người đã xóa mềm không xếp hạng
-  const leaderboardData = activeUsers
+  // Leaderboard — chỉ người đang làm và thuộc diện chấm KPI
+  const leaderboardData = nhanSuKpi
     .map(user => {
       const score = kpiScores.find(s => s.userId === user.id && s.month === currentMonthStr) || { attendance: 0, meeting: 0, post: 0, deal: 0, total: 0 };
       const dept = departments.find(d => d.id === user.deptId);
