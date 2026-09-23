@@ -778,6 +778,8 @@ export const AppProvider = ({ children }) => {
         isAuthenticated,
         // Tải lại toàn bộ dữ liệu — dùng sau khi tạo nhân sự từ luồng ngoài trang Nhân sự
         refreshData: fetchInitialData,
+        // Tải lại vài nhóm, ví dụ refresh('oneOnOne', 'kpi') sau khi duyệt một báo cáo
+        refresh,
         login,
         loginPublic,
         logout,

@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
-import { Table, Button, Space, Avatar, Tag, Input, Select, Popconfirm, message, Row, Col, Drawer, Modal, Form, DatePicker, TimePicker, Progress, Tabs, Image } from 'antd';
+import { Table, Button, Space, Avatar, Tag, Input, Select, Popconfirm, message, Row, Col, Drawer, Modal, Form, DatePicker, TimePicker, Progress, Tabs } from 'antd';
 import dayjs from 'dayjs';
 import {
   SearchOutlined, DeleteOutlined, ClockCircleOutlined, QrcodeOutlined,
@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import { TrainingRsvpRequests } from './TrainingRsvpRequests';
+import { DaoTao1Kem1 } from './DaoTao1Kem1';
 import { rowClick } from '../utils/tableRow';
 import { exportToCSV } from '../utils/exportCsv';
 
@@ -454,46 +455,8 @@ export const ManageTraining = () => {
     }
   ];
 
-  const oneOnOneColumns = [
-    {
-      title: 'Nhân sự',
-      key: 'user',
-      render: (_, record) => {
-        const u = getUserById(record.userId);
-        return (
-          <Space>
-            <Avatar src={u?.avatar || record.userAvatar} />
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{u?.name || record.userName}</span>
-              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{u?.phone}</span>
-            </div>
-          </Space>
-        );
-      }
-    },
-    {
-      title: 'Nội dung Đào tạo',
-      dataIndex: 'content',
-      key: 'content',
-    },
-    {
-      title: 'Hình ảnh',
-      dataIndex: 'photoUrl',
-      key: 'photoUrl',
-      render: (url) => url ? <Image src={url} width={60} style={{ borderRadius: 6 }} /> : 'Không có ảnh'
-    },
-    {
-      title: 'Thời gian',
-      dataIndex: 'submittedAt',
-      key: 'submittedAt',
-      render: (text) => new Date(text).toLocaleString()
-    },
-    {
-      title: 'Trạng thái',
-      key: 'status',
-      render: (_, record) => <Tag color="success">Đã duyệt</Tag>
-    }
-  ];
+  // Số báo cáo 1-1 chờ duyệt — gắn lên nhãn tab cho khỏi nằm im không ai biết
+  const soCho1Kem1 = oneOnOneTrainings.filter(o => o.status === 'PENDING').length;
 
   const handleExportSession = () => {
     const exportData = filteredSessions.map(s => ({
@@ -514,21 +477,6 @@ export const ManageTraining = () => {
     ], 'Bao_Cao_Lop_Dao_Tao.csv');
   };
 
-
-  const handleExportOneOnOne = () => {
-    const exportData = oneOnOneTrainings.map(o => ({
-      userName: o.userName,
-      content: o.content,
-      submittedAt: new Date(o.submittedAt).toLocaleString(),
-      status: 'Đã duyệt'
-    }));
-    exportToCSV(exportData, [
-      { title: 'Nhân sự', key: 'userName' },
-      { title: 'Nội dung', key: 'content' },
-      { title: 'Thời gian', key: 'submittedAt' },
-      { title: 'Trạng thái', key: 'status' }
-    ], 'Bao_Cao_Dao_Tao_1_1.csv');
-  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -693,25 +641,8 @@ export const ManageTraining = () => {
           },
           {
             key: 'oneOnOne',
-            label: <><TeamOutlined /> Đào tạo 1-1</>,
-            children: (
-              <div className="premium-card" style={{ padding: 0, overflow: 'hidden' }}>
-                <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)' }}>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <TeamOutlined style={{ fontSize: 20, color: '#ec4899' }} />
-                    <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Báo cáo Đào tạo 1-1</span>
-                  </div>
-                  <Button type="primary" danger icon={<DownloadOutlined />} onClick={handleExportOneOnOne}>Xuất báo cáo</Button>
-                </div>
-                <Table
-                  columns={oneOnOneColumns}
-                  dataSource={oneOnOneTrainings}
-                  rowKey="id"
-                  pagination={{ pageSize: 10 }}
-                  scroll={{ x: 'max-content' }}
-                />
-              </div>
-            )
+            label: <><TeamOutlined /> Đào tạo 1-1{soCho1Kem1 > 0 && <Tag color="warning" style={{ marginLeft: 8 }}>{soCho1Kem1}</Tag>}</>,
+            children: <DaoTao1Kem1 />
           },
           {
             key: 'rsvp',

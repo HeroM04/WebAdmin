@@ -28,7 +28,7 @@ export const AppLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { 
-    deals, attendance, posts, meetings, feedbacks,
+    deals, attendance, posts, meetings, feedbacks, oneOnOneTrainings,
     theme, setTheme, currentUser, users, resetAllData, logout
   } = useContext(AppContext);
 
@@ -61,7 +61,9 @@ export const AppLayout = () => {
   const pendingDeals = deals.filter(d => d.status === 'PENDING').length;
   const pendingPosts = posts.filter(p => p.status === 'PENDING').length;
   const pendingMeetings = meetings.filter(m => m.status === 'PENDING').length;
-  const totalPending = pendingAttendance + pendingDeals + pendingPosts + pendingMeetings;
+  // Báo cáo đào tạo 1-1 giờ phải chờ Admin duyệt mới cộng điểm
+  const pending1Kem1 = (oneOnOneTrainings || []).filter(o => o.status === 'PENDING').length;
+  const totalPending = pendingAttendance + pendingDeals + pendingPosts + pendingMeetings + pending1Kem1;
   const pendingFeedbacks = feedbacks.filter(f => f.status === 'PENDING' || f.status === 'UNREAD').length;
 
   const toggleTheme = () => {
@@ -196,7 +198,11 @@ export const AppLayout = () => {
         },
         {
           key: 'manage_training',
-          icon: <BookOutlined />,
+          icon: (
+            <Badge count={pending1Kem1} size="small" offset={[8, 0]}>
+              <BookOutlined style={{ color: pending1Kem1 > 0 ? '#fbbf24' : 'inherit' }} />
+            </Badge>
+          ),
           label: 'Đào tạo'
         },
         {
