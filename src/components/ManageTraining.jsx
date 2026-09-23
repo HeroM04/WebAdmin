@@ -6,7 +6,8 @@ import {
   PlusOutlined, EditOutlined, EyeOutlined, BookOutlined, TeamOutlined,
   CalendarOutlined, EnvironmentOutlined, UserAddOutlined, UserDeleteOutlined,
   CheckCircleOutlined, CloseCircleOutlined, DownloadOutlined,
-  YoutubeOutlined, LinkOutlined, FacebookOutlined
+  YoutubeOutlined, LinkOutlined, FacebookOutlined,
+  FullscreenOutlined, FullscreenExitOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import { TrainingRsvpRequests } from './TrainingRsvpRequests';
@@ -19,6 +20,16 @@ const { Search } = Input;
 const YOUTUBE_URL_REGEX = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([\w\-]{11})(.*)?$/;
 // Link Facebook: video trên trang/nhóm, fb.watch, link chia sẻ, link rút gọn
 const FACEBOOK_URL_REGEX = /^(https?:\/\/)?(www\.|m\.|web\.|mbasic\.)?(facebook\.com|fb\.com|fb\.watch)\/.+$/i;
+
+/**
+ * Ảnh mã QR theo kích thước mong muốn.
+ *
+ * Ảnh lấy từ dịch vụ ngoài nên phải xin đúng số điểm ảnh cần dùng: phóng một
+ * ảnh 180px lên nửa màn hình máy chiếu thì các ô vuông nhòe, điện thoại cuối
+ * phòng không bắt được.
+ */
+const anhQR = (roomCode, token, size) =>
+  `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${roomCode}:${token}&bgcolor=ffffff&color=0b0f19&qzone=1&margin=0&format=png`;
 
 const loaiLink = (url) => {
   const u = String(url || '').trim();
@@ -121,6 +132,9 @@ export const ManageTraining = () => {
   const [addForm] = Form.useForm();
   const [editForm] = Form.useForm();
   const timerRef = useRef(null);
+  // Chiếu QR lên máy chiếu: cả phòng quét cùng lúc nên mã phải thật to.
+  const [toanManHinh, setToanManHinh] = useState(false);
+  const khungToanManHinh = useRef(null);
 
   useEffect(() => {
     if (!qrSessionId) return;
@@ -134,6 +148,44 @@ export const ManageTraining = () => {
     }, 1000);
     return () => clearInterval(timerRef.current);
   }, [qrSessionId]);
+
+  /*
+   * TOÀN MÀN HÌNH CHO MÃ QR
+   *
+   * Dùng Fullscreen API của trình duyệt để che cả thanh địa chỉ và thanh tác vụ
+   * — chiếu lên máy chiếu thì mọi pixel đều dành cho mã QR. Trình duyệt chặn
+   * (iframe, hoặc người dùng chưa cho phép) thì vẫn phủ kín cửa sổ bằng CSS,
+   * không báo lỗi gì cho người đang đứng lớp.
+   *
+   * Thoát bằng phím Esc là chuyện của trình duyệt; sự kiện fullscreenchange
+   * dưới đây đưa state về đúng để nút bấm và giao diện khớp trạng thái thật.
+   */
+  useEffect(() => {
+    const dongBo = () => { if (!document.fullscreenElement) setToanManHinh(false); };
+    document.addEventListener('fullscreenchange', dongBo);
+    return () => document.removeEventListener('fullscreenchange', dongBo);
+  }, []);
+
+  // Không có Fullscreen API thì lớp phủ CSS vẫn kín cửa sổ, nên Esc phải tự bắt.
+  useEffect(() => {
+    if (!toanManHinh) return;
+    const nhanPhim = (e) => { if (e.key === 'Escape') thoatToanManHinh(); };
+    window.addEventListener('keydown', nhanPhim);
+    return () => window.removeEventListener('keydown', nhanPhim);
+  }, [toanManHinh]);
+
+  const moToanManHinh = () => {
+    setToanManHinh(true);
+    // Đợi React vẽ lớp phủ rồi mới xin toàn màn hình cho đúng phần tử đó
+    requestAnimationFrame(() => {
+      khungToanManHinh.current?.requestFullscreen?.().catch(() => { /* vẫn phủ kín bằng CSS */ });
+    });
+  };
+
+  const thoatToanManHinh = () => {
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+    setToanManHinh(false);
+  };
 
   const getUserById = (id) => users.find(u => u.id === id);
 
@@ -507,9 +559,13 @@ export const ManageTraining = () => {
                 <h3 style={{ color: 'var(--text-primary)', marginBottom: 12, fontSize: 14 }}>
                   <QrcodeOutlined style={{ color: 'var(--primary-color)', marginRight: 8 }} />QR Điểm danh — <span style={{ color: 'var(--primary-color)' }}>{session.title}</span>
                 </h3>
-                <div style={{ display: 'inline-block', background: '#fff', borderRadius: 16, padding: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', border: '4px solid var(--primary-color)' }}>
+                <div
+                  style={{ display: 'inline-block', background: '#fff', borderRadius: 16, padding: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', border: '4px solid var(--primary-color)', cursor: 'zoom-in' }}
+                  onClick={moToanManHinh}
+                  title="Bấm để phóng to toàn màn hình"
+                >
                   <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${session.roomCode}:${qrToken}&bgcolor=ffffff&color=0b0f19&qzone=1&margin=0&format=png`}
+                    src={anhQR(session.roomCode, qrToken, 180)}
                     alt="QR Code điểm danh"
                     style={{ width: 180, height: 180, display: 'block', borderRadius: 8 }}
                   />
@@ -518,6 +574,9 @@ export const ManageTraining = () => {
                   <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Mã QR thay đổi sau <strong style={{ color: 'var(--primary-color)' }}>{qrCountdown}s</strong></div>
                   <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontFamily: 'monospace', letterSpacing: 2, background: 'var(--bg-secondary)', padding: '3px 10px', borderRadius: 20 }}>TOKEN: {qrToken}</div>
                   <Progress percent={Math.round((qrCountdown / 10) * 100)} showInfo={false} size="small" style={{ width: 160 }} strokeColor={{ '0%': '#10b981', '100%': '#3b82f6' }} railColor="var(--border-color)" />
+                  <Button icon={<FullscreenOutlined />} onClick={moToanManHinh} style={{ marginTop: 4 }}>
+                    Phóng to toàn màn hình
+                  </Button>
                 </div>
               </Col>
               <Col xs={24} md={14}>
@@ -541,6 +600,54 @@ export const ManageTraining = () => {
                 </div>
               </Col>
             </Row>
+          </div>
+        );
+      })()}
+
+      {/* Mã QR toàn màn hình — chiếu lên máy chiếu cho cả lớp quét */}
+      {toanManHinh && qrSessionId && (() => {
+        const session = trainingSessions.find(s => s.id === qrSessionId);
+        if (!session) return null;
+        const daDiemDanh = (session.attendees || []).length;
+        return (
+          <div
+            ref={khungToanManHinh}
+            onClick={thoatToanManHinh}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 2000, background: '#ffffff',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 'min(2vh, 20px)', cursor: 'zoom-out', padding: '2vh 2vw',
+            }}
+          >
+            <div style={{ fontSize: 'clamp(18px, 3.2vh, 40px)', fontWeight: 800, color: '#0b0f19', textAlign: 'center', lineHeight: 1.2 }}>
+              {session.title}
+            </div>
+            {/* Cạnh mã QR bám theo cạnh NGẮN của màn hình để không tràn ra ngoài
+                dù máy chiếu ngang hay dọc. */}
+            <img
+              src={anhQR(session.roomCode, qrToken, 1000)}
+              alt="QR Code điểm danh"
+              style={{ width: 'min(66vh, 78vw)', height: 'min(66vh, 78vw)', imageRendering: 'pixelated' }}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(12px, 2vw, 32px)', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <span style={{ fontSize: 'clamp(14px, 2.2vh, 26px)', color: '#475569' }}>
+                Đổi mã sau <strong style={{ color: '#10b981' }}>{qrCountdown}s</strong>
+              </span>
+              <span style={{ fontSize: 'clamp(16px, 2.6vh, 32px)', fontFamily: 'monospace', letterSpacing: 4, fontWeight: 700, color: '#0b0f19', background: '#f1f5f9', padding: '0.4em 0.8em', borderRadius: 12 }}>
+                {qrToken}
+              </span>
+              <span style={{ fontSize: 'clamp(14px, 2.2vh, 26px)', color: '#475569' }}>
+                Đã điểm danh <strong style={{ color: '#10b981' }}>{daDiemDanh}</strong>
+              </span>
+            </div>
+            <Button
+              icon={<FullscreenExitOutlined />}
+              size="large"
+              onClick={(e) => { e.stopPropagation(); thoatToanManHinh(); }}
+              style={{ position: 'fixed', top: 16, right: 16 }}
+            >
+              Thoát (Esc)
+            </Button>
           </div>
         );
       })()}
