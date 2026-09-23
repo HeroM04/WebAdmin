@@ -132,11 +132,21 @@ export const KpiLedger = ({ userId }) => {
                       <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
                         {it.categoryLabel} · {fmtLuc(it.occurredAt)}
                       </div>
+                      {/* Khoản không vào đủ có hai lý do trái ngược nhau: nhóm đã
+                          đầy (khoản CỘNG bị chặn), hoặc nhóm đã về 0 (khoản TRỪ
+                          không trừ được nữa — điểm tuần không xuống dưới 0).
+                          Trước đây câu nào cũng ghi "kịch trần", nên khoản trừ
+                          hiện thành "kịch trần nên -15đ không cộng thêm được",
+                          đọc không hiểu gì. */}
                       {it.capped && (
                         <div style={{ fontSize: 11, color: '#9a3412', marginTop: 4 }}>
-                          {thuc === 0
-                            ? `Nhóm đã kịch trần tuần nên khoản ${it.points}đ không cộng thêm được`
-                            : `Quy định ${it.points}đ, nhóm sắp đầy nên chỉ vào được ${thuc}đ`}
+                          {it.points < 0
+                            ? (thuc === 0
+                                ? `Nhóm đang 0 điểm nên khoản trừ ${it.points}đ không trừ được nữa`
+                                : `Quy định trừ ${it.points}đ, nhóm chỉ còn ${-thuc}đ nên trừ hết về 0`)
+                            : (thuc === 0
+                                ? `Nhóm đã kịch trần tuần nên khoản ${it.points}đ không cộng thêm được`
+                                : `Quy định ${it.points}đ, nhóm sắp đầy nên chỉ vào được ${thuc}đ`)}
                         </div>
                       )}
                     </div>
