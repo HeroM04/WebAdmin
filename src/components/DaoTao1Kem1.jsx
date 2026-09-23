@@ -1,5 +1,5 @@
 import React, { useContext, useMemo, useState } from 'react';
-import { Table, Button, Space, Avatar, Tag, Input, Select, Image, Popconfirm, message } from 'antd';
+import { Table, Button, Space, Avatar, Tag, Input, Select, Image, Popconfirm, Alert, message } from 'antd';
 import { TeamOutlined, DownloadOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, SearchOutlined } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import { apiClient } from '../utils/apiClient';
@@ -32,6 +32,28 @@ export const DaoTao1Kem1 = () => {
 
   const nguoi = (id) => users.find(u => u.id === id);
   const soCho = oneOnOneTrainings.filter(o => o.status === 'PENDING').length;
+
+  // Báo cáo máy chủ TỰ DUYỆT theo cách cũ: đã duyệt mà chưa ai duyệt tay.
+  const tuDuyetCu = oneOnOneTrainings.filter(o => o.status === 'APPROVED' && !o.reviewedAt);
+  const soNguoiTuDuyet = new Set(tuDuyetCu.map(o => o.userId)).size;
+  const [dangChuyen, setDangChuyen] = useState(false);
+
+  const chuyenVeChoDuyet = async () => {
+    setDangChuyen(true);
+    try {
+      const kq = await apiClient.post('/training/1-on-1/reset-auto-approved', {});
+      message.success(`Đã chuyển ${kq?.soBaoCao ?? 0} báo cáo của ${kq?.soNguoi ?? 0} nhân sự về chờ duyệt, hoàn lại ${kq?.tongDiemHoan ?? 0}đ.`, 6);
+      if (kq?.khongTimThayNhatKy > 0) {
+        message.warning(`${kq.khongTimThayNhatKy} báo cáo không tìm thấy dòng nhật ký điểm — đã hoàn 5đ theo quy định.`, 8);
+      }
+      setLocTrangThai('PENDING');
+      await refresh('oneOnOne', 'kpi');
+    } catch (e) {
+      message.error(e?.message || 'Không chuyển được');
+    } finally {
+      setDangChuyen(false);
+    }
+  };
 
   const hienThi = useMemo(() => oneOnOneTrainings.filter(o =>
     (locTrangThai === 'ALL' || o.status === locTrangThai)
@@ -157,6 +179,25 @@ export const DaoTao1Kem1 = () => {
           <Button type="primary" danger icon={<DownloadOutlined />} onClick={xuatBaoCao}>Xuất báo cáo</Button>
         </Space>
       </div>
+      {tuDuyetCu.length > 0 && (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ margin: '12px 16px 0' }}
+          title={`${tuDuyetCu.length} báo cáo của ${soNguoiTuDuyet} nhân sự đã được hệ thống TỰ DUYỆT và cộng điểm theo cách cũ`}
+          description="Chuyển về chờ duyệt để xét lại từng báo cáo. Điểm đã cộng được hoàn lại đúng số đã vào (ai đã đầy nhóm Thực chiến thì lần đó thực ra không được cộng, nên cũng không bị trừ). Báo cáo nào bạn duyệt lại sẽ được cộng lại."
+          action={
+            <Popconfirm
+              title="Chuyển về chờ duyệt và hoàn điểm?"
+              description={<span>{tuDuyetCu.length} báo cáo sẽ về trạng thái <b>Chờ duyệt</b>.<br />Nhân sự nhận thông báo bị trừ điểm kèm lý do.</span>}
+              okText="Chuyển và hoàn điểm" cancelText="Hủy" okButtonProps={{ danger: true }}
+              onConfirm={chuyenVeChoDuyet}
+            >
+              <Button danger loading={dangChuyen}>Chuyển về chờ duyệt</Button>
+            </Popconfirm>
+          }
+        />
+      )}
       <Table
         columns={cot}
         dataSource={hienThi}
