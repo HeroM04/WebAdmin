@@ -1,6 +1,6 @@
 import React, { useContext, useMemo, useState } from 'react';
 import { Table, Button, Space, Avatar, Tag, Input, Select, Image, Popconfirm, Alert, message } from 'antd';
-import { TeamOutlined, DownloadOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, SearchOutlined } from '@ant-design/icons';
+import { TeamOutlined, DownloadOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, SearchOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import { apiClient } from '../utils/apiClient';
 import { exportToCSV } from '../utils/exportCsv';
@@ -60,6 +60,47 @@ export const DaoTao1Kem1 = () => {
     && khopTen(tuKhoa, nguoi(o.userId)?.name || o.userName, o.content)
   ), [oneOnOneTrainings, locTrangThai, tuKhoa, users]);
 
+  /*
+   * Báo cáo nộp trùng: cùng người, cùng nội dung, nộp cách nhau không quá 30
+   * phút — thường do bấm Gửi hai lần hoặc mạng chậm tưởng chưa gửi. Gắn nhãn
+   * cho cả nhóm để Admin thấy ngay trên cả hai trang, tự chọn giữ cái nào.
+   */
+  const idNopTrung = useMemo(() => {
+    const chuanNoiDung = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    const nhom = new Map();
+    oneOnOneTrainings.forEach(o => {
+      const k = o.userId + '|' + chuanNoiDung(o.content);
+      if (!nhom.has(k)) nhom.set(k, []);
+      nhom.get(k).push(o);
+    });
+    const trung = new Set();
+    nhom.forEach(ds => {
+      const theoGio = [...ds].sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt));
+      for (let i = 1; i < theoGio.length; i++) {
+        if (new Date(theoGio[i].submittedAt) - new Date(theoGio[i - 1].submittedAt) <= 30 * 60 * 1000) {
+          trung.add(theoGio[i].id);
+          trung.add(theoGio[i - 1].id);
+        }
+      }
+    });
+    return trung;
+  }, [oneOnOneTrainings]);
+
+  const xoa = async (o) => {
+    setDangXuLy(o.id);
+    try {
+      const kq = await apiClient.delete(`/training/1-on-1/${o.id}`);
+      message.success(kq?.thuHoi > 0
+        ? `Đã xóa báo cáo và thu hồi ${kq.thuHoi}đ của ${nguoi(o.userId)?.name || o.userName}.`
+        : 'Đã xóa báo cáo.');
+      await refresh('oneOnOne', 'kpi');
+    } catch (e) {
+      message.error(e?.message || 'Không xóa được báo cáo');
+    } finally {
+      setDangXuLy(null);
+    }
+  };
+
   const xuLy = async (o, hanhDong) => {
     setDangXuLy(o.id);
     try {
@@ -111,14 +152,19 @@ export const DaoTao1Kem1 = () => {
       key: 'status',
       render: (_, r) => {
         const tt = TRANG_THAI[r.status] || TRANG_THAI.PENDING;
-        return <Tag color={tt.mau} icon={tt.icon}>{tt.chu}</Tag>;
+        return (
+          <Space size={4} wrap>
+            <Tag color={tt.mau} icon={tt.icon}>{tt.chu}</Tag>
+            {idNopTrung.has(r.id) && <Tag color="purple" icon={<CopyOutlined />}>Nộp trùng</Tag>}
+          </Space>
+        );
       },
     },
     {
       title: 'Hành động',
       key: 'actions',
       fixed: 'right',
-      width: 190,
+      width: 230,
       render: (_, r) => (
         <Space size={4}>
           {r.status !== 'APPROVED' && (
@@ -140,6 +186,16 @@ export const DaoTao1Kem1 = () => {
               <Button size="small" danger icon={<CloseCircleOutlined />} loading={dangXuLy === r.id}>Từ chối</Button>
             </Popconfirm>
           )}
+          <Popconfirm
+            title="Xóa hẳn báo cáo này?"
+            description={r.status === 'APPROVED'
+              ? <span>Báo cáo đã được duyệt — xóa sẽ <b>thu hồi điểm</b> đã cộng.<br />Không khôi phục được.</span>
+              : 'Không khôi phục được. Nhân sự không nhận thông báo.'}
+            okText="Xóa" cancelText="Hủy" okButtonProps={{ danger: true }}
+            onConfirm={() => xoa(r)}
+          >
+            <Button size="small" type="text" danger icon={<DeleteOutlined />} loading={dangXuLy === r.id} title="Xóa báo cáo" />
+          </Popconfirm>
         </Space>
       ),
     },
