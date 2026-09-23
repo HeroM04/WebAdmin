@@ -4,13 +4,15 @@ import dayjs from 'dayjs';
 import { AppContext } from '../context/AppContext';
 import { rowClick } from '../utils/tableRow';
 import { NhapNhanSu } from './NhapNhanSu';
+import { PhienDangNhap } from './PhienDangNhap';
 import { nenAnh } from '../utils/nenAnh';
-import { 
-  PlusOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
   SafetyCertificateOutlined,
   KeyOutlined,
+  LaptopOutlined,
   UserAddOutlined,
   EyeOutlined,
   MailOutlined,
@@ -170,6 +172,8 @@ const PersonnelList = () => {
   // hiện công khai trên màn hình đăng nhập của app.
   const [resetPw, setResetPw] = useState(null);   // { id, name }
   const [resetPwValue, setResetPwValue] = useState('');
+  // Xem tài khoản này đang được đăng nhập ở những máy nào, và cắt khi cần
+  const [xemPhien, setXemPhien] = useState(null); // { id, name }
   const handleResetPassword = async () => {
     const pw = resetPwValue.trim();
     if (pw.length < 6) { message.warning('Mật khẩu mới phải từ 6 ký tự.'); return; }
@@ -759,7 +763,14 @@ const PersonnelList = () => {
                       setResetPw({ id: detailUser.id, name: detailUser.name });
                     }}
                   >
-                    Khôi phục mật khẩu mặc định (123456)
+                    Đặt lại mật khẩu
+                  </Button>
+                  <Button
+                    icon={<LaptopOutlined />}
+                    block
+                    onClick={() => setXemPhien({ id: detailUser.id, name: detailUser.name })}
+                  >
+                    Thiết bị đang đăng nhập
                   </Button>
                 </div>
               </div>
@@ -767,6 +778,13 @@ const PersonnelList = () => {
           );
         })()}
       </Drawer>
+
+      <PhienDangNhap
+        open={!!xemPhien}
+        userId={xemPhien?.id}
+        userName={xemPhien?.name}
+        onClose={() => setXemPhien(null)}
+      />
 
     </div>
   );
