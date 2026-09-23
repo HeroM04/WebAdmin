@@ -161,10 +161,17 @@ export const ManageKPI = () => {
   const isFutureMonth = dayjs(monthFilter, 'YYYY-MM').isAfter(dayjs(), 'month');
   const tableData = isFutureMonth ? [] : filteredUsers;
 
+  // Khóa sắp xếp. Chốt căn được tính 100% KPI dù điểm thô có thể thấp, nên
+  // cộng một khoản lớn để người chốt căn luôn đứng đầu khi xếp cao → thấp.
+  const diemTuan = (u) => { const w = calculateWeeklyKPI(u.id); return (w.hasDeal ? 1e6 : 0) + (w.total || 0); };
+  const diemThang = (u) => { const m = getMonthlyKPI(u.id, monthFilter); return (m.hasDeal ? 1e6 : 0) + (m.displayTotal || 0); };
+
   const columns = [
     {
       title: 'Nhân viên',
       key: 'user',
+      sorter: (a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'vi'),
+      sortDirections: ['ascend', 'descend'],
       render: (_, record) => (
         <Space>
           <Avatar src={record.avatar} style={{ border: '2px solid var(--border-color)' }} />
@@ -178,6 +185,8 @@ export const ManageKPI = () => {
     {
       title: dayjs(monthFilter, 'YYYY-MM').isSame(dayjs(), 'month') ? 'KPI Tuần (7 ngày qua)' : 'KPI Tuần cuối tháng',
       key: 'weeklyKpi',
+      sorter: (a, b) => diemTuan(a) - diemTuan(b),
+      sortDirections: ['descend', 'ascend'],   // bấm lần đầu là cao → thấp
       render: (_, record) => {
         const weekData = calculateWeeklyKPI(record.id);
         const kpiMonthly = getMonthlyKPI(record.id, monthFilter);
@@ -212,6 +221,9 @@ export const ManageKPI = () => {
       title: 'KPI Tháng',
       key: 'monthlyKpi',
       width: 250,
+      sorter: (a, b) => diemThang(a) - diemThang(b),
+      sortDirections: ['descend', 'ascend'],
+      defaultSortOrder: 'descend',             // mở ra là thấy người cao điểm nhất trước
       render: (_, record) => {
         const monthData = getMonthlyKPI(record.id, monthFilter);
         const maxKpi = getMaxKpiForMonth(monthFilter);
@@ -341,7 +353,12 @@ export const ManageKPI = () => {
             size="small"
             onRow={rowClick((record) => { setDetailUser(record); setDrawerOpen(true); })}
             pagination={{ defaultPageSize: 15, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }}
-            locale={{ emptyText: 'Chưa có dữ liệu' }}
+            locale={{
+              emptyText: 'Chưa có dữ liệu',
+              triggerDesc: 'Bấm để xếp từ cao xuống thấp',
+              triggerAsc: 'Bấm để xếp từ thấp lên cao',
+              cancelSort: 'Bấm để bỏ sắp xếp',
+            }}
           />
         )}
       </div>
