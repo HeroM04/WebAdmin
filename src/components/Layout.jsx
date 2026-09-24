@@ -24,6 +24,15 @@ import { AppContext } from '../context/AppContext';
 
 const { Header, Sider, Content, Footer } = Layout;
 
+/** Mỗi loại thông báo chờ duyệt mở trang nào. */
+const TRANG_THONG_BAO = {
+  deal: '/admin/chot-can',
+  att: '/admin/cham-cong',
+  post: '/admin/lan-toa',
+  meet: '/admin/thuc-chien',
+  one: '/admin/dao-tao?tab=oneOnOne',   // mở thẳng tab Đào tạo 1-1
+};
+
 export const AppLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -106,7 +115,8 @@ export const AppLayout = () => {
       list.push({
         id: p.id,
         title: `Bài đăng lan tỏa BĐS mới`,
-        desc: `${agent} chia sẻ bài đăng trên ${p.platform}`,
+        // App gửi "OTHER" khi không nhận ra nền tảng — đừng in nguyên mã ra
+        desc: `${agent} chia sẻ bài đăng ${!p.platform || String(p.platform).toUpperCase() === 'OTHER' ? 'trên kênh khác' : 'trên ' + p.platform}`,
         type: 'post',
         time: new Date(p.submittedAt)
       });
@@ -120,6 +130,19 @@ export const AppLayout = () => {
         desc: `${agent} báo cáo cuộc gặp khách hàng ${m.clientName}`,
         type: 'meet',
         time: new Date(m.submittedAt)
+      });
+    });
+
+    // Phải khớp đúng các nhóm cộng vào totalPending: thiếu một nhóm là chuông
+    // báo 4 mà mở ra chỉ thấy 1.
+    (oneOnOneTrainings || []).filter(o => o.status === 'PENDING').forEach(o => {
+      const agent = users.find(u => u.id === o.userId)?.name || o.userName || 'Nhân viên';
+      list.push({
+        id: 'one-' + o.id,
+        title: 'Báo cáo đào tạo 1-1 chờ duyệt',
+        desc: `${agent}: ${String(o.content || '').slice(0, 60)}`,
+        type: 'one',
+        time: new Date(o.submittedAt)
       });
     });
 
@@ -247,7 +270,10 @@ export const AppLayout = () => {
       <div style={{ padding: '8px 16px', fontWeight: 'bold', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between' }}>
         <span>Thông báo ({notifications.length})</span>
         {notifications.length > 0 && (
-          <span style={{ color: 'var(--primary-color)', fontSize: '12px', cursor: 'pointer' }} onClick={() => navigate('/admin/cham-cong')}>
+          /* Mở trang của thông báo mới nhất — trước đây luôn nhảy sang Chấm công
+             dù thông báo là bài đăng hay đào tạo 1-1. */
+          <span style={{ color: 'var(--primary-color)', fontSize: '12px', cursor: 'pointer' }}
+                onClick={() => { navigate(TRANG_THONG_BAO[notifications[0].type] || '/admin/dashboard'); setNotiVisible(false); }}>
             Xem ngay
           </span>
         )}
@@ -264,8 +290,7 @@ export const AppLayout = () => {
             <List.Item 
               style={{ cursor: 'pointer', padding: '12px 16px', borderBottom: '1px solid var(--border-color)' }}
               onClick={() => {
-                const tabMap = { deal: '/admin/chot-can', att: '/admin/cham-cong', post: '/admin/lan-toa', meet: '/admin/thuc-chien' };
-                navigate(tabMap[item.type] || '/admin/dashboard');
+                navigate(TRANG_THONG_BAO[item.type] || '/admin/dashboard');
                 setNotiVisible(false);
               }}
             >

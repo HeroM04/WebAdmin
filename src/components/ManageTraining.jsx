@@ -9,6 +9,7 @@ import {
   YoutubeOutlined, LinkOutlined, FacebookOutlined,
   FullscreenOutlined, FullscreenExitOutlined
 } from '@ant-design/icons';
+import { useSearchParams } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 import { TrainingRsvpRequests } from './TrainingRsvpRequests';
 import { DaoTao1Kem1 } from './DaoTao1Kem1';
@@ -118,6 +119,7 @@ export const ManageTraining = () => {
     addAttendeeToSession, removeAttendeeFromSession
   } = useContext(AppContext);
 
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [dateRange, setDateRange] = useState(null);
@@ -603,6 +605,9 @@ export const ManageTraining = () => {
       <Tabs
         type="card"
         style={{ marginTop: 20 }}
+        // ?tab=oneOnOne — bấm thông báo "báo cáo 1-1 chờ duyệt" là vào thẳng tab đó
+        key={searchParams.get('tab') || 'class'}
+        defaultActiveKey={searchParams.get('tab') || 'class'}
         items={[
           {
             key: 'class',
