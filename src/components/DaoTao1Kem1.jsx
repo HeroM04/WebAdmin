@@ -5,6 +5,7 @@ import { AppContext } from '../context/AppContext';
 import { apiClient } from '../utils/apiClient';
 import { exportToCSV } from '../utils/exportCsv';
 import { khopTen } from '../utils/locBang';
+import { timNopTrung } from '../utils/nopTrung';
 
 /*
  * DUYỆT BÁO CÁO ĐÀO TẠO 1-1
@@ -65,26 +66,7 @@ export const DaoTao1Kem1 = () => {
    * phút — thường do bấm Gửi hai lần hoặc mạng chậm tưởng chưa gửi. Gắn nhãn
    * cho cả nhóm để Admin thấy ngay trên cả hai trang, tự chọn giữ cái nào.
    */
-  const idNopTrung = useMemo(() => {
-    const chuanNoiDung = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
-    const nhom = new Map();
-    oneOnOneTrainings.forEach(o => {
-      const k = o.userId + '|' + chuanNoiDung(o.content);
-      if (!nhom.has(k)) nhom.set(k, []);
-      nhom.get(k).push(o);
-    });
-    const trung = new Set();
-    nhom.forEach(ds => {
-      const theoGio = [...ds].sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt));
-      for (let i = 1; i < theoGio.length; i++) {
-        if (new Date(theoGio[i].submittedAt) - new Date(theoGio[i - 1].submittedAt) <= 30 * 60 * 1000) {
-          trung.add(theoGio[i].id);
-          trung.add(theoGio[i - 1].id);
-        }
-      }
-    });
-    return trung;
-  }, [oneOnOneTrainings]);
+  const idNopTrung = useMemo(() => timNopTrung(oneOnOneTrainings), [oneOnOneTrainings]);
 
   const xoa = async (o) => {
     setDangXuLy(o.id);

@@ -65,6 +65,10 @@ export const Departments = () => {
   const openAdd = () => {
     setEditingDept(null);
     form.resetFields();
+    // Công ty một văn phòng: điền sẵn Trung Văn / 5000 m như "Đặt tọa độ chung".
+    // Để trống bán kính thì máy chủ gán 50 m — ai đứng cách hơn 50 m đều bị báo
+    // ngoài phạm vi.
+    form.setFieldsValue({ officeLat: 20.9921125, officeLng: 105.7873594, allowedRadius: 5000 });
     setModalOpen(true);
   };
 
@@ -366,6 +370,7 @@ export const Departments = () => {
             <Form.Item
               name="allowedRadius"
               label="Bán kính cho phép (mét)"
+              rules={[{ required: true, message: 'Nhập bán kính' }]}
               extra="Nhân viên chấm công trong bán kính này được duyệt tự động; ngoài phạm vi phải nhập lý do và chờ duyệt. Bán kính chỉ có tác dụng khi đã điền tọa độ."
             >
               <InputNumber style={{ width: '100%' }} min={10} max={20000} step={10} placeholder="Ví dụ: 200" />

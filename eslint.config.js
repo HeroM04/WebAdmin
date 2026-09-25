@@ -18,4 +18,9 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    // Test chạy bằng Vitest trên Node
+    files: ['**/*.test.js'],
+    languageOptions: { globals: globals.node },
+  },
 ])
