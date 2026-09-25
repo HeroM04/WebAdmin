@@ -15,6 +15,7 @@ import { TrainingRsvpRequests } from './TrainingRsvpRequests';
 import { DaoTao1Kem1 } from './DaoTao1Kem1';
 import { rowClick } from '../utils/tableRow';
 import { exportToCSV } from '../utils/exportCsv';
+import { khopTen } from '../utils/locBang';
 
 const { Search } = Input;
 
@@ -532,7 +533,16 @@ export const ManageTraining = () => {
               <Col xs={24} md={14}>
                 <h4 style={{ color: 'var(--text-primary)', marginBottom: 12 }}>Điểm danh thủ công (Mô phỏng)</h4>
                 <Space.Compact style={{ width: '100%', marginBottom: 16 }}>
-                  <Select value={scanUserId || undefined} onChange={setScanUserId} style={{ flex: 1 }} placeholder="Chọn nhân viên..." options={users.map(u => ({ value: u.id, label: `${u.name} (${u.role})` }))} />
+                  <Select
+                    value={scanUserId || undefined}
+                    onChange={setScanUserId}
+                    style={{ flex: 1 }}
+                    placeholder="Gõ tên để tìm nhân viên..."
+                    // Gõ không dấu vẫn ra: "linh" → "Bùi Thị Linh"
+                    showSearch={{ filterOption: (nhap, o) => khopTen(nhap, o?.label) }}
+                    allowClear
+                    options={users.map(u => ({ value: u.id, label: `${u.name} (${u.role})` }))}
+                  />
                   <Button type="primary" style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={() => handleSimulateScan(qrSessionId)}>Xác nhận</Button>
                 </Space.Compact>
                 <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>Đã điểm danh ({(session.attendees || []).length}):</div>
