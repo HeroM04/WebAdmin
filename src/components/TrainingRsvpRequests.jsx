@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Table, Button, Space, Tag, Empty, Modal, Input, message, Row, Col, DatePicker } from 'antd';
+import { Table, Button, Space, Tag, Empty, Modal, Input, message, Row, Col, DatePicker, Segmented } from 'antd';
 import {
   CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, ReloadOutlined
 } from '@ant-design/icons';
@@ -26,7 +26,15 @@ const fmtLuc = (iso) => {
   } catch { return '—'; }
 };
 
+const TRANG_THAI = {
+  PENDING: { chu: 'Chờ duyệt', mau: 'warning', rong: 'Không có đơn nào chờ duyệt' },
+  APPROVED: { chu: 'Đã duyệt', mau: 'success', rong: 'Chưa có đơn nào được duyệt' },
+  REJECTED: { chu: 'Từ chối', mau: 'error', rong: 'Chưa có đơn nào bị từ chối' },
+  ALL: { chu: 'Tất cả', mau: 'default', rong: 'Chưa có đơn xin vắng nào' },
+};
+
 export const TrainingRsvpRequests = () => {
+  const [trangThai, setTrangThai] = useState('PENDING');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -39,14 +47,20 @@ export const TrainingRsvpRequests = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const d = await apiClient.get('/training-sessions/rsvp/pending');
+      // Chờ duyệt vẫn gọi API cũ để máy chủ chưa lên bản mới vẫn dùng được
+      const d = await apiClient.get(trangThai === 'PENDING'
+        ? '/training-sessions/rsvp/pending'
+        : `/training-sessions/rsvp?status=${trangThai}`);
       setRows(Array.isArray(d) ? d : []);
     } catch (e) {
-      message.error(e?.message || 'Không tải được danh sách đơn xin vắng');
+      setRows([]);
+      message.error(trangThai === 'PENDING'
+        ? (e?.message || 'Không tải được danh sách đơn xin vắng')
+        : 'Không tải được đơn đã xử lý — máy chủ cần deploy bản mới (Render → Manual Deploy).');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [trangThai]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -129,10 +143,10 @@ export const TrainingRsvpRequests = () => {
     {
       title: 'Quyết định',
       key: 'actions',
-      width: 190,
+      width: 210,
       fixed: 'right',
       className: 'no-row-click',
-      render: (_, r) => (
+      render: (_, r) => r.status === 'PENDING' ? (
         <Space size={4}>
           <Button size="small" danger ghost icon={<CloseCircleOutlined />}
                   onClick={() => moHopThoai(r, false)}>
@@ -144,9 +158,26 @@ export const TrainingRsvpRequests = () => {
             Duyệt
           </Button>
         </Space>
+      ) : (
+        // Đơn đã xử lý: chỉ xem lại ai quyết, lúc nào, ghi chú gì
+        <div style={{ fontSize: 12 }}>
+          <Tag color={(TRANG_THAI[r.status] || TRANG_THAI.ALL).mau} style={{ marginInlineEnd: 0 }}>
+            {(TRANG_THAI[r.status] || { chu: r.status }).chu}
+          </Tag>
+          <div style={{ color: 'var(--text-secondary)', marginTop: 2 }}>
+            {r.reviewedByFullName || 'Admin'} · {fmtLuc(r.reviewedAt)}
+          </div>
+          {r.reviewNote && (
+            <div title={r.reviewNote} style={{ color: 'var(--text-secondary)', fontStyle: 'italic', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              “{r.reviewNote}”
+            </div>
+          )}
+        </div>
       )
     }
   ];
+
+  const tt = TRANG_THAI[trangThai];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -160,6 +191,14 @@ export const TrainingRsvpRequests = () => {
           </div>
         </Col>
         <Col>
+          <Segmented
+            size="small"
+            value={trangThai}
+            onChange={setTrangThai}
+            options={['PENDING', 'APPROVED', 'REJECTED', 'ALL'].map(k => ({ value: k, label: TRANG_THAI[k].chu }))}
+          />
+        </Col>
+        <Col>
           <Input.Search placeholder="Tìm nhân sự, buổi đào tạo..." allowClear size="small" style={{ width: 220 }}
                         onChange={e => setSearch(e.target.value)} />
         </Col>
@@ -168,8 +207,9 @@ export const TrainingRsvpRequests = () => {
                                  onChange={(dates) => setDateRange(doiKhoang(dates))} style={{ width: 230 }} />
         </Col>
         <Col>
-          <Tag color={rows.length ? 'warning' : 'default'} icon={<ClockCircleOutlined />}>
-            {filtered.length !== rows.length ? filtered.length + ' / ' : ''}{rows.length} đơn chờ duyệt
+          <Tag color={rows.length ? tt.mau : 'default'} icon={<ClockCircleOutlined />}>
+            {filtered.length !== rows.length ? filtered.length + ' / ' : ''}{rows.length} đơn
+            {trangThai === 'ALL' ? '' : ' ' + tt.chu.toLowerCase()}
           </Tag>
         </Col>
         <Col>
@@ -184,11 +224,11 @@ export const TrainingRsvpRequests = () => {
           rowKey="id"
           size="small"
           loading={loading}
-          onRow={rowClick((r) => moHopThoai(r, true))}
+          onRow={rowClick((r) => { if (r.status === 'PENDING') moHopThoai(r, true); })}
           pagination={{ defaultPageSize: 15, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }}
           scroll={{ x: 'max-content' }}
           style={{ padding: 8 }}
-          locale={{ emptyText: <Empty description="Không có đơn nào chờ duyệt" image={Empty.PRESENTED_IMAGE_SIMPLE} /> }}
+          locale={{ emptyText: <Empty description={tt.rong} image={Empty.PRESENTED_IMAGE_SIMPLE} /> }}
         />
       </div>
 
