@@ -102,10 +102,31 @@ const VideoLinkField = ({ form }) => {
   );
 };
 
+/*
+ * MÃ QR ĐIỂM DANH XOAY THEO THỜI GIAN
+ *
+ * Token suy ra từ đồng hồ, không lưu ở đâu cả: mọi máy cùng một giây thì cùng
+ * một token, nên máy chiếu, app của giảng viên và máy chủ khớp nhau mà không
+ * phải gọi API. Đổi con số 30 này là phải đổi ĐỒNG THỜI ở ba nơi:
+ *   - đây (Web Admin)
+ *   - kpi_mobile/lib/features/daotao/views/qr_token_display.dart
+ *   - TrainingService.attendTraining (máy chủ)
+ * Lệch nhau là học viên quét ra "Mã QR đã hết hạn".
+ *
+ * 30 giây thay vì 10: mười giây không đủ cho cả lớp giơ điện thoại lên quét,
+ * mã đổi giữa chừng là phải quét lại. Máy chủ vẫn chấp nhận cửa sổ liền trước
+ * và liền sau nên người quét chậm vài giây vẫn vào được.
+ */
+const GIAY_DOI_MA = 30;
+const MS_DOI_MA = GIAY_DOI_MA * 1000;
+
 const generateQRToken = () => {
-  const now = Math.floor(Date.now() / 10000);
+  const now = Math.floor(Date.now() / MS_DOI_MA);
   return (now * 31337 % 999999).toString().padStart(6, '0');
 };
+
+/** Số giây còn lại của mã đang hiện — tính từ đồng hồ nên luôn khớp lúc đổi mã. */
+const giayConLai = () => GIAY_DOI_MA - Math.floor((Date.now() % MS_DOI_MA) / 1000);
 
 const STATUS_CONFIG = {
   UPCOMING: { color: 'blue', label: 'Sắp diễn ra' },
@@ -129,7 +150,7 @@ export const ManageTraining = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [qrSessionId, setQrSessionId] = useState(null);
   const [qrToken, setQrToken] = useState(generateQRToken());
-  const [qrCountdown, setQrCountdown] = useState(10);
+  const [qrCountdown, setQrCountdown] = useState(giayConLai);
   const [scanUserId, setScanUserId] = useState('');
   const [detailSession, setDetailSession] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -142,14 +163,11 @@ export const ManageTraining = () => {
 
   useEffect(() => {
     if (!qrSessionId) return;
-    setQrToken(generateQRToken());
-    setQrCountdown(10);
-    timerRef.current = setInterval(() => {
-      setQrCountdown(prev => {
-        if (prev <= 1) { setQrToken(generateQRToken()); return 10; }
-        return prev - 1;
-      });
-    }, 1000);
+    // Mỗi giây đọc lại đồng hồ thay vì tự đếm lùi: tự đếm thì cái đồng hồ trên
+    // màn hình trôi dần khỏi mốc đổi mã thật, có lúc báo "còn 8s" mà mã đã đổi.
+    const nhip = () => { setQrToken(generateQRToken()); setQrCountdown(giayConLai()); };
+    nhip();
+    timerRef.current = setInterval(nhip, 1000);
     return () => clearInterval(timerRef.current);
   }, [qrSessionId]);
 
@@ -524,7 +542,7 @@ export const ManageTraining = () => {
                 <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                   <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Mã QR thay đổi sau <strong style={{ color: 'var(--primary-color)' }}>{qrCountdown}s</strong></div>
                   <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontFamily: 'monospace', letterSpacing: 2, background: 'var(--bg-secondary)', padding: '3px 10px', borderRadius: 20 }}>TOKEN: {qrToken}</div>
-                  <Progress percent={Math.round((qrCountdown / 10) * 100)} showInfo={false} size="small" style={{ width: 160 }} strokeColor={{ '0%': '#10b981', '100%': '#3b82f6' }} railColor="var(--border-color)" />
+                  <Progress percent={Math.round((qrCountdown / GIAY_DOI_MA) * 100)} showInfo={false} size="small" style={{ width: 160 }} strokeColor={{ '0%': '#10b981', '100%': '#3b82f6' }} railColor="var(--border-color)" />
                   <Button icon={<FullscreenOutlined />} onClick={moToanManHinh} style={{ marginTop: 4 }}>
                     Phóng to toàn màn hình
                   </Button>
