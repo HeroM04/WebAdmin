@@ -208,7 +208,7 @@ export const Feedback = () => {
                     "{fb.content || fb.message}"
                   </div>
 
-                  {/* Ảnh đính kèm: link ký tạm 24 giờ từ kho S3 riêng tư — bấm để phóng to */}
+                  {/* Ảnh đính kèm (link Cloudinary như các phần khác) — bấm để phóng to */}
                   {Array.isArray(fb.imageUrls) && fb.imageUrls.length > 0 && (
                     <div style={{ marginLeft: 58, marginBottom: 12 }}>
                       <Image.PreviewGroup>
@@ -221,7 +221,7 @@ export const Feedback = () => {
                               height={72}
                               style={{ objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border-color)' }}
                               alt={`Ảnh đính kèm ${i + 1}`}
-                              fallback="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72'><rect width='72' height='72' fill='%23e5e7eb'/><text x='36' y='40' font-size='10' text-anchor='middle' fill='%236b7280'>Tải lại trang</text></svg>"
+                              fallback="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72'><rect width='72' height='72' fill='%23e5e7eb'/><text x='36' y='40' font-size='10' text-anchor='middle' fill='%236b7280'>Lỗi ảnh</text></svg>"
                             />
                           ))}
                         </Space>
