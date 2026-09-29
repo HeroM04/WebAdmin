@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Row, Col, List, Avatar, Button, Input, Space, Tag, Badge, notification, Select, Rate, Divider, DatePicker } from 'antd';
+import { Row, Col, List, Avatar, Button, Input, Space, Tag, Badge, notification, Select, Rate, Divider, DatePicker, Image } from 'antd';
 import { 
   MessageOutlined, SendOutlined, PlayCircleOutlined, PauseCircleOutlined,
   CheckCircleOutlined, ClockCircleOutlined, SmileOutlined, ToolOutlined,
@@ -207,6 +207,27 @@ export const Feedback = () => {
                   }}>
                     "{fb.content || fb.message}"
                   </div>
+
+                  {/* Ảnh đính kèm: link ký tạm 24 giờ từ kho S3 riêng tư — bấm để phóng to */}
+                  {Array.isArray(fb.imageUrls) && fb.imageUrls.length > 0 && (
+                    <div style={{ marginLeft: 58, marginBottom: 12 }}>
+                      <Image.PreviewGroup>
+                        <Space size={8} wrap>
+                          {fb.imageUrls.map((url, i) => (
+                            <Image
+                              key={i}
+                              src={url}
+                              width={72}
+                              height={72}
+                              style={{ objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border-color)' }}
+                              alt={`Ảnh đính kèm ${i + 1}`}
+                              fallback="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72'><rect width='72' height='72' fill='%23e5e7eb'/><text x='36' y='40' font-size='10' text-anchor='middle' fill='%236b7280'>Tải lại trang</text></svg>"
+                            />
+                          ))}
+                        </Space>
+                      </Image.PreviewGroup>
+                    </div>
+                  )}
 
                   {/* Admin reply or reply form */}
                   {fb.adminReply ? (
