@@ -10,6 +10,17 @@ import { apiClient } from '../utils/apiClient';
 
 const { Search } = Input;
 
+/*
+ * Bán kính điền sẵn khi thêm phòng / đặt tọa độ chung.
+ *
+ * Từng để 5000 m từ hồi phòng ban chưa có tọa độ (app đo từ một điểm mặc định
+ * cách văn phòng 2 km). Tọa độ đã đúng rồi mà vẫn để vài km thì người chấm
+ * công ở nhà cách 2 km cũng được tự duyệt (29/09/2026). 300 m đủ cho sai số GPS
+ * trong tòa nhà; ai ngoài phạm vi vẫn chấm được, chỉ phải ghi lý do chờ duyệt.
+ */
+const BAN_KINH_DE_XUAT = 300;
+const GOI_Y_BAN_KINH = `Nên đặt khoảng ${BAN_KINH_DE_XUAT} m. Bán kính vài km thì người ở nhà cũng được tự duyệt.`;
+
 export const Departments = () => {
   const {
     departments, activeUsers, refreshData,
@@ -65,10 +76,10 @@ export const Departments = () => {
   const openAdd = () => {
     setEditingDept(null);
     form.resetFields();
-    // Công ty một văn phòng: điền sẵn Trung Văn / 5000 m như "Đặt tọa độ chung".
+    // Công ty một văn phòng: điền sẵn tọa độ Trung Văn như "Đặt tọa độ chung".
     // Để trống bán kính thì máy chủ gán 50 m — ai đứng cách hơn 50 m đều bị báo
     // ngoài phạm vi.
-    form.setFieldsValue({ officeLat: 20.9921125, officeLng: 105.7873594, allowedRadius: 5000 });
+    form.setFieldsValue({ officeLat: 20.9921125, officeLng: 105.7873594, allowedRadius: BAN_KINH_DE_XUAT });
     setModalOpen(true);
   };
 
@@ -151,7 +162,12 @@ export const Departments = () => {
       title: 'Vị trí chấm công',
       key: 'viTri',
       render: (_, d) => (d.officeLat && d.officeLng)
-        ? <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{Number(d.officeLat).toFixed(6)}, {Number(d.officeLng).toFixed(6)} · {d.allowedRadius || 2000} m</span>
+        ? <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
+            {Number(d.officeLat).toFixed(6)}, {Number(d.officeLng).toFixed(6)} ·{' '}
+            {(d.allowedRadius || 2000) > 1000
+              ? <b style={{ color: 'var(--warning-color)' }} title={GOI_Y_BAN_KINH}>{d.allowedRadius || 2000} m</b>
+              : <>{d.allowedRadius || 2000} m</>}
+          </span>
         : <Tag color="error">Chưa có tọa độ — bán kính không có tác dụng</Tag>
     },
     {
@@ -225,7 +241,7 @@ export const Departments = () => {
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
           <Search placeholder="Tìm tên phòng ban..." allowClear style={{ width: 260 }} onChange={e => setSearch(e.target.value)} prefix={<SearchOutlined style={{ color: 'var(--text-secondary)' }} />} />
           <Space>
-            <Button icon={<EnvironmentOutlined />} onClick={() => { formChung.setFieldsValue({ officeLat: 20.9921125, officeLng: 105.7873594, allowedRadius: 5000 }); setToaDoChung(true); }}>
+            <Button icon={<EnvironmentOutlined />} onClick={() => { formChung.setFieldsValue({ officeLat: 20.9921125, officeLng: 105.7873594, allowedRadius: BAN_KINH_DE_XUAT }); setToaDoChung(true); }}>
               Đặt tọa độ chung cho tất cả phòng
             </Button>
             <Button type="primary" icon={<PlusOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={openAdd}>Thêm Phòng ban</Button>
@@ -256,7 +272,7 @@ export const Departments = () => {
             <Col span={12}><Form.Item name="officeLat" label="Vĩ độ (Latitude)" rules={[{ required: true, message: 'Nhập vĩ độ' }]}><InputNumber style={{ width: '100%' }} step={0.000001} /></Form.Item></Col>
             <Col span={12}><Form.Item name="officeLng" label="Kinh độ (Longitude)" rules={[{ required: true, message: 'Nhập kinh độ' }]}><InputNumber style={{ width: '100%' }} step={0.000001} /></Form.Item></Col>
           </Row>
-          <Form.Item name="allowedRadius" label="Bán kính cho phép (mét)" rules={[{ required: true, message: 'Nhập bán kính' }]}><InputNumber style={{ width: '100%' }} min={10} step={100} /></Form.Item>
+          <Form.Item name="allowedRadius" label="Bán kính cho phép (mét)" rules={[{ required: true, message: 'Nhập bán kính' }]} extra={GOI_Y_BAN_KINH}><InputNumber style={{ width: '100%' }} min={10} step={50} /></Form.Item>
         </Form>
       </Modal>
 
@@ -371,7 +387,7 @@ export const Departments = () => {
               name="allowedRadius"
               label="Bán kính cho phép (mét)"
               rules={[{ required: true, message: 'Nhập bán kính' }]}
-              extra="Nhân viên chấm công trong bán kính này được duyệt tự động; ngoài phạm vi phải nhập lý do và chờ duyệt. Bán kính chỉ có tác dụng khi đã điền tọa độ."
+              extra={`Nhân viên chấm công trong bán kính này được duyệt tự động; ngoài phạm vi phải nhập lý do và chờ duyệt. Bán kính chỉ có tác dụng khi đã điền tọa độ. ${GOI_Y_BAN_KINH}`}
             >
               <InputNumber style={{ width: '100%' }} min={10} max={20000} step={10} placeholder="Ví dụ: 200" />
             </Form.Item>

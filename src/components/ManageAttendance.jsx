@@ -8,6 +8,7 @@ import {
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import { doiKhoang } from '../utils/locBang';
+import { docKhoangCach, laXa, NGUONG_XA_MET } from '../utils/khoangCach';
 import { apiClient } from '../utils/apiClient';
 import { exportToCSV } from '../utils/exportCsv';
 import { rowClick } from '../utils/tableRow';
@@ -15,6 +16,21 @@ import { LeaveRequests } from './LeaveRequests';
 import { BangCongThang } from './BangCongThang';
 
 const { Search } = Input;
+
+/** Khoảng cách tới văn phòng, dưới địa chỉ; xa bất thường thì tô cam dù đã duyệt. */
+const KhoangCach = ({ met }) => {
+  const chu = docKhoangCach(met);
+  if (!chu) return null;
+  const xa = laXa(met);
+  return (
+    <div
+      style={{ fontSize: 11, marginTop: 2, fontWeight: xa ? 600 : 400, color: xa ? 'var(--warning-color)' : 'var(--text-secondary)' }}
+      title={xa ? `Chấm công cách văn phòng hơn ${NGUONG_XA_MET} m` : undefined}
+    >
+      Cách văn phòng {chu}
+    </div>
+  );
+};
 
 const StatusTag = ({ status }) => {
   if (status === 'APPROVED') return <Tag color="success" icon={<CheckCircleOutlined />}>Đã duyệt</Tag>;
@@ -318,6 +334,7 @@ const AttendanceLogs = () => {
             <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
               <EnvironmentOutlined style={{ color: '#ef4444', marginRight: 4 }} />{cIn.gpsLocation || cIn.address || 'Không xác định'}
             </div>
+            <KhoangCach met={cIn.distanceToOffice} />
           </div>
         ) : <span style={{ color: '#cbd5e1' }}>—</span>;
       }
@@ -335,6 +352,7 @@ const AttendanceLogs = () => {
             <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
               <EnvironmentOutlined style={{ color: '#ef4444', marginRight: 4 }} />{cOut.gpsLocation || cOut.address || 'Không xác định'}
             </div>
+            <KhoangCach met={cOut.distanceToOffice} />
           </div>
         ) : <span style={{ color: '#cbd5e1' }}>—</span>;
       }
