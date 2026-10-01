@@ -9,6 +9,7 @@ import {
 import { AppContext } from '../context/AppContext';
 import { doiKhoang } from '../utils/locBang';
 import { docKhoangCach, laXa, NGUONG_XA_MET } from '../utils/khoangCach';
+import { gopNgayCong } from '../utils/ngayCong';
 import { apiClient } from '../utils/apiClient';
 import { exportToCSV } from '../utils/exportCsv';
 import { rowClick } from '../utils/tableRow';
@@ -95,12 +96,15 @@ const AttendanceLogs = () => {
         q.set('to', dateRange[1]);
       }
       const res = await apiClient.getRaw(`/attendance?${q.toString()}`);
-      setRows(Array.isArray(res?.data) ? res.data : []);
+      const data = Array.isArray(res?.data) ? res.data : [];
+      setRows(data);
       setTongNgayCong(res?.page?.totalElements ?? 0);
       if (res?.stats) setStats(res.stats);
+      return data;
     } catch (e) {
       message.error(e?.message || 'Không tải được danh sách chấm công');
       setRows([]);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -108,41 +112,8 @@ const AttendanceLogs = () => {
 
   useEffect(() => { taiDuLieu(); }, [taiDuLieu]);
 
-  const filtered = Object.values(rows.reduce((acc, curr) => {
-    const dateStr = curr.checkinTime ? curr.checkinTime.substring(0, 10) : '';
-    const key = `${curr.userId}_${dateStr}`;
-    if (!acc[key]) {
-      acc[key] = {
-        id: key,
-        userId: curr.userId,
-        date: dateStr,
-        checkinRecord: null,
-        checkoutRecord: null,
-        status: curr.status,
-        note: curr.note,
-        approvedBy: curr.approvedBy
-      };
-    }
-    if (curr.actionType === 'CHECK_OUT') {
-      acc[key].checkoutRecord = curr;
-      if (curr.note) acc[key].note = curr.note;
-    } else {
-      acc[key].checkinRecord = curr;
-      if (curr.note) acc[key].note = curr.note;
-    }
-    
-    const cIn = acc[key].checkinRecord;
-    const cOut = acc[key].checkoutRecord;
-    if ((cIn && cIn.status === 'PENDING') || (cOut && cOut.status === 'PENDING')) {
-      acc[key].status = 'PENDING';
-    } else if ((cIn && cIn.status === 'REJECTED') || (cOut && cOut.status === 'REJECTED')) {
-      acc[key].status = 'REJECTED';
-    } else {
-      acc[key].status = 'APPROVED';
-    }
-    
-    return acc;
-  }, {})).sort((a, b) => new Date(b.date) - new Date(a.date));
+  // Mỗi dòng = một ngày công, giữ ĐỦ mọi lượt vào/ra (xem utils/ngayCong.js)
+  const filtered = gopNgayCong(rows);
 
   // `stats` do máy chủ đếm trên toàn bộ dữ liệu, không phải đếm mảng đang cầm.
   // Đếm tay chỉ ra đúng khi trình duyệt giữ cả bảng — điều không còn đúng nữa.
@@ -269,10 +240,11 @@ const AttendanceLogs = () => {
     }
   };
 
+  // Thao tác trên dòng áp cho MỌI lượt của ngày công, kể cả lượt không hiện
+  // trên dòng — không thì lượt đó kẹt mãi ở "Chờ duyệt".
   const handleDelete = async (record) => {
     try {
-      if (record.checkinRecord) await deleteAttendance(record.checkinRecord.id);
-      if (record.checkoutRecord) await deleteAttendance(record.checkoutRecord.id);
+      for (const r of record.records || []) await deleteAttendance(r.id);
       message.success('Đã xóa.');
       await taiDuLieu();
     } catch (e) {
@@ -282,8 +254,9 @@ const AttendanceLogs = () => {
 
   const handleApprove = async (record) => {
     try {
-      if (record.checkinRecord && record.checkinRecord.status === 'PENDING') await approveAttendance(record.checkinRecord.id, currentUser.name);
-      if (record.checkoutRecord && record.checkoutRecord.status === 'PENDING') await approveAttendance(record.checkoutRecord.id, currentUser.name);
+      for (const r of (record.records || []).filter((x) => x.status === 'PENDING')) {
+        await approveAttendance(r.id, currentUser.name);
+      }
       message.success('Đã duyệt.');
       setDrawerOpen(false);
       await taiDuLieu();
@@ -294,11 +267,27 @@ const AttendanceLogs = () => {
 
   const handleReject = async (record) => {
     try {
-      if (record.checkinRecord && record.checkinRecord.status === 'PENDING') await rejectAttendance(record.checkinRecord.id, currentUser.name);
-      if (record.checkoutRecord && record.checkoutRecord.status === 'PENDING') await rejectAttendance(record.checkoutRecord.id, currentUser.name);
+      for (const r of (record.records || []).filter((x) => x.status === 'PENDING')) {
+        await rejectAttendance(r.id, currentUser.name);
+      }
       message.warning('Đã từ chối.');
       setDrawerOpen(false);
       await taiDuLieu();
+    } catch (e) {
+      message.error(e.message || 'Lỗi hệ thống');
+    }
+  };
+
+  /** Duyệt / từ chối riêng một lượt (trong khung chi tiết). */
+  const xuLyMotLuot = async (luot, duyet) => {
+    try {
+      if (duyet) await approveAttendance(luot.id, currentUser.name);
+      else await rejectAttendance(luot.id, currentUser.name);
+      message[duyet ? 'success' : 'warning'](duyet ? 'Đã duyệt lượt này.' : 'Đã từ chối lượt này.');
+      const moi = await taiDuLieu();
+      // Giữ khung chi tiết mở, cập nhật theo dữ liệu mới
+      const ngay = Array.isArray(moi) ? gopNgayCong(moi).find((d) => d.id === detailRecord?.id) : null;
+      if (ngay) setDetailRecord(ngay); else setDrawerOpen(false);
     } catch (e) {
       message.error(e.message || 'Lỗi hệ thống');
     }
@@ -389,6 +378,15 @@ const AttendanceLogs = () => {
         <div>
           <StatusTag status={record.status} />
           {record.approvedBy && <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 3 }}>bởi {record.approvedBy}</div>}
+          {record.khac?.length > 0 && (
+            <div
+              style={{ fontSize: 11, marginTop: 4, fontWeight: record.soChoKhac ? 600 : 400,
+                color: record.soChoKhac ? 'var(--warning-color)' : 'var(--text-secondary)', cursor: 'pointer' }}
+              title="Bấm để xem đủ các lượt chấm công trong ngày"
+            >
+              +{record.khac.length} lượt khác{record.soChoKhac ? ` · ${record.soChoKhac} chờ duyệt` : ''}
+            </div>
+          )}
         </div>
       )
     },
@@ -407,7 +405,7 @@ const AttendanceLogs = () => {
               <Button size="small" type="primary" icon={<CheckCircleOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={() => handleApprove(record)} />
             </>
           )}
-          <Popconfirm title="Xóa bản ghi này?" onConfirm={() => handleDelete(record)} okText="Xóa" cancelText="Hủy" okButtonProps={{ danger: true }}>
+          <Popconfirm title={record.records?.length > 1 ? `Xóa cả ${record.records.length} lượt chấm công của ngày này?` : 'Xóa bản ghi này?'} onConfirm={() => handleDelete(record)} okText="Xóa" cancelText="Hủy" okButtonProps={{ danger: true }}>
             <Button size="small" type="text" icon={<DeleteOutlined style={{ color: 'var(--danger-color)' }} />} />
           </Popconfirm>
         </Space>
@@ -594,13 +592,63 @@ const AttendanceLogs = () => {
                   </div>
                 )}
 
-                {/* Actions */}
-                {(detailRecord.checkinRecord?.status === 'PENDING' || detailRecord.checkoutRecord?.status === 'PENDING') && (
-                  <Space style={{ width: '100%' }}>
-                    <Button danger ghost icon={<CloseCircleOutlined />} style={{ flex: 1 }} onClick={() => handleReject(detailRecord)}>Từ chối</Button>
-                    <Button type="primary" icon={<CheckCircleOutlined />} style={{ flex: 1, backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={() => handleApprove(detailRecord)}>Phê duyệt</Button>
-                  </Space>
-                )}
+                {/* Mọi lượt trong ngày — ngày có nhiều lượt vào/ra thì dòng trên bảng
+                    chỉ hiện lượt vào đầu và lượt ra cuối, phần còn lại xem và duyệt ở đây */}
+                {detailRecord.records?.length > 2 || detailRecord.khac?.length > 0 ? (
+                  <div>
+                    <Divider orientation="left" style={{ fontSize: 13, margin: '4px 0 12px' }}>
+                      Tất cả lượt chấm công trong ngày ({detailRecord.records.length})
+                    </Divider>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {detailRecord.records.map((l) => (
+                        <div key={l.id} style={{ border: '1px solid var(--border-color)', borderRadius: 10, padding: '10px 12px',
+                          display: 'flex', gap: 10, alignItems: 'flex-start',
+                          background: l.status === 'PENDING' ? 'rgba(245, 158, 11, 0.06)' : 'transparent' }}>
+                          {l.photoUrl ? (
+                            <img src={l.photoUrl} alt="" onClick={() => setPreviewImg(l.photoUrl)}
+                              style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 8, cursor: 'zoom-in', flex: '0 0 auto' }} />
+                          ) : null}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                              <Tag color={l.actionType === 'CHECK_OUT' ? 'blue' : 'green'} style={{ marginInlineEnd: 0 }}>
+                                {l.actionType === 'CHECK_OUT' ? 'Ra' : 'Vào'}
+                              </Tag>
+                              <b style={{ fontSize: 13 }}>{new Date(l.checkinTime).toLocaleString('vi-VN')}</b>
+                              <StatusTag status={l.status} />
+                            </div>
+                            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 3 }}>
+                              <EnvironmentOutlined style={{ marginRight: 4 }} />{l.gpsLocation || l.address || 'Không xác định'}
+                            </div>
+                            <KhoangCach met={l.distanceToOffice} />
+                            {l.note && <div style={{ fontSize: 12, marginTop: 3 }}>“{l.note}”</div>}
+                          </div>
+                          {l.status === 'PENDING' && (
+                            <Space size={4} style={{ flex: '0 0 auto' }}>
+                              <Button size="small" danger ghost icon={<CloseCircleOutlined />} onClick={() => xuLyMotLuot(l, false)} title="Từ chối lượt này" />
+                              <Button size="small" type="primary" icon={<CheckCircleOutlined />} onClick={() => xuLyMotLuot(l, true)} title="Duyệt lượt này"
+                                style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} />
+                            </Space>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Actions: áp cho MỌI lượt đang chờ của ngày */}
+                {detailRecord.status === 'PENDING' && (() => {
+                  const soCho = (detailRecord.records || []).filter((x) => x.status === 'PENDING').length;
+                  return (
+                    <Space style={{ width: '100%' }}>
+                      <Button danger ghost icon={<CloseCircleOutlined />} style={{ flex: 1 }} onClick={() => handleReject(detailRecord)}>
+                        {soCho > 1 ? `Từ chối cả ${soCho} lượt chờ` : 'Từ chối'}
+                      </Button>
+                      <Button type="primary" icon={<CheckCircleOutlined />} style={{ flex: 1, backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={() => handleApprove(detailRecord)}>
+                        {soCho > 1 ? `Duyệt cả ${soCho} lượt chờ` : 'Phê duyệt'}
+                      </Button>
+                    </Space>
+                  );
+                })()}
             </div>
           </div>
         )}
