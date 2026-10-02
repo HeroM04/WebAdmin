@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Row, Col, List, Avatar, Button, Input, Space, Tag, Badge, notification, Select, Rate, Divider, DatePicker, Image } from 'antd';
+import { List, Avatar, Button, Input, Space, Tag, Badge, notification, Select, Rate, Divider, DatePicker, Image } from 'antd';
 import { 
   MessageOutlined, SendOutlined, PlayCircleOutlined, PauseCircleOutlined,
   CheckCircleOutlined, ClockCircleOutlined, SmileOutlined, ToolOutlined,
@@ -7,6 +7,7 @@ import {
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import { khopTen, khopNgay, doiKhoang } from '../utils/locBang';
+import { DaiSoLieu } from './ui/DaiSoLieu';
 
 // Mock feedback bank removed
 
@@ -82,32 +83,14 @@ export const Feedback = () => {
         </div>
 
         {/* Stats Row */}
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={12} md={6}>
-            <div className="premium-card hover-lift" style={{ padding: '20px', textAlign: 'center' }}>
-              <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 8 }}>Tổng góp ý</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--primary-color)' }}>{stats.total}</div>
-            </div>
-          </Col>
-          <Col xs={12} md={6}>
-            <div className="premium-card hover-lift" style={{ padding: '20px', textAlign: 'center' }}>
-              <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 8 }}>Chờ xử lý</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--warning-color)' }}>{stats.pending}</div>
-            </div>
-          </Col>
-          <Col xs={12} md={6}>
-            <div className="premium-card hover-lift" style={{ padding: '20px', textAlign: 'center' }}>
-              <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 8 }}>Đã giải quyết</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--success-color)' }}>{stats.resolved}</div>
-            </div>
-          </Col>
-          <Col xs={12} md={6}>
-            <div className="premium-card hover-lift" style={{ padding: '20px', textAlign: 'center' }}>
-              <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 8 }}>Mức độ hài lòng TB</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--warning-color)' }}>{stats.avgRating}<span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>/5</span></div>
-            </div>
-          </Col>
-        </Row>
+        <div style={{ marginBottom: 20 }}>
+          <DaiSoLieu items={[
+            { nhan: 'Tổng góp ý', giaTri: stats.total },
+            { nhan: 'Chờ xử lý', giaTri: stats.pending, ton: 'cho' },
+            { nhan: 'Đã giải quyết', giaTri: stats.resolved, ton: 'dat' },
+            { nhan: 'Mức hài lòng trung bình', giaTri: <>{stats.avgRating}<small>/ 5</small></> },
+          ]} />
+        </div>
 
         <div className="premium-card" style={{ padding: '16px 20px' }}>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>

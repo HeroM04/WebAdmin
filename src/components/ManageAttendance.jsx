@@ -15,6 +15,7 @@ import { exportToCSV } from '../utils/exportCsv';
 import { rowClick } from '../utils/tableRow';
 import { LeaveRequests } from './LeaveRequests';
 import { BangCongThang } from './BangCongThang';
+import { DaiSoLieu } from './ui/DaiSoLieu';
 
 const { Search } = Input;
 
@@ -418,22 +419,12 @@ const AttendanceLogs = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Stats */}
-      <Row gutter={[16, 16]}>
-        {[
-          { label: 'Tổng bản ghi', value: stats.total, color: '#3b82f6' },
-          { label: 'Chờ duyệt', value: stats.pending, color: '#fbbf24' },
-          { label: 'Đã duyệt', value: stats.approved, color: '#10b981' },
-          { label: 'Đã từ chối', value: stats.rejected, color: '#ef4444' },
-        ].map((s, i) => (
-          <Col xs={12} md={6} key={i}>
-            <div className="premium-card" style={{ padding: '16px 20px' }}>
-              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>{s.label}</div>
-              <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</div>
-            </div>
-          </Col>
-        ))}
-      </Row>
+      <DaiSoLieu items={[
+        { nhan: 'Tổng bản ghi', giaTri: stats.total },
+        { nhan: 'Chờ duyệt', giaTri: stats.pending, ton: 'cho' },
+        { nhan: 'Đã duyệt', giaTri: stats.approved, ton: 'dat' },
+        { nhan: 'Đã từ chối', giaTri: stats.rejected, ton: 'loi' },
+      ]} />
 
       {/* Filter + Add */}
       <div className="premium-card" style={{ padding: '16px 20px' }}>

@@ -166,6 +166,15 @@ export const AppLayout = () => {
     leaderboard: 'Bảng Vinh Danh',
   };
 
+  // Tên mục + số việc chờ duyệt nằm gọn bên phải. Trước đây số đỏ gắn lên biểu
+  // tượng nên đè cả vào chữ đầu ("4Chấm công").
+  const nhanMuc = (ten, soCho) => (
+    <span className="nav-label">
+      <span className="nav-text">{ten}</span>
+      {soCho > 0 && <span className="nav-count" aria-label={`${soCho} chờ duyệt`}>{soCho > 99 ? '99+' : soCho}</span>}
+    </span>
+  );
+
   const menuItems = [
     {
       key: 'dashboard',
@@ -194,48 +203,28 @@ export const AppLayout = () => {
       children: [
         {
           key: 'manage_attendance',
-          icon: (
-            <Badge count={pendingAttendance} size="small" offset={[8, 0]}>
-              <ClockCircleOutlined style={{ color: pendingAttendance > 0 ? '#fbbf24' : 'inherit' }} />
-            </Badge>
-          ),
-          label: 'Chấm công'
+          icon: <ClockCircleOutlined />,
+          label: nhanMuc('Chấm công', pendingAttendance)
         },
         {
           key: 'manage_meetings',
-          icon: (
-            <Badge count={pendingMeetings} size="small" offset={[8, 0]}>
-              <SolutionOutlined style={{ color: pendingMeetings > 0 ? '#fbbf24' : 'inherit' }} />
-            </Badge>
-          ),
-          label: 'Thực chiến'
+          icon: <SolutionOutlined />,
+          label: nhanMuc('Thực chiến', pendingMeetings)
         },
         {
           key: 'manage_posts',
-          icon: (
-            <Badge count={pendingPosts} size="small" offset={[8, 0]}>
-              <FileImageOutlined style={{ color: pendingPosts > 0 ? '#fbbf24' : 'inherit' }} />
-            </Badge>
-          ),
-          label: 'Bài đăng'
+          icon: <FileImageOutlined />,
+          label: nhanMuc('Bài đăng', pendingPosts)
         },
         {
           key: 'manage_training',
-          icon: (
-            <Badge count={pending1Kem1} size="small" offset={[8, 0]}>
-              <BookOutlined style={{ color: pending1Kem1 > 0 ? '#fbbf24' : 'inherit' }} />
-            </Badge>
-          ),
-          label: 'Đào tạo'
+          icon: <BookOutlined />,
+          label: nhanMuc('Đào tạo', pending1Kem1)
         },
         {
           key: 'manage_deals',
-          icon: (
-            <Badge count={pendingDeals} size="small" offset={[8, 0]}>
-              <HomeOutlined style={{ color: pendingDeals > 0 ? '#fbbf24' : 'inherit' }} />
-            </Badge>
-          ),
-          label: 'Chốt căn'
+          icon: <HomeOutlined />,
+          label: nhanMuc('Chốt căn', pendingDeals)
         },
         {
           key: 'manage_kpi',
@@ -244,12 +233,8 @@ export const AppLayout = () => {
         },
         {
           key: 'feedback',
-          icon: (
-            <Badge count={pendingFeedbacks} size="small" offset={[8, 0]}>
-              <MessageOutlined style={{ color: pendingFeedbacks > 0 ? '#fbbf24' : 'inherit' }} />
-            </Badge>
-          ),
-          label: <Link to="/admin/gop-y">Góp ý Nhân sự</Link>
+          icon: <MessageOutlined />,
+          label: nhanMuc(<Link to="/admin/gop-y">Góp ý Nhân sự</Link>, pendingFeedbacks)
         },
         {
           key: 'leaderboard',
@@ -316,12 +301,12 @@ export const AppLayout = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider width={240} theme="dark" style={{ borderRight: '1px solid var(--border-color)', position: 'fixed', height: '100vh', left: 0, top: 0, bottom: 0, zIndex: 100, overflowY: 'auto', overflowX: 'hidden' }}>
-        <div style={{ height: 64, display: 'flex', alignItems: 'center', padding: '0 18px', borderBottom: '1px solid var(--border-color)' }}>
-          {/* Nền thanh bên là màu nền chung (sáng), nên chữ phải dùng biến màu
-              chữ chứ không để trắng — để trắng là mất hút trên nền sáng. */}
-          <div style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: 15, letterSpacing: '.02em', whiteSpace: 'nowrap' }}>
-            Trí Long Land <span style={{ color: '#8A6A18', fontWeight: 800 }}>KPI</span>
+      <Sider width={240} theme="dark" className="sider-navy" style={{ position: 'fixed', height: '100vh', left: 0, top: 0, bottom: 0, zIndex: 100, overflowY: 'auto', overflowX: 'hidden' }}>
+        <div className="sider-brand" style={{ height: 64, display: 'flex', alignItems: 'center', padding: '0 18px' }}>
+          {/* Thanh bên nền navy thương hiệu (giống trang đăng nhập và app) — chữ
+              trắng, "KPI" vàng đồng. Màu nằm ở .sider-navy trong index.css. */}
+          <div style={{ color: '#fff', fontWeight: 700, fontSize: 15, letterSpacing: '.02em', whiteSpace: 'nowrap' }}>
+            Trí Long Land <span style={{ color: '#D4AF37', fontWeight: 800 }}>KPI</span>
           </div>
         </div>
 
@@ -341,8 +326,8 @@ export const AppLayout = () => {
           width: '100%', display: 'flex', alignItems: 'center', 
           justifyContent: 'space-between', padding: '0 24px' 
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <h2 className="outfit-font" style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+            <h2 className="outfit-font" style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {PAGE_TITLES[activeTab] || 'Trí Long Land KPI'}
             </h2>
             {totalPending > 0 && (

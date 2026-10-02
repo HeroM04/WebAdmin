@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { Table, Button, Space, Avatar, Tag, Input, Select, DatePicker, Row, Col, Progress, Popconfirm, message, Drawer, Tooltip, Divider } from 'antd';
+import { Table, Button, Space, Avatar, Tag, Input, Select, DatePicker, Progress, Popconfirm, message, Drawer, Tooltip, Divider } from 'antd';
 import {
   SearchOutlined, FlagOutlined, TrophyOutlined,
   CheckCircleOutlined, WarningOutlined, EyeOutlined,
@@ -10,6 +10,7 @@ import { KpiLedger } from './KpiLedger';
 import { rowClick } from '../utils/tableRow';
 import { locNguoiChamKpi } from '../utils/vaiTro';
 import dayjs from 'dayjs';
+import { DaiSoLieu } from './ui/DaiSoLieu';
 
 const { Search } = Input;
 
@@ -283,31 +284,11 @@ export const ManageKPI = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Header Stats */}
-      <Row gutter={[16, 16]}>
-        <Col xs={12} md={8}>
-          <div className="premium-card" style={{ padding: '16px 20px', borderLeft: '4px solid #3b82f6' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>NHÂN SỰ CHẤM KPI</div>
-            <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: '#3b82f6' }}>{nhanSuKpi.length}</div>
-          </div>
-        </Col>
-        <Col xs={12} md={8}>
-          <div className="premium-card" style={{ padding: '16px 20px', borderLeft: '4px solid #10b981' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>ĐẠT KPI TUẦN</div>
-            <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: '#10b981' }}>
-              {nhanSuKpi.filter(u => calculateWeeklyKPI(u.id).total >= 100).length}
-            </div>
-          </div>
-        </Col>
-        <Col xs={12} md={8}>
-          <div className="premium-card" style={{ padding: '16px 20px', borderLeft: '4px solid #ef4444' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>CỜ ĐỎ VI PHẠM</div>
-            <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: '#ef4444' }}>
-              {kpiScores.filter(s => s.month === monthFilter && s.isFlagged).length}
-            </div>
-          </div>
-        </Col>
-      </Row>
+      <DaiSoLieu items={[
+        { nhan: 'Nhân sự chấm KPI', giaTri: nhanSuKpi.length },
+        { nhan: 'Đạt KPI tuần', giaTri: nhanSuKpi.filter(u => calculateWeeklyKPI(u.id).total >= 100).length, ton: 'dat', phu: 'từ 100 điểm/tuần' },
+        { nhan: 'Cờ đỏ vi phạm', giaTri: kpiScores.filter(s => s.month === monthFilter && s.isFlagged).length, ton: 'loi' },
+      ]} />
 
       {/* Main Table */}
       <div className="premium-card" style={{ padding: 0, overflow: 'hidden' }}>

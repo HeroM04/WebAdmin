@@ -10,6 +10,7 @@ import { AppContext } from '../context/AppContext';
 import { doiKhoang } from '../utils/locBang';
 import { rowClick } from '../utils/tableRow';
 import confetti from 'canvas-confetti';
+import { DaiSoLieu } from './ui/DaiSoLieu';
 
 const { Search } = Input;
 
@@ -248,32 +249,12 @@ export const ManageDeals = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <Row gutter={[16, 16]}>
-        <Col xs={12} md={6}>
-          <div className="premium-card" style={{ padding: '16px 20px' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>Tổng giao dịch</div>
-            <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: '#3b82f6' }}>{stats.total}</div>
-          </div>
-        </Col>
-        <Col xs={12} md={6}>
-          <div className="premium-card" style={{ padding: '16px 20px' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>Chờ duyệt</div>
-            <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: '#fbbf24' }}>{stats.pending}</div>
-          </div>
-        </Col>
-        <Col xs={12} md={6}>
-          <div className="premium-card" style={{ padding: '16px 20px' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>Deal thành công</div>
-            <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: '#10b981' }}>{stats.approved}</div>
-          </div>
-        </Col>
-        <Col xs={12} md={6}>
-          <div className="premium-card" style={{ padding: '16px 20px' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>Doanh số đã duyệt</div>
-            <div className="outfit-font" style={{ fontSize: 22, fontWeight: 800, color: '#ec4899' }}>{(stats.totalRevenue / 1e9).toFixed(1)} Tỷ</div>
-          </div>
-        </Col>
-      </Row>
+      <DaiSoLieu items={[
+        { nhan: 'Tổng giao dịch', giaTri: stats.total },
+        { nhan: 'Chờ duyệt', giaTri: stats.pending, ton: 'cho' },
+        { nhan: 'Deal thành công', giaTri: stats.approved, ton: 'dat' },
+        { nhan: 'Doanh số đã duyệt', giaTri: <>{(stats.totalRevenue / 1e9).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}<small>tỷ</small></> },
+      ]} />
 
       <div className="premium-card" style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>

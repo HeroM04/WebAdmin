@@ -10,6 +10,7 @@ import { AppContext } from '../context/AppContext';
 import { doiKhoang } from '../utils/locBang';
 import { rowClick } from '../utils/tableRow';
 import { scanPostContent } from '../utils/aiScanner';
+import { DaiSoLieu } from './ui/DaiSoLieu';
 
 const { Search } = Input;
 
@@ -267,21 +268,12 @@ export const ManagePosts = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <Row gutter={[16, 16]}>
-        {[
-          { label: 'Tổng nội dung', value: stats.total, color: '#3b82f6' },
-          { label: 'Chờ duyệt', value: stats.pending, color: '#fbbf24' },
-          { label: 'Video xây kênh (đã duyệt)', value: stats.video, color: '#c026d3' },
-          { label: 'Bài đăng (đã duyệt)', value: stats.post, color: '#10b981' },
-        ].map((s, i) => (
-          <Col xs={12} md={6} key={i}>
-            <div className="premium-card" style={{ padding: '16px 20px' }}>
-              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>{s.label}</div>
-              <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</div>
-            </div>
-          </Col>
-        ))}
-      </Row>
+      <DaiSoLieu items={[
+        { nhan: 'Tổng nội dung', giaTri: stats.total },
+        { nhan: 'Chờ duyệt', giaTri: stats.pending, ton: 'cho' },
+        { nhan: 'Video xây kênh', giaTri: stats.video, phu: 'đã duyệt' },
+        { nhan: 'Bài đăng', giaTri: stats.post, phu: 'đã duyệt' },
+      ]} />
 
       <div className="premium-card" style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>

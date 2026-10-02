@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import { AppContext } from '../context/AppContext';
 import { apiClient } from '../utils/apiClient';
 import { khopTen, khopNgay, doiKhoang } from '../utils/locBang';
+import { DaiSoLieu } from './ui/DaiSoLieu';
 
 const STATUS_META = {
   PENDING:  { color: 'warning', icon: <ClockCircleOutlined />, label: 'Chờ duyệt' },
@@ -212,21 +213,12 @@ export const ReferralSubmissions = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <Row gutter={[16, 16]}>
-        {[
-          { label: 'Chờ duyệt', value: stats.pending, color: '#fbbf24' },
-          { label: 'Đã mở tài khoản', value: stats.approved, color: '#10b981' },
-          { label: 'Đã cộng điểm', value: stats.rewarded, color: '#c026d3' },
-          { label: 'Đã từ chối', value: stats.rejected, color: '#94a3b8' },
-        ].map((s, i) => (
-          <Col xs={12} md={6} key={i}>
-            <div className="premium-card" style={{ padding: '16px 20px' }}>
-              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>{s.label}</div>
-              <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</div>
-            </div>
-          </Col>
-        ))}
-      </Row>
+      <DaiSoLieu items={[
+        { nhan: 'Chờ duyệt', giaTri: stats.pending, ton: 'cho' },
+        { nhan: 'Đã mở tài khoản', giaTri: stats.approved, ton: 'dat' },
+        { nhan: 'Đã cộng điểm', giaTri: stats.rewarded, ton: 'thongtin' },
+        { nhan: 'Đã từ chối', giaTri: stats.rejected, ton: 'trung' },
+      ]} />
 
       <div className="premium-card" style={{ padding: '16px 20px' }}>
         <Space wrap>

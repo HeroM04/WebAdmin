@@ -7,6 +7,7 @@ import {
 import { AppContext } from '../context/AppContext';
 import { rowClick } from '../utils/tableRow';
 import { apiClient } from '../utils/apiClient';
+import { DaiSoLieu } from './ui/DaiSoLieu';
 
 const { Search } = Input;
 
@@ -216,26 +217,11 @@ export const Departments = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <Row gutter={[16, 16]}>
-        <Col xs={12} md={8}>
-          <div className="premium-card" style={{ padding: '16px 20px' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>Tổng số phòng ban</div>
-            <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: '#3b82f6' }}>{departments.length}</div>
-          </div>
-        </Col>
-        <Col xs={12} md={8}>
-          <div className="premium-card" style={{ padding: '16px 20px' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>Chưa phân phòng</div>
-            <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: '#fbbf24' }}>{getUnassignedUsers().length}</div>
-          </div>
-        </Col>
-        <Col xs={12} md={8}>
-          <div className="premium-card" style={{ padding: '16px 20px' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>Tổng nhân sự</div>
-            <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: '#10b981' }}>{activeUsers.length}</div>
-          </div>
-        </Col>
-      </Row>
+      <DaiSoLieu items={[
+        { nhan: 'Phòng ban', giaTri: departments.length },
+        { nhan: 'Tổng nhân sự', giaTri: activeUsers.length },
+        { nhan: 'Chưa phân phòng', giaTri: getUnassignedUsers().length, ton: getUnassignedUsers().length ? 'cho' : undefined },
+      ]} />
 
       <div className="premium-card" style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>

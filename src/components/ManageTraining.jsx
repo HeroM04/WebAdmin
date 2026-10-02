@@ -16,6 +16,7 @@ import { DaoTao1Kem1 } from './DaoTao1Kem1';
 import { rowClick } from '../utils/tableRow';
 import { exportToCSV } from '../utils/exportCsv';
 import { khopTen } from '../utils/locBang';
+import { DaiSoLieu } from './ui/DaiSoLieu';
 
 const { Search } = Input;
 
@@ -501,21 +502,12 @@ export const ManageTraining = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <Row gutter={[16, 16]}>
-        {[
-          { label: 'Tổng buổi học', value: stats.total, color: '#3b82f6' },
-          { label: 'Sắp diễn ra', value: stats.upcoming, color: '#fbbf24' },
-          { label: 'Đã hoàn thành', value: stats.completed, color: '#10b981' },
-          { label: 'Lượt tham dự', value: stats.totalAttendees, color: '#8b5cf6' },
-        ].map((s, i) => (
-          <Col xs={12} md={6} key={i}>
-            <div className="premium-card" style={{ padding: '16px 20px' }}>
-              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>{s.label}</div>
-              <div className="outfit-font" style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</div>
-            </div>
-          </Col>
-        ))}
-      </Row>
+      <DaiSoLieu items={[
+        { nhan: 'Tổng buổi học', giaTri: stats.total },
+        { nhan: 'Sắp diễn ra', giaTri: stats.upcoming, ton: 'thongtin' },
+        { nhan: 'Đã hoàn thành', giaTri: stats.completed, ton: 'dat' },
+        { nhan: 'Lượt tham dự', giaTri: stats.totalAttendees },
+      ]} />
 
       {/* QR Panel */}
       {qrSessionId && (() => {
