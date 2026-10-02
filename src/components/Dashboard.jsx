@@ -39,6 +39,8 @@ import { calcSalary, formatVND } from '../utils/salaryUtils';
 import { useNavigate } from 'react-router-dom';
 import { exportToCSV } from '../utils/exportCsv';
 import { locNguoiChamKpi } from '../utils/vaiTro';
+import { thangKpi, khoangThangKpi, diemToiDaThang } from '../utils/thangKpi';
+import { useDiemKpiThang, useThangKpiTuDong } from '../utils/useDiemKpiThang';
 
 // Premium CRM Stat Card
 const StatCard = ({ label, value, trend, trendColor, color, icon, onClick, clickable }) => (
@@ -109,26 +111,33 @@ export const Dashboard = () => {
     departments,
     users,          // đầy đủ, kể cả người đã nghỉ — chỉ để tra tên trên việc cũ
     activeUsers,    // người đang làm — dùng cho xếp hạng và biểu đồ
-    kpiScores,
+    // điểm KPI lấy theo tháng qua useDiemKpiThang, không lọc thẳng kpiScores
     deals,
     attendance,
     posts,
     meetings
   } = useContext(AppContext);
 
-  const [selectedMonth, setSelectedMonth] = useState(() => dayjs());
+  // Mặc định THÁNG KPI đang chấm chứ không phải tháng dương lịch: 1–4/10/2026
+  // vẫn là KPI tháng 9 (trước đây mở ra là tháng 10, toàn 0 và -100%); hết
+  // Chủ nhật 04/10 mới tự sang tháng 10.
+  const [thangChon, setThangChon] = useThangKpiTuDong();
+  const selectedMonth = dayjs(thangChon + '-01');
   const currentMonthStr = selectedMonth.format('YYYY-MM');
   const previousMonthStr = selectedMonth.subtract(1, 'month').format('YYYY-MM');
   
-  const currentMonthLabel = `Tháng ${selectedMonth.format('M/YYYY')}`;
+  const currentMonthLabel = `tháng KPI ${selectedMonth.format('M/YYYY')}`;
+  const khoangThang = khoangThangKpi(currentMonthStr);
+  const toiDaThang = diemToiDaThang(currentMonthStr);
   const prevMonthLabel = `Tháng ${selectedMonth.subtract(1, 'month').format('M')}`;
   const currMonthLabel = `Tháng ${selectedMonth.format('M')}`;
 
   // Stat Calculations with Trends
-  const filterByMonth = (arr, monthStr) => arr.filter(item => item.submittedAt && item.submittedAt.startsWith(monthStr));
+  // Việc thuộc tháng KPI nào theo tuần của nó (utils/thangKpi), khớp cách máy chủ cộng điểm
+  const filterByMonth = (arr, monthStr) => arr.filter(item => item.submittedAt && thangKpi(item.submittedAt) === monthStr);
 
-  const scoresCurr = kpiScores.filter(s => s.month === currentMonthStr);
-  const scoresPrev = kpiScores.filter(s => s.month === previousMonthStr);
+  const { ds: scoresCurr } = useDiemKpiThang(currentMonthStr);
+  const { ds: scoresPrev } = useDiemKpiThang(previousMonthStr);
   const kpiCurr = scoresCurr.reduce((sum, s) => sum + (s.total || 0), 0);
   const kpiPrev = scoresPrev.reduce((sum, s) => sum + (s.total || 0), 0);
 
@@ -142,12 +151,14 @@ export const Dashboard = () => {
   const meetingsPrev = filterByMonth(meetings, previousMonthStr);
 
   // Chấm công do máy chủ đếm: trình duyệt không còn giữ cả bảng để đếm tay.
-  // Lấy theo đúng tháng đang chọn nên lật về tháng nào cũng ra số thật.
+  // Lấy theo đúng khoảng ngày của tháng KPI đang chọn (from/to) — tham số
+  // month của máy chủ là tháng dương lịch, lệch với các ô khác trên trang.
   const [soChamCong, setSoChamCong] = useState({ nay: 0, truoc: 0 });
   useEffect(() => {
     let conHieuLuc = true;
     const dem = async (m) => {
-      const r = await apiClient.getRaw(`/attendance?size=1&month=${m}`).catch(() => null);
+      const { tu, den } = khoangThangKpi(m);
+      const r = await apiClient.getRaw(`/attendance?size=1&from=${tu.format('YYYY-MM-DD')}&to=${den.format('YYYY-MM-DD')}`).catch(() => null);
       return r?.stats?.total ?? 0;
     };
     Promise.all([dem(currentMonthStr), dem(previousMonthStr)]).then(([nay, truoc]) => {
@@ -199,7 +210,7 @@ export const Dashboard = () => {
   const comboChartData = departments.map(dept => {
     const deptUsers = nhanSuKpi.filter(u => u.deptId === dept.id);
     const userIds = deptUsers.map(u => u.id);
-    const scoresCurrDept = kpiScores.filter(s => s.month === currentMonthStr && userIds.includes(s.userId));
+    const scoresCurrDept = scoresCurr.filter(s => userIds.includes(s.userId));
     return {
       name: dept.name.replace('Phòng ', ''),
       'Phát triển cá nhân': scoresCurrDept.reduce((sum, s) => sum + (s.attendance || 0), 0),
@@ -263,9 +274,9 @@ export const Dashboard = () => {
   // Leaderboard — chỉ người đang làm và thuộc diện chấm KPI
   const leaderboardData = nhanSuKpi
     .map(user => {
-      const score = kpiScores.find(s => s.userId === user.id && s.month === currentMonthStr) || { attendance: 0, meeting: 0, post: 0, deal: 0, total: 0 };
+      const score = scoresCurr.find(s => s.userId === user.id) || { attendance: 0, meeting: 0, post: 0, deal: 0, total: 0 };
       const dept = departments.find(d => d.id === user.deptId);
-      const agentDeals = deals.filter(d => d.userId === user.id && d.status === 'APPROVED' && d.submittedAt && d.submittedAt.startsWith(currentMonthStr));
+      const agentDeals = deals.filter(d => d.userId === user.id && d.status === 'APPROVED' && d.submittedAt && thangKpi(d.submittedAt) === currentMonthStr);
       const agentDealsValue = agentDeals.reduce((sum, d) => sum + d.price, 0);
       return {
         key: user.id, user, deptName: dept ? dept.name : 'Chưa phân phòng',
@@ -315,14 +326,14 @@ export const Dashboard = () => {
       title: `KPI ${currMonthLabel}`,
       key: 'kpi',
       render: (_, record) => {
-        const percent = Math.min(100, (record.kpi / 500) * 100);
+        const percent = Math.min(100, (record.kpi / toiDaThang) * 100);
         return (
           <div style={{ minWidth: 160 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
               <span className="outfit-font" style={{ fontWeight: 800, color: 'var(--primary-color)', fontSize: 16 }}>
                 {record.kpi}
               </span>
-              <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>/ 500 pts</span>
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>/ {toiDaThang} điểm</span>
             </div>
             <Progress
               percent={percent} size="small" showInfo={false}
@@ -339,11 +350,16 @@ export const Dashboard = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)' }}>Tổng quan {currentMonthLabel}</h2>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)' }}>Tổng quan {currentMonthLabel}</h2>
+          <div style={{ marginTop: 2, fontSize: 13, color: 'var(--text-secondary)' }}>
+            {khoangThang.tu.format('DD/MM')} – {khoangThang.den.format('DD/MM/YYYY')} · tối đa {toiDaThang} điểm/người
+          </div>
+        </div>
         <Space>
           <DatePicker.MonthPicker 
             value={selectedMonth} 
-            onChange={(date) => date && setSelectedMonth(date)} 
+            onChange={(date) => date && setThangChon(date.format('YYYY-MM'))}
             allowClear={false} 
             format="MM/YYYY" 
             size="middle"

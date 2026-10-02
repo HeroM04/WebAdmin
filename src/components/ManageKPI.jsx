@@ -11,17 +11,22 @@ import { rowClick } from '../utils/tableRow';
 import { locNguoiChamKpi } from '../utils/vaiTro';
 import dayjs from 'dayjs';
 import { DaiSoLieu } from './ui/DaiSoLieu';
+import { thangKpi, khoangThangKpi } from '../utils/thangKpi';
+import { useDiemKpiThang, useThangKpiTuDong } from '../utils/useDiemKpiThang';
 
 const { Search } = Input;
 
 export const ManageKPI = () => {
   const {
-    activeUsers: users, kpiScores, departments, deals, attendance, posts, meetings, trainingSessions, flagKpiRecord
+    activeUsers: users, departments, deals, attendance, posts, meetings, trainingSessions, flagKpiRecord
   } = useContext(AppContext);
 
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('ALL');
-  const [monthFilter, setMonthFilter] = useState(() => dayjs().format('YYYY-MM'));
+  // Mặc định THÁNG KPI đang chấm (thứ Hai đầu tuần quyết định tháng), không
+  // phải tháng dương lịch: 1–4/10/2026 vẫn là KPI tháng 9, hết 04/10 mới sang tháng 10.
+  const [monthFilter, setMonthFilter] = useThangKpiTuDong();
+  const { ds: diemKpi, dangTai: dangTaiDiem } = useDiemKpiThang(monthFilter);
   const [exporting, setExporting] = useState(null); // null | 'company' | userId
 
   /**
@@ -93,10 +98,10 @@ export const ManageKPI = () => {
     return dept ? dept.name : 'Chưa phân phòng';
   };
 
-  // Lấy KPI từ API Backend trả về (được lưu trong kpiScores)
-  const getKpiRecord = (userId, month) => {
-    // API trả về kpiScores chứa { attendance, meeting, post, deal, total, weeklyTotal, isFlagged }
-    const record = kpiScores.find(s => s.userId === userId && s.month === month);
+  // Lấy KPI từ API Backend trả về (điểm của tháng monthFilter — xem useDiemKpiThang)
+  const getKpiRecord = (userId) => {
+    // API trả về { attendance, meeting, post, deal, total, weeklyTotal, isFlagged }
+    const record = diemKpi.find(s => s.userId === userId);
     if (record) {
       return {
         ...record,
@@ -159,7 +164,7 @@ export const ManageKPI = () => {
     return matchName && matchDept;
   });
 
-  const isFutureMonth = dayjs(monthFilter, 'YYYY-MM').isAfter(dayjs(), 'month');
+  const isFutureMonth = monthFilter > thangKpi();
   const tableData = isFutureMonth ? [] : filteredUsers;
 
   // Khóa sắp xếp. Chốt căn được tính 100% KPI dù điểm thô có thể thấp, nên
@@ -184,7 +189,7 @@ export const ManageKPI = () => {
       )
     },
     {
-      title: dayjs(monthFilter, 'YYYY-MM').isSame(dayjs(), 'month') ? 'KPI Tuần (7 ngày qua)' : 'KPI Tuần cuối tháng',
+      title: monthFilter === thangKpi() ? 'KPI Tuần (7 ngày qua)' : 'KPI Tuần cuối tháng',
       key: 'weeklyKpi',
       sorter: (a, b) => diemTuan(a) - diemTuan(b),
       sortDirections: ['descend', 'ascend'],   // bấm lần đầu là cao → thấp
@@ -287,7 +292,7 @@ export const ManageKPI = () => {
       <DaiSoLieu items={[
         { nhan: 'Nhân sự chấm KPI', giaTri: nhanSuKpi.length },
         { nhan: 'Đạt KPI tuần', giaTri: nhanSuKpi.filter(u => calculateWeeklyKPI(u.id).total >= 100).length, ton: 'dat', phu: 'từ 100 điểm/tuần' },
-        { nhan: 'Cờ đỏ vi phạm', giaTri: kpiScores.filter(s => s.month === monthFilter && s.isFlagged).length, ton: 'loi' },
+        { nhan: 'Cờ đỏ vi phạm', giaTri: diemKpi.filter(s => s.isFlagged).length, ton: 'loi' },
       ]} />
 
       {/* Main Table */}
@@ -296,6 +301,12 @@ export const ManageKPI = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <TrophyOutlined style={{ color: 'var(--primary-color)', fontSize: 18 }} />
             <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Bảng chấm KPI</h3>
+            {!isFutureMonth && (() => {
+              const { tu, den } = khoangThangKpi(monthFilter);
+              return <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                · tháng KPI {dayjs(monthFilter, 'YYYY-MM').format('MM/YYYY')}: {tu.format('DD/MM')} – {den.format('DD/MM')}
+              </span>;
+            })()}
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <Search placeholder="Tìm mã, tên nhân viên..." allowClear style={{ width: 220 }} onChange={e => setSearch(e.target.value)} />
@@ -332,6 +343,7 @@ export const ManageKPI = () => {
             columns={columns}
             rowKey="id"
             size="small"
+            loading={dangTaiDiem}
             onRow={rowClick((record) => { setDetailUser(record); setDrawerOpen(true); })}
             pagination={{ defaultPageSize: 15, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }}
             locale={{

@@ -1,13 +1,13 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { Table, Avatar, DatePicker, Button, Input, Empty } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { AppContext } from '../context/AppContext';
-import { apiClient } from '../utils/apiClient';
+import { useDiemKpiThang, useThangKpiTuDong } from '../utils/useDiemKpiThang';
 import { exportToCSV } from '../utils/exportCsv';
 import { khopTen } from '../utils/locBang';
 import { locNguoiChamKpi } from '../utils/vaiTro';
-import { thangKpi, diemToiDaThang, khoangThangKpi } from '../utils/thangKpi';
+import { diemToiDaThang, khoangThangKpi } from '../utils/thangKpi';
 import { DaiSoLieu } from './ui/DaiSoLieu';
 
 // Màu nền ảnh đại diện chữ cái: trầm, theo NGƯỜI (id) chứ không theo hạng —
@@ -56,28 +56,10 @@ const BucVinhDanh = ({ top, coDiem }) => (
 
 const Leaderboard = () => {
   // activeUsers: người đã xóa mềm không lên bảng vinh danh (xem chú thích ở AppContext)
-  const { activeUsers, departments, kpiScores } = useContext(AppContext);
-  const [thang, setThang] = useState(() => thangKpi());
+  const { activeUsers, departments } = useContext(AppContext);
+  const [thang, setThang] = useThangKpiTuDong();
   const [search, setSearch] = useState('');
-  const [taiRieng, setTaiRieng] = useState({ thang: null, ds: [], dangTai: false });
-
-  // Dữ liệu chung chỉ có tháng KPI hiện tại (GET /kpi-scores không kèm tháng).
-  // Tháng khác thì tải riêng — trước đây chọn tháng cũ là cả bảng về 0.
-  const coSan = kpiScores.some(s => s.month === thang);
-  useEffect(() => {
-    if (coSan) return;
-    let huy = false;
-    setTaiRieng({ thang, ds: [], dangTai: true });
-    apiClient.get(`/kpi-scores?month=${thang}`)
-      .then(d => { if (!huy) setTaiRieng({ thang, ds: Array.isArray(d) ? d : [], dangTai: false }); })
-      .catch(() => { if (!huy) setTaiRieng({ thang, ds: [], dangTai: false }); });
-    return () => { huy = true; };
-  }, [thang, coSan]);
-
-  const diemThang = useMemo(() => (coSan ? kpiScores.filter(s => s.month === thang)
-                                         : (taiRieng.thang === thang ? taiRieng.ds : [])),
-                            [coSan, kpiScores, thang, taiRieng]);
-  const dangTai = !coSan && (taiRieng.thang !== thang || taiRieng.dangTai);
+  const { ds: diemThang, dangTai } = useDiemKpiThang(thang);
   const toiDa = diemToiDaThang(thang);
   const { tu, den } = khoangThangKpi(thang);
 
