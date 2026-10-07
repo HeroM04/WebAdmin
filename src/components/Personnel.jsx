@@ -25,6 +25,7 @@ import {
 } from '@ant-design/icons';
 import { apiClient } from '../utils/apiClient';
 import { ReferralSubmissions } from './ReferralSubmissions';
+import { DaiSoLieu } from './ui/DaiSoLieu';
 
 // Wait, the React Context import is correct. Let's make sure there is no react-redux import.
 // Yes! I'll write the code correctly without react-redux.
@@ -185,6 +186,15 @@ const PersonnelList = () => {
       message.error(e.message || 'Lỗi hệ thống khi đặt lại mật khẩu');
     }
   };
+
+  // Tổng toàn công ty, không theo bộ lọc — bộ lọc chỉ đổi số cạnh tiêu đề bảng.
+  // users có cả người đã nghỉ (xóa mềm = INACTIVE), nên đếm theo trạng thái.
+  const dangLam = users.filter(u => u.status === 'ACTIVE');
+  const soSale = dangLam.filter(u => u.role === 'SALE').length;
+  const soTruongPhong = dangLam.filter(u => u.role === 'TRUONG_PHONG').length;
+  const soQuanTri = dangLam.filter(u => u.role === 'ADMIN').length;
+  const soVanPhong = dangLam.length - soSale - soTruongPhong - soQuanTri;
+  const soDaNghi = users.filter(u => u.status !== 'ACTIVE').length;
 
   const filteredUsers = [...users]
     .filter(u => {
@@ -400,6 +410,16 @@ const PersonnelList = () => {
         </Space>
       </div>
 
+      <div style={{ marginBottom: 16 }}>
+        <DaiSoLieu items={[
+          { nhan: 'Đang làm việc', giaTri: dangLam.length, ton: 'dat', phu: 'tất cả tài khoản đang hoạt động' },
+          { nhan: 'Kinh doanh', giaTri: soSale + soTruongPhong, phu: `${soSale} sale · ${soTruongPhong} trưởng phòng` },
+          { nhan: 'Văn phòng', giaTri: soVanPhong, phu: 'chỉ chấm công, không chấm KPI' },
+          { nhan: 'Quản trị', giaTri: soQuanTri, phu: 'tài khoản Admin' },
+          { nhan: 'Đã nghỉ / đã khóa', giaTri: soDaNghi, ton: 'trung', phu: 'giữ lại lịch sử' },
+        ]} />
+      </div>
+
       <Row gutter={[16, 16]}>
         {/* Top: Users table */}
         <Col xs={24} xl={24}>
@@ -408,6 +428,8 @@ const PersonnelList = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <TeamOutlined style={{ color: 'var(--primary-color)', fontSize: 18 }} />
                 <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Danh sách Nhân sự</h3>
+                {/* Số người đang hiện theo bộ lọc (phòng ban, trạng thái, ô tìm) */}
+                <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>· {filteredUsers.length} người</span>
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
                 <Input.Search placeholder="Tìm mã, tên nhân viên..." allowClear style={{ width: 200 }} onChange={e => setSearch(e.target.value)} />
@@ -421,7 +443,7 @@ const PersonnelList = () => {
               rowKey="id"
               size="small"
               onRow={rowClick((record) => { setDetailUser(record); setDrawerOpen(true); })}
-              pagination={{ defaultPageSize: 15, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }}
+              pagination={{ defaultPageSize: 15, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100], showTotal: (tong) => `Tổng ${tong} người` }}
               scroll={{ x: 'max-content' }}
             />
           </div>
