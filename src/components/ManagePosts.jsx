@@ -197,13 +197,18 @@ export const ManagePosts = () => {
               mở ô chi tiết là thấy đầy đủ nội dung. */}
           <div
             title={record.caption}
-            style={{ fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 300 }}
+            style={{ fontSize: 13, color: record.caption ? 'var(--text-primary)' : 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 300 }}
           >
-            {record.caption}
+            {record.caption || 'Không có caption'}
           </div>
-          <a href={record.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: 'var(--primary-color)' }}>
-            <LinkOutlined style={{ marginRight: 4 }} />Xem bài gốc
-          </a>
+          {/* Story, video xây kênh có thể chỉ gửi ảnh chụp, không có link */}
+          {record.link ? (
+            <a href={record.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: 'var(--primary-color)' }}>
+              <LinkOutlined style={{ marginRight: 4 }} />Xem bài gốc
+            </a>
+          ) : (
+            <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Không có link · xem ảnh chụp</span>
+          )}
         </div>
       )
     },
@@ -325,13 +330,17 @@ export const ManagePosts = () => {
               {/* Post content */}
               <div className="premium-card" style={{ padding: 16 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1, marginBottom: 10 }}>NỘI DUNG BÀI ĐĂNG</div>
-                <div style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, padding: '12px 14px', background: 'var(--bg-secondary)', borderRadius: 8, borderLeft: `3px solid ${PLATFORM_COLORS[detailRecord.platform] || '#3b82f6'}` }}>
-                  {detailRecord.caption}
+                <div style={{ fontSize: 13, color: detailRecord.caption ? 'var(--text-primary)' : 'var(--text-secondary)', lineHeight: 1.7, padding: '12px 14px', background: 'var(--bg-secondary)', borderRadius: 8, borderLeft: `3px solid ${PLATFORM_COLORS[detailRecord.platform] || '#3b82f6'}` }}>
+                  {detailRecord.caption || 'Nhân sự không gửi caption — đối chiếu trên ảnh chụp màn hình.'}
                 </div>
                 <div style={{ marginTop: 10 }}>
-                  <a href={detailRecord.link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-color)', fontSize: 12 }}>
-                    <LinkOutlined style={{ marginRight: 6 }} />Xem bài viết gốc trên {detailRecord.platform}
-                  </a>
+                  {detailRecord.link ? (
+                    <a href={detailRecord.link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-color)', fontSize: 12 }}>
+                      <LinkOutlined style={{ marginRight: 6 }} />Xem bài viết gốc trên {detailRecord.platform}
+                    </a>
+                  ) : (
+                    <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Không có link bài viết (story / video chỉ gửi ảnh chụp).</span>
+                  )}
                 </div>
               </div>
 
@@ -412,10 +421,10 @@ export const ManagePosts = () => {
               <Select options={[{ value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }]} />
             </Form.Item>
           )}
-          <Form.Item name="link" label="Link bài viết" rules={[{ required: true }]}>
+          <Form.Item name="link" label="Link bài viết (không bắt buộc)">
             <Input placeholder="https://facebook.com/..." prefix={<LinkOutlined />} />
           </Form.Item>
-          <Form.Item name="caption" label="Nội dung caption" rules={[{ required: true }]}>
+          <Form.Item name="caption" label="Nội dung caption (không bắt buộc)">
             <Input.TextArea rows={5} placeholder="Nhập nội dung bài đăng về BĐS..." showCount maxLength={1000} />
           </Form.Item>
         </Form>
