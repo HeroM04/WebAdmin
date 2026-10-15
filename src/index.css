@@ -406,8 +406,13 @@ h1, h2, h3, h4, .outfit-font {
   }
 }
 
+/* Không dùng `forwards`: nó giữ lại transform sau khi hiệu ứng chạy xong, và
+   một phần tử có transform khiến mọi `position: fixed` bên trong (khung xem ảnh
+   phóng to, màn hình chiếu QR đào tạo) định vị theo cả trang dài thay vì theo
+   màn hình — bấm xem ảnh chấm công phải cuộn tít xuống mới thấy. Bỏ đi thì chạy
+   xong phần tử trở về bình thường, không còn transform. */
 .animate-fade-in-up {
-  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes pulseGlow {
