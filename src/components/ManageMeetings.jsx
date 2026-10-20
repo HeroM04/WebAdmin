@@ -1,14 +1,15 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { Table, Button, Space, Avatar, Tag, Input, Select, Popconfirm, message, Row, Col, Drawer, Modal, Form, Tooltip, Divider, DatePicker } from 'antd';
 import {
   SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined,
   ClockCircleOutlined, EnvironmentOutlined, FileTextOutlined, PlusOutlined,
-  EditOutlined, EyeOutlined, SolutionOutlined, PhoneOutlined, CalendarOutlined, UserOutlined
+  EditOutlined, EyeOutlined, SolutionOutlined, PhoneOutlined, CalendarOutlined, UserOutlined, CopyOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import { doiKhoang } from '../utils/locBang';
 import { rowClick } from '../utils/tableRow';
 import { DaiSoLieu } from './ui/DaiSoLieu';
+import { timNopTrung } from '../utils/nopTrung';
 
 const { Search } = Input;
 
@@ -36,10 +37,20 @@ export const ManageMeetings = () => {
     return dept ? dept.name : 'Chưa phân phòng';
   };
 
+  /*
+   * Báo cáo nộp trùng: cùng người, cùng loại, cùng nội dung, nộp cách nhau
+   * không quá 30 phút — thường do bấm Gửi nhiều lần khi app đang lấy vị trí.
+   * Gắn nhãn cả nhóm (như trang Đào tạo 1-1) để Admin tự chọn giữ cái nào.
+   */
+  const idNopTrung = useMemo(() => timNopTrung(
+    meetings.map(m => ({ ...m, content: (m.battleType || 'MEETING') + '|' + (m.content || '') }))
+  ), [meetings]);
+
   const filtered = meetings.filter(item => {
     const user = getUserById(item.userId);
     const matchName = !search || (user?.name || '').toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === 'ALL' || item.status === statusFilter;
+    const matchStatus = statusFilter === 'ALL'
+      || (statusFilter === 'TRUNG' ? idNopTrung.has(item.id) : item.status === statusFilter);
     const matchDept = deptFilter === 'ALL' || (user && user.deptId === deptFilter);
     let matchDate = true;
     if (dateRange && dateRange[0] && dateRange[1] && item.submittedAt) {
@@ -179,7 +190,10 @@ export const ManageMeetings = () => {
       width: 130,
       render: (_, record) => (
         <div>
-          <StatusTag status={record.status} />
+          <Space size={4} wrap>
+            <StatusTag status={record.status} />
+            {idNopTrung.has(record.id) && <Tag color="purple" icon={<CopyOutlined />}>Nộp trùng</Tag>}
+          </Space>
           {record.approvedBy && <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 3 }}>bởi {record.approvedBy}</div>}
         </div>
       )
@@ -223,7 +237,7 @@ export const ManageMeetings = () => {
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Search placeholder="Tìm theo tên nhân sự hoặc khách hàng..." allowClear style={{ width: 260 }} onChange={e => setSearch(e.target.value)} prefix={<SearchOutlined style={{ color: 'var(--text-secondary)' }} />} />
             <Select value={deptFilter} onChange={setDeptFilter} style={{ width: 160 }} options={[{ value: 'ALL', label: 'Tất cả phòng ban' }, ...(departments || []).map(d => ({ value: d.id, label: d.name }))]} />
-            <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 140 }} options={[{ value: 'ALL', label: 'Tất cả trạng thái' }, { value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }]} />
+            <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 140 }} options={[{ value: 'ALL', label: 'Tất cả trạng thái' }, { value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }, { value: 'TRUNG', label: `Nộp trùng (${idNopTrung.size})` }]} />
             <DatePicker.RangePicker placeholder={['Từ ngày', 'Đến ngày']} format="DD/MM/YYYY" onChange={(dates) => setDateRange(doiKhoang(dates))} style={{ width: 240 }} />
           </div>
           <Button type="primary" icon={<PlusOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={openAdd}>Thêm Báo cáo</Button>
@@ -249,7 +263,10 @@ export const ManageMeetings = () => {
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: 'Inter, sans-serif' }}>{detailUser.name}</div>
                   <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>Báo cáo thực chiến</div>
-                  <div style={{ marginTop: 8 }}><StatusTag status={detailRecord.status} /></div>
+                  <div style={{ marginTop: 8 }}>
+                    <StatusTag status={detailRecord.status} />
+                    {idNopTrung.has(detailRecord.id) && <Tag color="purple" icon={<CopyOutlined />}>Nộp trùng</Tag>}
+                  </div>
                 </div>
               </Space>
             </div>
