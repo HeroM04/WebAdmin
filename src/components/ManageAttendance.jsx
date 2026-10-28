@@ -1,5 +1,6 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { Table, Button, Space, Avatar, Tag, Input, Select, Popconfirm, message, Row, Col, Drawer, Modal, Form, Divider, Badge, Upload, DatePicker, Tabs } from 'antd';
+import { Table, Button, Space, Avatar, Tag, Input, Select, Popconfirm, message, Row, Col, Drawer, Modal, Form, Divider, Badge, Upload, DatePicker, TimePicker, Tabs, Alert } from 'antd';
+import dayjs from 'dayjs';
 import {
   SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined,
   ClockCircleOutlined, EnvironmentOutlined, FilterOutlined, PlusOutlined,
@@ -7,7 +8,7 @@ import {
   CalendarOutlined, TableOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
-import { doiKhoang } from '../utils/locBang';
+import { doiKhoang, khopTen } from '../utils/locBang';
 import { docKhoangCach, laXa, NGUONG_XA_MET } from '../utils/khoangCach';
 import { gopNgayCong } from '../utils/ngayCong';
 import { apiClient } from '../utils/apiClient';
@@ -41,7 +42,7 @@ const StatusTag = ({ status }) => {
 };
 
 const AttendanceLogs = () => {
-  const { users, departments, currentUser, approveAttendance, rejectAttendance, deleteAttendance, updateAttendance, addAttendance } = useContext(AppContext);
+  const { users, departments, currentUser, approveAttendance, rejectAttendance, deleteAttendance, updateAttendance } = useContext(AppContext);
   const [search, setSearch] = useState('');
   // Mặc định 'Chờ duyệt': mở trang là thấy đúng việc phải làm. Toàn bộ chấm công
   // thường ngày xem ở tab Bảng công tháng, không lật danh sách.
@@ -124,57 +125,58 @@ const AttendanceLogs = () => {
     setDrawerOpen(true);
   };
 
+  // Người được thêm chấm công tay: đang làm việc, không tính tài khoản quản trị
+  const nguoiChamCong = users.filter((u) => u.status === 'ACTIVE' && u.role !== 'ADMIN');
+  const [dangLuu, setDangLuu] = useState(false);
+
+  /*
+   * Thêm chấm công tay: Admin chọn người, NGÀY, GIỜ VÀO và / hoặc GIỜ RA.
+   * Trước đây form này gửi lên /attendance/checkin — tức chấm công cho chính
+   * tài khoản Admin, đúng giờ bấm nút, kèm tọa độ và ảnh mẫu, lỗi thì vẫn báo
+   * "đã thêm". Nay gọi /attendance/them-tay: máy chủ tạo lượt vào / ra đúng
+   * ngày giờ, duyệt luôn, tính điểm như duyệt chấm công, và gỡ vắng không phép
+   * nếu đêm hôm đó đã bị chốt.
+   */
   const openAdd = () => {
     setEditingRecord(null);
     form.resetFields();
-    form.setFieldsValue({
-      userId: users[0]?.id,
-      status: 'PENDING',
-      gpsLocation: '10.7769, 106.7009 (Văn phòng Chính)',
-      photoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80'
-    });
+    form.setFieldsValue({ ngay: dayjs() });
     setModalOpen(true);
   };
 
+  // Sửa: máy chủ chỉ cho đổi trạng thái lượt chấm công (duyệt / từ chối)
   const openEdit = (record) => {
     setEditingRecord(record);
-    form.setFieldsValue({
-      userId: record.userId,
-      note: record.note,
-      gpsLocation: record.gpsLocation,
-      status: record.status,
-      photoUrl: record.photoUrl,
-    });
+    form.setFieldsValue({ userId: record.userId, status: record.status });
     setModalOpen(true);
   };
 
   const handleSave = () => {
     form.validateFields().then(async values => {
+      setDangLuu(true);
       try {
-        const locStr = values.gpsLocation || "";
-        const parts = locStr.split(',');
-        const latitude = parseFloat(parts[0]) || 10.7769;
-        const longitude = parseFloat(parts[1]) || 106.7009;
-        
-        const dto = {
-          ...values,
-          latitude,
-          longitude
-        };
-
         if (editingRecord) {
-          await updateAttendance({ ...editingRecord, ...dto });
+          await updateAttendance({ ...editingRecord, status: values.status });
           message.success('Đã cập nhật bản ghi chấm công!');
         } else {
-          await addAttendance(dto);
-          message.success('Đã thêm bản ghi chấm công mới!');
+          await apiClient.post('/attendance/them-tay', {
+            userId: values.userId,
+            ngay: values.ngay.format('YYYY-MM-DD'),
+            gioVao: values.gioVao ? values.gioVao.format('HH:mm') : null,
+            gioRa: values.gioRa ? values.gioRa.format('HH:mm') : null,
+            ghiChu: values.ghiChu,
+          });
+          const ten = users.find((u) => u.id === values.userId)?.name || '';
+          message.success(`Đã thêm chấm công cho ${ten} ngày ${values.ngay.format('DD/MM/YYYY')}.`);
         }
         setModalOpen(false);
         await taiDuLieu();
       } catch (e) {
-        message.error(e.message || 'Lỗi hệ thống');
+        message.error(e?.message || 'Lỗi hệ thống');
+      } finally {
+        setDangLuu(false);
       }
-    });
+    }).catch(() => {});
   };
 
   const handleExportCSV = () => {
@@ -645,39 +647,75 @@ const AttendanceLogs = () => {
         )}
       </Drawer>
 
-      {/* Add/Edit Modal */}
+      {/* Thêm chấm công tay / Sửa trạng thái */}
       <Modal
-        title={editingRecord ? 'Chỉnh sửa Bản ghi Chấm công' : 'Thêm Bản ghi Chấm công Mới'}
+        title={editingRecord ? 'Chỉnh sửa Bản ghi Chấm công' : 'Thêm chấm công tay'}
         open={modalOpen}
         onOk={handleSave}
         onCancel={() => setModalOpen(false)}
-        okText={editingRecord ? 'Lưu thay đổi' : 'Thêm mới'}
+        okText={editingRecord ? 'Lưu thay đổi' : 'Thêm chấm công'}
         cancelText="Hủy"
+        confirmLoading={dangLuu}
         okButtonProps={{ style: { backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' } }}
         width={520}
       >
-        <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item name="userId" label="Nhân sự" rules={[{ required: true }]}>
-            <Select options={users.map(u => ({ value: u.id, label: `${u.name} (${u.role})` }))} />
-          </Form.Item>
-          <Form.Item name="actionType" label="Loại chấm công" initialValue="CHECK_IN">
-            <Select options={[{ value: 'CHECK_IN', label: 'Check-in' }, { value: 'CHECK_OUT', label: 'Check-out' }]} />
-          </Form.Item>
-          <Form.Item name="gpsLocation" label="Vị trí GPS">
-            <Input placeholder="Ví dụ: 10.7769, 106.7009 (Văn phòng Quận 1)" />
-          </Form.Item>
-          <Form.Item name="photoUrl" label="URL Ảnh Check-in">
-            <Input placeholder="https://..." />
-          </Form.Item>
-          <Form.Item name="note" label="Ghi chú">
-            <Input.TextArea rows={2} placeholder="Ghi chú về lý do chấm công ngoại tuyến..." />
-          </Form.Item>
-          {editingRecord && (
+        {editingRecord ? (
+          <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
+            <Form.Item name="userId" label="Nhân sự">
+              <Select disabled options={users.map(u => ({ value: u.id, label: u.name }))} />
+            </Form.Item>
             <Form.Item name="status" label="Trạng thái">
               <Select options={[{ value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }]} />
             </Form.Item>
-          )}
-        </Form>
+          </Form>
+        ) : (
+          <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
+            <Form.Item name="userId" label="Nhân sự" rules={[{ required: true, message: 'Chọn nhân sự' }]}>
+              <Select
+                showSearch
+                placeholder="Gõ tên để tìm (không dấu cũng được)"
+                filterOption={(go, o) => khopTen(go, o?.label)}
+                options={nguoiChamCong.map(u => ({ value: u.id, label: `${u.name} · ${getDeptName(u.deptId)}` }))}
+              />
+            </Form.Item>
+            <Form.Item name="ngay" label="Ngày chấm công" rules={[{ required: true, message: 'Chọn ngày' }]}>
+              <DatePicker format="DD/MM/YYYY" style={{ width: '100%' }} allowClear={false}
+                disabledDate={(d) => d && d.isAfter(dayjs(), 'day')} />
+            </Form.Item>
+            <Row gutter={12}>
+              <Col span={12}>
+                <Form.Item name="gioVao" label="Giờ vào">
+                  <TimePicker format="HH:mm" style={{ width: '100%' }} placeholder="Ví dụ 08:30" needConfirm={false} />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="gioRa"
+                  label="Giờ ra"
+                  dependencies={['gioVao']}
+                  rules={[({ getFieldValue }) => ({
+                    validator(_, gioRa) {
+                      const gioVao = getFieldValue('gioVao');
+                      if (!gioRa && !gioVao) return Promise.reject(new Error('Nhập ít nhất giờ vào hoặc giờ ra'));
+                      if (gioRa && gioVao && !gioRa.isAfter(gioVao, 'minute')) return Promise.reject(new Error('Giờ ra phải sau giờ vào'));
+                      return Promise.resolve();
+                    },
+                  })]}
+                >
+                  <TimePicker format="HH:mm" style={{ width: '100%' }} placeholder="Ví dụ 17:30" needConfirm={false} />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item name="ghiChu" label="Lý do thêm tay" rules={[{ required: true, whitespace: true, message: 'Nhập lý do' }]}>
+              <Input.TextArea rows={2} maxLength={300} placeholder="Ví dụ: Quên chấm công, điện thoại hỏng, mất mạng…" />
+            </Form.Item>
+            <Alert
+              type="info"
+              showIcon
+              message="Lượt thêm tay được duyệt ngay và tính điểm như duyệt chấm công (đúng giờ +5, muộn −5, thứ Bảy không tính). Nếu hôm đó đã bị chốt vắng không phép, hệ thống tự hoàn điểm và bỏ dấu vắng."
+            />
+          </Form>
+        )}
       </Modal>
 
       {/* Full-screen image preview */}
