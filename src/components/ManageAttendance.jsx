@@ -712,7 +712,7 @@ const AttendanceLogs = () => {
             <Alert
               type="info"
               showIcon
-              message="Lượt thêm tay được duyệt ngay và tính điểm như duyệt chấm công (đúng giờ +5, muộn −5, thứ Bảy không tính). Nếu hôm đó đã bị chốt vắng không phép, hệ thống tự hoàn điểm và bỏ dấu vắng."
+              message="Lượt thêm tay được duyệt ngay, ghi vào bảng công. Sale và Trưởng phòng được tính điểm như duyệt chấm công (đúng giờ +5, muộn −5, thứ Bảy không tính); Văn phòng chỉ ghi công, không có điểm. Nếu hôm đó đã bị chốt vắng không phép, hệ thống tự bỏ dấu vắng (và hoàn điểm nếu có)."
             />
           </Form>
         )}
