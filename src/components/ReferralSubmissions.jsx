@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { Table, Button, Space, Tag, Select, message, Row, Col, Modal, Input, Popconfirm, Empty, Form, DatePicker } from 'antd';
+import { Table, Button, Space, Tag, Select, message, Row, Col, Modal, Input, Popconfirm, Empty, Form, DatePicker, Alert } from 'antd';
 import {
   CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined,
   ReloadOutlined, GiftOutlined, PhoneOutlined, UserAddOutlined
@@ -12,7 +12,7 @@ import { DaiSoLieu } from './ui/DaiSoLieu';
 
 const STATUS_META = {
   PENDING:  { color: 'warning', icon: <ClockCircleOutlined />, label: 'Chờ duyệt' },
-  APPROVED: { color: 'success', icon: <CheckCircleOutlined />, label: 'Đã duyệt · đã mở tài khoản' },
+  APPROVED: { color: 'success', icon: <CheckCircleOutlined />, label: 'Đã duyệt' },
   REJECTED: { color: 'error',   icon: <CloseCircleOutlined />, label: 'Đã từ chối' },
 };
 
@@ -72,7 +72,9 @@ export const ReferralSubmissions = () => {
         note: values.note || null,
       };
       const created = await apiClient.put(`/referral-submissions/${approving.id}/approve`, payload);
-      message.success(`Đã mở tài khoản cho ${created?.fullName || approving.candidateName}.`);
+      message.success(approving.existingAccountId
+        ? `Đã ghi nhận ${approving.referrerFullName} giới thiệu ${created?.fullName || approving.existingAccountName}.`
+        : `Đã mở tài khoản cho ${created?.fullName || approving.candidateName}.`);
       setApproving(null);
       load();
       refreshData?.();
@@ -131,6 +133,9 @@ export const ReferralSubmissions = () => {
           <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
             <PhoneOutlined style={{ marginRight: 4 }} />{r.candidatePhone}
           </div>
+          {r.existingAccountId && (
+            <Tag color="blue" style={{ marginTop: 4, fontSize: 11 }}>Đã có tài khoản</Tag>
+          )}
         </div>
       )
     },
@@ -203,7 +208,7 @@ export const ReferralSubmissions = () => {
             <Button size="small" type="primary" icon={<UserAddOutlined />}
                     style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }}
                     onClick={() => openApprove(r)}>
-              Duyệt &amp; mở tài khoản
+              {r.existingAccountId ? 'Duyệt' : <>Duyệt &amp; mở tài khoản</>}
             </Button>
           </Space>
         );
@@ -215,7 +220,7 @@ export const ReferralSubmissions = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <DaiSoLieu items={[
         { nhan: 'Chờ duyệt', giaTri: stats.pending, ton: 'cho' },
-        { nhan: 'Đã mở tài khoản', giaTri: stats.approved, ton: 'dat' },
+        { nhan: 'Đã duyệt', giaTri: stats.approved, ton: 'dat' },
         { nhan: 'Đã cộng điểm', giaTri: stats.rewarded, ton: 'thongtin' },
         { nhan: 'Đã từ chối', giaTri: stats.rejected, ton: 'trung' },
       ]} />
@@ -244,7 +249,7 @@ export const ReferralSubmissions = () => {
           <GiftOutlined style={{ color: 'var(--primary-color)', fontSize: 16 }} />
           <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Đơn giới thiệu nhân sự mới</h3>
           <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-            — Sale gửi trên app, duyệt là mở tài khoản luôn
+            — Sale gửi trên app; duyệt là mở tài khoản, hoặc gắn người giới thiệu nếu nhân sự đã mở tài khoản trước
           </span>
         </div>
         <Table
@@ -262,11 +267,11 @@ export const ReferralSubmissions = () => {
 
       {/* Duyệt & mở tài khoản */}
       <Modal
-        title="Duyệt đơn và mở tài khoản nhân sự mới"
+        title={approving?.existingAccountId ? 'Duyệt đơn giới thiệu' : 'Duyệt đơn và mở tài khoản nhân sự mới'}
         open={!!approving}
         onOk={doApprove}
         onCancel={() => setApproving(null)}
-        okText="Duyệt & tạo tài khoản"
+        okText={approving?.existingAccountId ? 'Duyệt & ghi nhận người giới thiệu' : 'Duyệt & tạo tài khoản'}
         cancelText="Hủy"
         okButtonProps={{ style: { backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' } }}
         width={560}
@@ -283,6 +288,36 @@ export const ReferralSubmissions = () => {
               )}
             </div>
 
+            {approving.existingAccountId ? (
+              /* Nhân sự đã mở tài khoản trước: duyệt chỉ gắn người giới thiệu, không tạo mới */
+              <Form form={form} layout="vertical">
+                <Alert
+                  type="info"
+                  showIcon
+                  style={{ marginBottom: 16 }}
+                  message={<>Số này đã có tài khoản: <strong>{approving.existingAccountName}</strong>
+                    {approving.existingAccountStatus && approving.existingAccountStatus !== 'ACTIVE'
+                      ? ` (${approving.existingAccountStatus})` : ''}, vào làm {fmtDate(approving.existingAccountJoinedDate)}.</>}
+                  description={<>Duyệt sẽ ghi nhận <strong>{approving.referrerFullName}</strong> là người giới thiệu
+                    cho tài khoản này — không tạo tài khoản mới, không đổi phòng ban, vai trò hay mật khẩu.
+                    {approving.existingAccountJoinedDate && dayjs(approving.existingAccountJoinedDate).add(1, 'month').isBefore(dayjs()) && (
+                      <div style={{ marginTop: 6 }}>
+                        Tài khoản này vào làm đã hơn một tháng, nên duyệt xong điểm gieo hạt sẽ được cộng ngay lần quét tới.
+                      </div>
+                    )}</>}
+                />
+                <Form.Item name="note" label="Ghi chú của Admin">
+                  <Input.TextArea rows={2} placeholder="Tùy chọn" />
+                </Form.Item>
+                {approving.existingAccountJoinedDate && (
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                    {approving.referrerFullName} sẽ được <strong>cộng điểm Lan tỏa</strong> từ ngày{' '}
+                    <strong>{dayjs(approving.existingAccountJoinedDate).add(1, 'month').format('DD/MM/YYYY')}</strong> nếu{' '}
+                    {approving.existingAccountName} vẫn còn làm.
+                  </div>
+                )}
+              </Form>
+            ) : (<>
             <Form form={form} layout="vertical">
               <Row gutter={16}>
                 <Col span={12}>
@@ -341,6 +376,7 @@ export const ReferralSubmissions = () => {
                 ) : null;
               }}
             </Form.Item>
+            </>)}
           </div>
         )}
       </Modal>
