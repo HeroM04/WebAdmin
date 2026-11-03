@@ -114,6 +114,10 @@ const TabDonXinVang = ({ onDaXuLy }) => {
       render: (_, r) => (
         <div>
           <StatusTag status={r.status} />
+          {r.status === 'UNEXCUSED' && !r.reviewedByFullName && (
+            /* Đơn còn chờ thì bị máy chốt vắng lúc 23:59 (trước bản 03/11/2026). Duyệt lại → −10 thay −15 */
+            <div style={{ fontSize: 10, color: '#b45309', marginTop: 3 }}>Máy chốt khi đơn chưa được duyệt</div>
+          )}
           {r.reviewedByFullName && <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 3 }}>bởi {r.reviewedByFullName}</div>}
           {r.reviewNote && <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>“{r.reviewNote}”</div>}
         </div>
@@ -156,6 +160,7 @@ const TabDonXinVang = ({ onDaXuLy }) => {
           { value: 'PENDING', label: 'Chờ duyệt' },
           { value: 'APPROVED', label: 'Vắng có phép' },
           { value: 'REJECTED', label: 'Đã từ chối' },
+          { value: 'UNEXCUSED', label: 'Thành vắng không phép' },
         ]} />
         <Button icon={<ReloadOutlined />} onClick={load}>Tải lại</Button>
         <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
