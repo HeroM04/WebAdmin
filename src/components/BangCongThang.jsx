@@ -64,7 +64,8 @@ export const BangCongThang = () => {
     khongPhep: a.khongPhep + (h.tong?.khongPhep || 0), choDuyet: a.choDuyet + (h.tong?.choDuyet || 0),
   }), { cong: 0, muon: 0, khongPhep: 0, choDuyet: 0 }), [hang]);
 
-  // Xuất Excel: máy chủ đã có sẵn báo cáo tháng (mỗi người một sheet) ở
+  // Xuất Excel: máy chủ dựng sẵn "BẢNG CHI TIẾT CHẤM CÔNG" bố cục y hệt file máy
+  // chấm công (mỗi người một khối 62 dòng, cột A–P) để gộp chung được, ở
   // /api/reports/attendance — nằm ngoài /api/v1 nên phải cắt hậu tố.
   const xuatExcel = async () => {
     setDangXuat(true);
