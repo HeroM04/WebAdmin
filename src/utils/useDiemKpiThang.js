@@ -29,7 +29,11 @@ export const useThangKpiTuDong = () => {
  * cập nhật; tháng khác thì tải riêng /kpi-scores?month=. Trước đây các trang
  * lọc thẳng kpiScores theo tháng được chọn nên lật sang tháng cũ là toàn 0.
  */
-export const useDiemKpiThang = (thang) => {
+/**
+ * @param lanTai tăng lên để tải lại điểm tháng cũ sau khi máy chủ vừa sửa điểm
+ *               (ví dụ thu lại tăng ca tính trùng)
+ */
+export const useDiemKpiThang = (thang, lanTai = 0) => {
   const { kpiScores } = useContext(AppContext);
   // Kết quả tải riêng gắn với tháng của nó: đổi tháng là taiRieng.thang lệch
   // ngay → đang tải, khỏi đặt cờ trong effect.
@@ -43,7 +47,7 @@ export const useDiemKpiThang = (thang) => {
       .then(d => { if (!huy) setTaiRieng({ thang, ds: Array.isArray(d) ? d : [] }); })
       .catch(() => { if (!huy) setTaiRieng({ thang, ds: [] }); });
     return () => { huy = true; };
-  }, [thang, coSan]);
+  }, [thang, coSan, lanTai]);
 
   const ds = useMemo(() => (coSan ? kpiScores.filter(s => s.month === thang)
                                   : (taiRieng.thang === thang ? taiRieng.ds : [])),

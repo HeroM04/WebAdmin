@@ -7,6 +7,7 @@ import {
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
 import { KpiLedger } from './KpiLedger';
+import { TangCaTrung } from './TangCaTrung';
 import { rowClick } from '../utils/tableRow';
 import { locNguoiChamKpi } from '../utils/vaiTro';
 import dayjs from 'dayjs';
@@ -18,7 +19,7 @@ const { Search } = Input;
 
 export const ManageKPI = () => {
   const {
-    activeUsers: users, departments, deals, attendance, posts, meetings, trainingSessions, flagKpiRecord
+    activeUsers: users, departments, deals, attendance, posts, meetings, trainingSessions, flagKpiRecord, refresh
   } = useContext(AppContext);
 
   const [search, setSearch] = useState('');
@@ -26,7 +27,9 @@ export const ManageKPI = () => {
   // Mặc định THÁNG KPI đang chấm (thứ Hai đầu tuần quyết định tháng), không
   // phải tháng dương lịch: 1–4/10/2026 vẫn là KPI tháng 9, hết 04/10 mới sang tháng 10.
   const [monthFilter, setMonthFilter] = useThangKpiTuDong();
-  const { ds: diemKpi, dangTai: dangTaiDiem } = useDiemKpiThang(monthFilter);
+  const [lanTaiDiem, setLanTaiDiem] = useState(0);
+  const { ds: diemKpi, dangTai: dangTaiDiem } = useDiemKpiThang(monthFilter, lanTaiDiem);
+  const [moTangCaTrung, setMoTangCaTrung] = useState(false);
   const [exporting, setExporting] = useState(null); // null | 'company' | userId
 
   /**
@@ -295,6 +298,13 @@ export const ManageKPI = () => {
         { nhan: 'Cờ đỏ vi phạm', giaTri: diemKpi.filter(s => s.isFlagged).length, ton: 'loi' },
       ]} />
 
+      <TangCaTrung
+        open={moTangCaTrung}
+        thang={monthFilter}
+        onClose={() => setMoTangCaTrung(false)}
+        onDaThuLai={() => { refresh('kpi'); setLanTaiDiem(n => n + 1); }}
+      />
+
       {/* Main Table */}
       <div className="premium-card" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between' }}>
@@ -319,6 +329,9 @@ export const ManageKPI = () => {
               style={{ width: 130 }}
               allowClear={false}
             />
+            <Tooltip title="Ngày nào bị cộng tăng ca quá một lần — xem trước rồi thu lại">
+              <Button onClick={() => setMoTangCaTrung(true)}>Tăng ca tính trùng</Button>
+            </Tooltip>
             <Tooltip title="Xuất bảng tổng hợp KPI của toàn bộ nhân sự trong tháng (Excel)">
               <Button
                 type="primary"
