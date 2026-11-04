@@ -42,7 +42,7 @@ const StatusTag = ({ status }) => {
 };
 
 const AttendanceLogs = () => {
-  const { users, departments, currentUser, approveAttendance, rejectAttendance, deleteAttendance, updateAttendance } = useContext(AppContext);
+  const { users, departments, currentUser, approveAttendance, rejectAttendance, deleteAttendance, updateAttendance, refresh } = useContext(AppContext);
   const [search, setSearch] = useState('');
   // Mặc định 'Chờ duyệt': mở trang là thấy đúng việc phải làm. Toàn bộ chấm công
   // thường ngày xem ở tab Bảng công tháng, không lật danh sách.
@@ -281,6 +281,33 @@ const AttendanceLogs = () => {
     }
   };
 
+  /**
+   * Duyệt một lượt mọi chấm công đang chờ khớp bộ lọc phòng ban / tên / khoảng
+   * ngày — máy chủ duyệt cả những trang chưa mở, từ cũ tới mới, điểm tính như
+   * bấm duyệt từng lượt.
+   */
+  const [dangDuyetTatCa, setDangDuyetTatCa] = useState(false);
+  const duyetTatCa = async () => {
+    setDangDuyetTatCa(true);
+    try {
+      const q = new URLSearchParams();
+      if (timTre) q.set('search', timTre);
+      if (deptFilter !== 'ALL') q.set('departmentId', String(deptFilter));
+      if (dateRange && dateRange[0] && dateRange[1]) {
+        q.set('from', dateRange[0]);
+        q.set('to', dateRange[1]);
+      }
+      const kq = await apiClient.post(`/attendance/duyet-tat-ca?${q.toString()}`);
+      const so = kq?.soLuot ?? 0;
+      message.success(so ? `Đã duyệt ${so} lượt chấm công.` : 'Không có lượt nào đang chờ duyệt.');
+      await Promise.all([taiDuLieu(), refresh('attendance', 'kpi')]);
+    } catch (e) {
+      message.error(e?.message || 'Duyệt tất cả không thành công');
+    } finally {
+      setDangDuyetTatCa(false);
+    }
+  };
+
   /** Duyệt / từ chối riêng một lượt (trong khung chi tiết). */
   const xuLyMotLuot = async (luot, duyet) => {
     try {
@@ -450,6 +477,29 @@ const AttendanceLogs = () => {
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <ClockCircleOutlined style={{ color: 'var(--primary-color)', fontSize: 16 }} />
           <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Danh sách Chấm công Ngoại tuyến</h3>
+          {stats.pending > 0 && (
+            <Popconfirm
+              title={`Duyệt tất cả ${stats.pending} ngày công đang chờ?`}
+              description={
+                <div style={{ maxWidth: 300 }}>
+                  Theo bộ lọc phòng ban, tên và khoảng ngày đang chọn — gồm cả các trang chưa mở.
+                  Điểm tính như duyệt từng lượt. Lượt nào đáng ngờ thì từ chối riêng trước rồi hãy bấm.
+                </div>
+              }
+              okText="Duyệt tất cả"
+              cancelText="Hủy"
+              onConfirm={duyetTatCa}
+            >
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                loading={dangDuyetTatCa}
+                style={{ marginLeft: 'auto', backgroundColor: '#059669', borderColor: '#059669' }}
+              >
+                Duyệt tất cả ({stats.pending})
+              </Button>
+            </Popconfirm>
+          )}
         </div>
         <Table
           dataSource={filtered}
