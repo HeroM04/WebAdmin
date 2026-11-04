@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Segmented, Button, Empty, Spin, Tag, Tooltip } from 'antd';
 import { LeftOutlined, RightOutlined, ReloadOutlined } from '@ant-design/icons';
 import { apiClient } from '../utils/apiClient';
+import { mocKhoanDiem } from '../utils/mocKhoanDiem';
 
 /**
  * Nhật ký điểm KPI của một nhân sự — từng khoản được cộng và bị trừ, kèm lý do.
@@ -15,18 +16,6 @@ const MAU_NHOM = {
   meeting:    '#10b981',
   post:       '#8b5cf6',
   deal:       '#ec4899',
-};
-
-// Tự ghép chuỗi thay vì dùng toLocaleString: bộ định dạng vi-VN trả về dạng
-// "11:30 21-08", lệch với "11:30 · 21/08" mà ứng dụng đang hiển thị.
-const fmtLuc = (iso) => {
-  if (!iso) return '';
-  try {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return '';
-    const hai = (n) => String(n).padStart(2, '0');
-    return `${hai(d.getHours())}:${hai(d.getMinutes())} · ${hai(d.getDate())}/${hai(d.getMonth() + 1)}`;
-  } catch { return ''; }
 };
 
 export const KpiLedger = ({ userId }) => {
@@ -130,7 +119,7 @@ export const KpiLedger = ({ userId }) => {
                         {it.reason}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
-                        {it.categoryLabel} · {fmtLuc(it.occurredAt)}
+                        {it.categoryLabel} · {mocKhoanDiem(it)}
                       </div>
                       {/* Khoản không vào đủ có hai lý do trái ngược nhau: nhóm đã
                           đầy (khoản CỘNG bị chặn), hoặc nhóm đã về 0 (khoản TRỪ
