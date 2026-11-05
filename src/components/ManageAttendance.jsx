@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Table, Button, Space, Avatar, Tag, Input, Select, Popconfirm, message, Row, Col, Drawer, Modal, Form, Divider, Badge, Upload, DatePicker, TimePicker, Tabs, Alert } from 'antd';
 import dayjs from 'dayjs';
 import {
@@ -8,7 +8,7 @@ import {
   CalendarOutlined, TableOutlined
 } from '@ant-design/icons';
 import { AppContext } from '../context/AppContext';
-import { doiKhoang, khopTen } from '../utils/locBang';
+import { khopTen } from '../utils/locBang';
 import { docKhoangCach, laXa, NGUONG_XA_MET } from '../utils/khoangCach';
 import { gopNgayCong } from '../utils/ngayCong';
 import { apiClient } from '../utils/apiClient';
@@ -42,12 +42,17 @@ const StatusTag = ({ status }) => {
 };
 
 const AttendanceLogs = () => {
-  const { users, departments, currentUser, approveAttendance, rejectAttendance, deleteAttendance, updateAttendance, refresh } = useContext(AppContext);
+  const { users, departments, currentUser, approveAttendance, rejectAttendance, deleteAttendance, updateAttendance, refresh,
+    attendance: dsChoDuyet } = useContext(AppContext);
   const [search, setSearch] = useState('');
   // Mặc định 'Chờ duyệt': mở trang là thấy đúng việc phải làm. Toàn bộ chấm công
   // thường ngày xem ở tab Bảng công tháng, không lật danh sách.
   const [statusFilter, setStatusFilter] = useState('PENDING');
-  const [dateRange, setDateRange] = useState(null);
+  // Luôn xem MỘT tháng (mặc định tháng này): không chọn khoảng ngày thì máy chủ
+  // phải đếm và thống kê trên toàn bộ lịch sử chấm công — càng ngày càng chậm.
+  const [thang, setThang] = useState(() => dayjs().startOf('month'));
+  const tuNgay = thang.startOf('month').format('YYYY-MM-DD');
+  const denNgay = thang.endOf('month').format('YYYY-MM-DD');
   const [deptFilter, setDeptFilter] = useState('ALL');
   const [previewImg, setPreviewImg] = useState(null);
   const [detailRecord, setDetailRecord] = useState(null);
@@ -84,19 +89,15 @@ const AttendanceLogs = () => {
 
   // Đổi bộ lọc thì phải quay về trang 1, không thì đang ở trang 12 mà lọc còn
   // 3 trang sẽ hiện bảng rỗng.
-  useEffect(() => { setTrang(1); }, [timTre, statusFilter, deptFilter, dateRange]);
+  useEffect(() => { setTrang(1); }, [timTre, statusFilter, deptFilter, tuNgay]);
 
   const taiDuLieu = useCallback(async () => {
     setLoading(true);
     try {
-      const q = new URLSearchParams({ page: String(trang - 1), size: String(coSo) });
+      const q = new URLSearchParams({ page: String(trang - 1), size: String(coSo), from: tuNgay, to: denNgay });
       if (timTre) q.set('search', timTre);
       if (statusFilter !== 'ALL') q.set('status', statusFilter);
       if (deptFilter !== 'ALL') q.set('departmentId', String(deptFilter));
-      if (dateRange && dateRange[0] && dateRange[1]) {
-        q.set('from', dateRange[0]);
-        q.set('to', dateRange[1]);
-      }
       const res = await apiClient.getRaw(`/attendance?${q.toString()}`);
       const data = Array.isArray(res?.data) ? res.data : [];
       setRows(data);
@@ -110,7 +111,19 @@ const AttendanceLogs = () => {
     } finally {
       setLoading(false);
     }
-  }, [trang, coSo, timTre, statusFilter, deptFilter, dateRange]);
+  }, [trang, coSo, timTre, statusFilter, deptFilter, tuNgay, denNgay]);
+
+  // Lượt chờ duyệt nằm ở tháng khác tháng đang xem (danh sách chờ duyệt toàn
+  // hệ thống đã có sẵn cho huy hiệu đỏ) — báo để Admin chuyển tháng, khỏi sót.
+  const choThangKhac = useMemo(() => {
+    const dem = {};
+    for (const l of dsChoDuyet || []) {
+      if (l?.status !== 'PENDING' || !l.checkinTime) continue;
+      const t = dayjs(l.checkinTime).format('YYYY-MM');
+      if (t !== thang.format('YYYY-MM')) dem[t] = (dem[t] || 0) + 1;
+    }
+    return Object.entries(dem).sort(([a], [b]) => b.localeCompare(a));
+  }, [dsChoDuyet, thang]);
 
   useEffect(() => { taiDuLieu(); }, [taiDuLieu]);
 
@@ -238,9 +251,9 @@ const AttendanceLogs = () => {
       const token = localStorage.getItem('kpi_access_token');
       const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'https://kpi-backend-4xex.onrender.com/api/v1').replace('/api/v1', '/api');
       
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth() + 1;
+      // Xuất đúng tháng đang xem (trước luôn là tháng hiện tại)
+      const currentYear = thang.year();
+      const currentMonth = thang.month() + 1;
 
       message.loading({ content: 'Đang tạo báo cáo Excel...', key: 'export_excel' });
 
@@ -321,10 +334,8 @@ const AttendanceLogs = () => {
       const q = new URLSearchParams();
       if (timTre) q.set('search', timTre);
       if (deptFilter !== 'ALL') q.set('departmentId', String(deptFilter));
-      if (dateRange && dateRange[0] && dateRange[1]) {
-        q.set('from', dateRange[0]);
-        q.set('to', dateRange[1]);
-      }
+      q.set('from', tuNgay);
+      q.set('to', denNgay);
       const kq = await apiClient.post(`/attendance/duyet-tat-ca?${q.toString()}`);
       const so = kq?.soLuot ?? 0;
       message.success(so ? `Đã duyệt ${so} lượt chấm công.` : 'Không có lượt nào đang chờ duyệt.');
@@ -490,7 +501,15 @@ const AttendanceLogs = () => {
             <Search placeholder="Tìm theo tên nhân sự..." allowClear style={{ width: 220 }} onChange={e => setSearch(e.target.value)} prefix={<SearchOutlined style={{ color: 'var(--text-secondary)' }} />} />
             <Select value={deptFilter} onChange={setDeptFilter} style={{ width: 160 }} options={[{ value: 'ALL', label: 'Tất cả phòng ban' }, ...departments.map(d => ({ value: d.id, label: d.name }))]} />
             <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 150 }} options={[{ value: 'ALL', label: 'Tất cả trạng thái' }, { value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }]} />
-            <DatePicker.RangePicker placeholder={['Từ ngày', 'Đến ngày']} format="DD/MM/YYYY" onChange={(dates) => setDateRange(doiKhoang(dates))} style={{ width: 240 }} />
+            <DatePicker
+              picker="month"
+              value={thang}
+              format="[Tháng] MM/YYYY"
+              allowClear={false}
+              disabledDate={(d) => d && d.isAfter(dayjs(), 'month')}
+              onChange={(d) => d && setThang(d.startOf('month'))}
+              style={{ width: 160 }}
+            />
             <Button type="primary" danger icon={<DownloadOutlined />} onClick={handleExportExcel}>Xuất báo cáo (Excel)</Button>
             <span style={{ fontSize: 13, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
               Hiển thị <strong style={{ color: 'var(--text-primary)', margin: '0 4px' }}>{filtered.length}</strong> / {tongNgayCong} ngày công
@@ -499,6 +518,27 @@ const AttendanceLogs = () => {
           <Button type="primary" icon={<PlusOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={openAdd}>Thêm Chấm công</Button>
         </div>
       </div>
+
+      {choThangKhac.length > 0 && (
+        <Alert
+          type="warning"
+          showIcon
+          title={
+            <span>
+              Còn lượt chờ duyệt ở tháng khác:{' '}
+              {choThangKhac.map(([t, so], i) => (
+                <React.Fragment key={t}>
+                  {i > 0 && ', '}
+                  <Button type="link" size="small" style={{ padding: 0, height: 'auto' }}
+                    onClick={() => setThang(dayjs(t + '-01'))}>
+                    tháng {dayjs(t + '-01').format('MM/YYYY')} ({so} lượt)
+                  </Button>
+                </React.Fragment>
+              ))}
+            </span>
+          }
+        />
+      )}
 
       {/* Table */}
       <div className="premium-card" style={{ padding: 0, overflow: 'hidden' }}>
