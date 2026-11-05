@@ -144,20 +144,48 @@ const AttendanceLogs = () => {
     setModalOpen(true);
   };
 
-  // Sửa: máy chủ chỉ cho đổi trạng thái lượt chấm công (duyệt / từ chối)
-  const openEdit = (record) => {
+  /*
+   * Sửa một ngày công: giờ vào, giờ ra (từng lượt), trạng thái. Sửa giờ đi qua
+   * PUT /attendance/{id}/gio — máy chủ tính lại điểm đúng giờ / đi muộn và tăng
+   * ca theo giờ mới, ghi giờ cũ + lý do vào ghi chú. Ví dụ tới 08:45 nhưng app
+   * chậm, 08:46 mới nhận nên bị trừ đi muộn: sửa về 08:45 là được hoàn điểm.
+   */
+  const [luotSua, setLuotSua] = useState({ vao: null, ra: null });
+  const gioCua = (luot) => (luot?.checkinTime ? dayjs(luot.checkinTime) : null);
+  const openEdit = (ngay) => {
+    const record = ngay.checkinRecord || ngay.checkoutRecord;
     setEditingRecord(record);
-    form.setFieldsValue({ userId: record.userId, status: record.status });
+    setLuotSua({ vao: ngay.checkinRecord || null, ra: ngay.checkoutRecord || null });
+    form.setFieldsValue({
+      userId: record.userId, status: record.status, lyDoSuaGio: '',
+      gioVao: gioCua(ngay.checkinRecord), gioRa: gioCua(ngay.checkoutRecord),
+    });
     setModalOpen(true);
   };
+  /** Những lượt có giờ mới khác giờ đang lưu: [[lượt, 'HH:mm'], …] */
+  const luotDoiGio = (values) => [[luotSua.vao, values.gioVao], [luotSua.ra, values.gioRa]]
+    .filter(([luot, g]) => luot && g && g.format('HH:mm') !== gioCua(luot).format('HH:mm'))
+    .map(([luot, g]) => [luot, g.format('HH:mm')]);
 
   const handleSave = () => {
     form.validateFields().then(async values => {
       setDangLuu(true);
       try {
         if (editingRecord) {
-          await updateAttendance({ ...editingRecord, status: values.status });
-          message.success('Đã cập nhật bản ghi chấm công!');
+          // Sửa giờ trước rồi mới đổi trạng thái: duyệt sau khi sửa thì điểm tính theo giờ mới
+          const ketQua = [];
+          for (const [luot, gio] of luotDoiGio(values)) {
+            const kq = await apiClient.put(
+              `/attendance/${luot.id}/gio?gio=${gio}&lyDo=${encodeURIComponent(values.lyDoSuaGio.trim())}`);
+            if (kq?.moTa) ketQua.push(kq.moTa);
+          }
+          if (values.status !== editingRecord.status) {
+            await updateAttendance({ ...editingRecord, status: values.status });
+            ketQua.push('Đã cập nhật trạng thái.');
+          } else if (ketQua.length) {
+            await refresh('attendance', 'kpi');
+          }
+          message.success(ketQua.length ? ketQua.join(' ') : 'Không có gì thay đổi.', ketQua.length ? 6 : 3);
         } else {
           await apiClient.post('/attendance/them-tay', {
             userId: values.userId,
@@ -428,7 +456,7 @@ const AttendanceLogs = () => {
       className: 'no-row-click',
       render: (_, record) => (
         <Space size={2}>
-          <Button size="small" type="text" icon={<EditOutlined style={{ color: 'var(--primary-color)' }} />} onClick={() => openEdit(record.checkinRecord || record.checkoutRecord)}>Sửa</Button>
+          <Button size="small" type="text" icon={<EditOutlined style={{ color: 'var(--primary-color)' }} />} onClick={() => openEdit(record)}>Sửa</Button>
           {record.status === 'PENDING' && (
             <>
               <Button size="small" danger ghost icon={<CloseCircleOutlined />} onClick={() => handleReject(record)} />
@@ -714,6 +742,41 @@ const AttendanceLogs = () => {
             <Form.Item name="userId" label="Nhân sự">
               <Select disabled options={users.map(u => ({ value: u.id, label: u.name }))} />
             </Form.Item>
+            <Row gutter={12}>
+              <Col span={12}>
+                <Form.Item name="gioVao" label="Giờ vào"
+                  extra={luotSua.vao ? null : 'Ngày này chưa có giờ vào — dùng Thêm chấm công tay.'}>
+                  <TimePicker format="HH:mm" style={{ width: '100%' }} needConfirm={false} disabled={!luotSua.vao} allowClear={false} />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="gioRa" label="Giờ ra"
+                  extra={luotSua.ra ? null : 'Ngày này chưa có giờ ra — dùng Thêm chấm công tay.'}>
+                  <TimePicker format="HH:mm" style={{ width: '100%' }} needConfirm={false} disabled={!luotSua.ra} allowClear={false} />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item
+              name="lyDoSuaGio"
+              label="Lý do sửa giờ"
+              dependencies={['gioVao', 'gioRa']}
+              rules={[({ getFieldsValue }) => ({
+                validator(_, v) {
+                  if (luotDoiGio(getFieldsValue()).length && !(v || '').trim()) {
+                    return Promise.reject(new Error('Đã đổi giờ thì phải ghi lý do'));
+                  }
+                  return Promise.resolve();
+                },
+              })]}
+            >
+              <Input.TextArea rows={2} maxLength={300} placeholder="Ví dụ: tới lúc 08:45, app chậm 08:46 mới nhận" />
+            </Form.Item>
+            <Alert
+              type="info"
+              showIcon
+              style={{ marginBottom: 16 }}
+              title="Sửa giờ vào thì hệ thống tự tính lại điểm đúng giờ / đi muộn của ngày đó: gỡ đúng khoản cũ rồi tính theo giờ mới. Sửa giờ ra qua hoặc về dưới 20:00 thì cộng / thu lại tăng ca. Giờ cũ và lý do được lưu vào ghi chú, nhân sự thấy khoản điểm trong mục Thông báo."
+            />
             <Form.Item name="status" label="Trạng thái">
               <Select options={[{ value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }]} />
             </Form.Item>
