@@ -85,6 +85,10 @@ export const ReferralSubmissions = () => {
   };
 
   const doReject = async () => {
+    if (!rejectNote.trim()) {
+      message.error('Nhập lý do từ chối để nhân sự biết vì sao bị từ chối.');
+      return;
+    }
     try {
       await apiClient.put(`/referral-submissions/${rejecting.id}/reject`, { note: rejectNote || null });
       message.success('Đã từ chối đơn giới thiệu.');
@@ -398,7 +402,8 @@ export const ReferralSubmissions = () => {
               <strong>{rejecting.candidateName}</strong> ({rejecting.candidatePhone})
             </div>
             <Input.TextArea rows={3} value={rejectNote} onChange={e => setRejectNote(e.target.value)}
-                            placeholder="Lý do từ chối (người giới thiệu sẽ thấy trên app)" />
+                            maxLength={500} showCount
+                            placeholder="Lý do từ chối (bắt buộc) — người giới thiệu sẽ thấy trên app" />
           </div>
         )}
       </Modal>

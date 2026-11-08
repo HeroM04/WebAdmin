@@ -11,6 +11,7 @@ import { doiKhoang } from '../utils/locBang';
 import { rowClick } from '../utils/tableRow';
 import { scanPostContent } from '../utils/aiScanner';
 import { DaiSoLieu } from './ui/DaiSoLieu';
+import { useHopLyDoTuChoi, DongLyDoTuChoi } from './ui/HopLyDoTuChoi';
 
 const { Search } = Input;
 
@@ -20,8 +21,20 @@ const StatusTag = ({ status }) => {
   return <Tag color="warning" icon={<ClockCircleOutlined />}>Chờ duyệt</Tag>;
 };
 
-const PLATFORM_COLORS = { Facebook: '#1877f2', Zalo: '#0068ff', TikTok: '#010101', Instagram: '#e1306c' };
-const PLATFORM_TAG_COLORS = { Facebook: 'blue', Zalo: 'cyan', TikTok: 'purple', Instagram: 'volcano' };
+// Mã nền tảng máy chủ lưu (app gửi lên): FACEBOOK / TIKTOK / ZALO; OTHER là
+// bài từ app đời cũ không chọn nền tảng. Bản ghi cũ nhập tay có thể còn "Facebook".
+const nenTangOf = (p) => {
+  const s = String(p || '').toUpperCase().replace(/\s/g, '');
+  return s === 'FB' ? 'FACEBOOK' : (['FACEBOOK', 'TIKTOK', 'ZALO'].includes(s) ? s : 'OTHER');
+};
+const TEN_NEN_TANG = { FACEBOOK: 'Facebook', TIKTOK: 'TikTok', ZALO: 'Zalo', OTHER: 'Khác' };
+const PLATFORM_COLORS = { FACEBOOK: '#1877f2', ZALO: '#0068ff', TIKTOK: '#010101' };
+const PLATFORM_TAG_COLORS = { FACEBOOK: 'blue', ZALO: 'cyan', TIKTOK: 'purple' };
+const tenNenTang = (p) => TEN_NEN_TANG[nenTangOf(p)];
+const LUA_CHON_NEN_TANG = [
+  { value: 'FACEBOOK', label: 'Facebook' }, { value: 'TIKTOK', label: 'TikTok' },
+  { value: 'ZALO', label: 'Zalo' }, { value: 'OTHER', label: 'Khác' },
+];
 
 // Cả hai loại đều thuộc nhóm "Lan tỏa giá trị" (5đ/lượt, trần 30đ/tuần),
 // tách ra để Admin theo dõi ai làm video xây kênh, ai chỉ đăng bài.
@@ -48,6 +61,7 @@ export const ManagePosts = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
+  const [hoiLyDo, hopLyDo] = useHopLyDoTuChoi();
   const [previewImg, setPreviewImg] = useState(null);
   const [detailAI, setDetailAI] = useState(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -64,7 +78,7 @@ export const ManagePosts = () => {
     const matchName = !search || (user?.name || '').toLowerCase().includes(search.toLowerCase())
       || (item.caption || '').toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'ALL' || item.status === statusFilter;
-    const matchPlatform = platformFilter === 'ALL' || item.platform === platformFilter;
+    const matchPlatform = platformFilter === 'ALL' || nenTangOf(item.platform) === platformFilter;
     const matchType = typeFilter === 'ALL' || contentTypeOf(item) === typeFilter;
     const matchDept = deptFilter === 'ALL' || (user && user.deptId === deptFilter);
     let matchDate = true;
@@ -103,13 +117,13 @@ export const ManagePosts = () => {
   const openAdd = () => {
     setEditingRecord(null);
     form.resetFields();
-    form.setFieldsValue({ userId: users.find(u => u.role === 'Nhân viên')?.id || users[0]?.id, platform: 'Facebook', contentType: 'POST', status: 'PENDING' });
+    form.setFieldsValue({ userId: users.find(u => u.role === 'Nhân viên')?.id || users[0]?.id, platform: 'FACEBOOK', contentType: 'POST', status: 'PENDING' });
     setModalOpen(true);
   };
 
   const openEdit = (record) => {
     setEditingRecord(record);
-    form.setFieldsValue({ userId: record.userId, platform: record.platform, contentType: contentTypeOf(record), link: record.link, caption: record.caption, status: record.status });
+    form.setFieldsValue({ userId: record.userId, platform: nenTangOf(record.platform), contentType: contentTypeOf(record), link: record.link, caption: record.caption, status: record.status, rejectReason: record.rejectReason || '' });
     setModalOpen(true);
   };
 
@@ -148,15 +162,15 @@ export const ManagePosts = () => {
     }
   };
 
-  const handleReject = async (id) => {
-    try {
-      await rejectPost(id, currentUser.name);
+  const handleReject = (id) => hoiLyDo({
+    tieuDe: 'Từ chối bài đăng',
+    moTa: 'Bài đã duyệt thì 5đ Lan tỏa đã cộng sẽ được thu lại.',
+    guiDi: async (lyDo) => {
+      await rejectPost(id, lyDo);
       message.warning('Đã từ chối.');
       setDrawerOpen(false);
-    } catch (e) {
-      message.error(e.message || 'Lỗi hệ thống');
-    }
-  };
+    },
+  });
 
   const columns = [
     {
@@ -170,7 +184,7 @@ export const ManagePosts = () => {
             <Avatar src={user?.avatar} size="small" />
             <div>
               <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13 }}>{user?.name || 'Ẩn danh'}</div>
-              <Tag color={PLATFORM_TAG_COLORS[record.platform] || 'default'} style={{ fontSize: 10, marginTop: 2 }}>{record.platform}</Tag>
+              <Tag color={PLATFORM_TAG_COLORS[nenTangOf(record.platform)] || 'default'} style={{ fontSize: 10, marginTop: 2 }}>{tenNenTang(record.platform)}</Tag>
             </div>
           </Space>
         );
@@ -273,6 +287,7 @@ export const ManagePosts = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {hopLyDo}
       <DaiSoLieu items={[
         { nhan: 'Tổng nội dung', giaTri: stats.total },
         { nhan: 'Chờ duyệt', giaTri: stats.pending, ton: 'cho' },
@@ -285,7 +300,7 @@ export const ManagePosts = () => {
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Search placeholder="Tìm theo nhân sự hoặc nội dung..." allowClear style={{ width: 220 }} onChange={e => setSearch(e.target.value)} prefix={<SearchOutlined style={{ color: 'var(--text-secondary)' }} />} />
             <Select value={deptFilter} onChange={setDeptFilter} style={{ width: 150 }} options={[{ value: 'ALL', label: 'Tất cả phòng ban' }, ...(departments || []).map(d => ({ value: d.id, label: d.name }))]} />
-            <Select value={platformFilter} onChange={setPlatformFilter} style={{ width: 130 }} options={[{ value: 'ALL', label: 'Tất cả nền tảng' }, { value: 'Facebook', label: 'Facebook' }, { value: 'Zalo', label: 'Zalo' }, { value: 'TikTok', label: 'TikTok' }, { value: 'Instagram', label: 'Instagram' }]} />
+            <Select value={platformFilter} onChange={setPlatformFilter} style={{ width: 130 }} options={[{ value: 'ALL', label: 'Tất cả nền tảng' }, ...LUA_CHON_NEN_TANG]} />
             <Select value={typeFilter} onChange={setTypeFilter} style={{ width: 160 }} options={[{ value: 'ALL', label: 'Tất cả phân loại' }, { value: 'VIDEO', label: CONTENT_TYPES.VIDEO }, { value: 'POST', label: CONTENT_TYPES.POST }]} />
             <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 130 }} options={[{ value: 'ALL', label: 'Trạng thái' }, { value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Từ chối' }]} />
             <DatePicker.RangePicker placeholder={['Từ ngày', 'Đến ngày']} format="DD/MM/YYYY" onChange={(dates) => setDateRange(doiKhoang(dates))} style={{ width: 240 }} />
@@ -308,13 +323,13 @@ export const ManagePosts = () => {
         {detailRecord && detailUser && (
           <div>
             {/* Header with platform color */}
-            <div style={{ background: `linear-gradient(135deg, ${PLATFORM_COLORS[detailRecord.platform] || '#3b82f6'} 0%, #8b5cf6 100%)`, padding: '28px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ background: `linear-gradient(135deg, ${PLATFORM_COLORS[nenTangOf(detailRecord.platform)] || '#3b82f6'} 0%, #8b5cf6 100%)`, padding: '28px', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
               <Space size={14} align="start">
                 <Avatar src={detailUser.avatar} size={56} style={{ border: '3px solid rgba(255,255,255,0.5)' }} />
                 <div>
                   <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontFamily: 'Inter, sans-serif' }}>{detailUser.name}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>Chia sẻ trên <strong>{detailRecord.platform}</strong></div>
+                  <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>Chia sẻ trên <strong>{tenNenTang(detailRecord.platform)}</strong></div>
                   <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11 }}>{new Date(detailRecord.submittedAt).toLocaleString('vi-VN')}</div>
                   <div style={{ marginTop: 8 }}>
                     <Space size={4}>
@@ -330,13 +345,13 @@ export const ManagePosts = () => {
               {/* Post content */}
               <div className="premium-card" style={{ padding: 16 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 1, marginBottom: 10 }}>NỘI DUNG BÀI ĐĂNG</div>
-                <div style={{ fontSize: 13, color: detailRecord.caption ? 'var(--text-primary)' : 'var(--text-secondary)', lineHeight: 1.7, padding: '12px 14px', background: 'var(--bg-secondary)', borderRadius: 8, borderLeft: `3px solid ${PLATFORM_COLORS[detailRecord.platform] || '#3b82f6'}` }}>
+                <div style={{ fontSize: 13, color: detailRecord.caption ? 'var(--text-primary)' : 'var(--text-secondary)', lineHeight: 1.7, padding: '12px 14px', background: 'var(--bg-secondary)', borderRadius: 8, borderLeft: `3px solid ${PLATFORM_COLORS[nenTangOf(detailRecord.platform)] || '#3b82f6'}` }}>
                   {detailRecord.caption || 'Nhân sự không gửi caption — đối chiếu trên ảnh chụp màn hình.'}
                 </div>
                 <div style={{ marginTop: 10 }}>
                   {detailRecord.link ? (
                     <a href={detailRecord.link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-color)', fontSize: 12 }}>
-                      <LinkOutlined style={{ marginRight: 6 }} />Xem bài viết gốc trên {detailRecord.platform}
+                      <LinkOutlined style={{ marginRight: 6 }} />Xem bài viết gốc trên {tenNenTang(detailRecord.platform)}
                     </a>
                   ) : (
                     <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Không có link bài viết (story / video chỉ gửi ảnh chụp).</span>
@@ -385,6 +400,8 @@ export const ManagePosts = () => {
                 </div>
               )}
 
+              {detailRecord.status === 'REJECTED' && <DongLyDoTuChoi lyDo={detailRecord.rejectReason} />}
+
               {detailRecord.status === 'PENDING' && (
                 <Space style={{ width: '100%' }}>
                   <Button danger ghost icon={<CloseCircleOutlined />} style={{ flex: 1 }} onClick={() => handleReject(detailRecord.id)}>Từ chối</Button>
@@ -406,7 +423,7 @@ export const ManagePosts = () => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="platform" label="Nền tảng" rules={[{ required: true }]}>
-                <Select options={[{ value: 'Facebook', label: 'Facebook' }, { value: 'Zalo', label: 'Zalo' }, { value: 'TikTok', label: 'TikTok' }, { value: 'Instagram', label: 'Instagram' }]} />
+                <Select options={LUA_CHON_NEN_TANG} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -419,6 +436,16 @@ export const ManagePosts = () => {
           {editingRecord && (
             <Form.Item name="status" label="Trạng thái">
               <Select options={[{ value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }]} />
+            </Form.Item>
+          )}
+          {editingRecord && (
+            <Form.Item noStyle dependencies={['status']}>
+              {({ getFieldValue }) => getFieldValue('status') === 'REJECTED' && (
+                <Form.Item name="rejectReason" label="Lý do từ chối (nhân sự thấy trên app)"
+                           rules={[{ required: true, whitespace: true, message: 'Nhập lý do để nhân sự biết vì sao bị từ chối.' }]}>
+                  <Input.TextArea rows={2} maxLength={500} showCount />
+                </Form.Item>
+              )}
             </Form.Item>
           )}
           <Form.Item name="link" label="Link bài viết (không bắt buộc)">

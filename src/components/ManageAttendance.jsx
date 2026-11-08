@@ -17,6 +17,7 @@ import { rowClick } from '../utils/tableRow';
 import { LeaveRequests } from './LeaveRequests';
 import { BangCongThang } from './BangCongThang';
 import { DaiSoLieu } from './ui/DaiSoLieu';
+import { useHopLyDoTuChoi } from './ui/HopLyDoTuChoi';
 
 const { Search } = Input;
 
@@ -59,6 +60,7 @@ const AttendanceLogs = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
+  const [hoiLyDo, hopLyDo] = useHopLyDoTuChoi();
   const [form] = Form.useForm();
 
   // ── Dữ liệu lấy theo trang từ máy chủ ───────────────────────────────────
@@ -170,7 +172,7 @@ const AttendanceLogs = () => {
     setEditingRecord(record);
     setLuotSua({ vao: ngay.checkinRecord || null, ra: ngay.checkoutRecord || null });
     form.setFieldsValue({
-      userId: record.userId, status: record.status, lyDoSuaGio: '',
+      userId: record.userId, status: record.status, lyDoSuaGio: '', rejectReason: record.rejectReason || '',
       gioVao: gioCua(ngay.checkinRecord), gioRa: gioCua(ngay.checkoutRecord),
     });
     setModalOpen(true);
@@ -193,7 +195,7 @@ const AttendanceLogs = () => {
             if (kq?.moTa) ketQua.push(kq.moTa);
           }
           if (values.status !== editingRecord.status) {
-            await updateAttendance({ ...editingRecord, status: values.status });
+            await updateAttendance({ ...editingRecord, status: values.status, rejectReason: values.rejectReason });
             ketQua.push('Đã cập nhật trạng thái.');
           } else if (ketQua.length) {
             await refresh('attendance', 'kpi');
@@ -309,17 +311,18 @@ const AttendanceLogs = () => {
     }
   };
 
-  const handleReject = async (record) => {
-    try {
-      for (const r of (record.records || []).filter((x) => x.status === 'PENDING')) {
-        await rejectAttendance(r.id, currentUser.name);
-      }
-      message.warning('Đã từ chối.');
-      setDrawerOpen(false);
-      await taiDuLieu();
-    } catch (e) {
-      message.error(e.message || 'Lỗi hệ thống');
-    }
+  /** Từ chối mọi lượt đang chờ của ngày — cùng một lý do (nhân sự xem trong Lịch sử trên app). */
+  const handleReject = (record) => {
+    const cho = (record.records || []).filter((x) => x.status === 'PENDING');
+    hoiLyDo({
+      tieuDe: cho.length > 1 ? `Từ chối cả ${cho.length} lượt chấm công chờ duyệt` : 'Từ chối chấm công',
+      guiDi: async (lyDo) => {
+        for (const r of cho) await rejectAttendance(r.id, lyDo);
+        message.warning('Đã từ chối.');
+        setDrawerOpen(false);
+        await taiDuLieu();
+      },
+    });
   };
 
   /**
@@ -349,14 +352,27 @@ const AttendanceLogs = () => {
 
   /** Duyệt / từ chối riêng một lượt (trong khung chi tiết). */
   const xuLyMotLuot = async (luot, duyet) => {
-    try {
-      if (duyet) await approveAttendance(luot.id, currentUser.name);
-      else await rejectAttendance(luot.id, currentUser.name);
-      message[duyet ? 'success' : 'warning'](duyet ? 'Đã duyệt lượt này.' : 'Đã từ chối lượt này.');
+    const capNhatKhung = async () => {
       const moi = await taiDuLieu();
       // Giữ khung chi tiết mở, cập nhật theo dữ liệu mới
       const ngay = Array.isArray(moi) ? gopNgayCong(moi).find((d) => d.id === detailRecord?.id) : null;
       if (ngay) setDetailRecord(ngay); else setDrawerOpen(false);
+    };
+    if (!duyet) {
+      hoiLyDo({
+        tieuDe: 'Từ chối lượt chấm công này',
+        guiDi: async (lyDo) => {
+          await rejectAttendance(luot.id, lyDo);
+          message.warning('Đã từ chối lượt này.');
+          await capNhatKhung();
+        },
+      });
+      return;
+    }
+    try {
+      await approveAttendance(luot.id, currentUser.name);
+      message.success('Đã duyệt lượt này.');
+      await capNhatKhung();
     } catch (e) {
       message.error(e.message || 'Lỗi hệ thống');
     }
@@ -487,6 +503,7 @@ const AttendanceLogs = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {hopLyDo}
       <DaiSoLieu items={[
         { nhan: 'Tổng bản ghi', giaTri: stats.total },
         { nhan: 'Chờ duyệt', giaTri: stats.pending, ton: 'cho' },
@@ -732,6 +749,9 @@ const AttendanceLogs = () => {
                             </div>
                             <KhoangCach met={l.distanceToOffice} />
                             {l.note && <div style={{ fontSize: 12, marginTop: 3 }}>“{l.note}”</div>}
+                            {l.status === 'REJECTED' && l.rejectReason && (
+                              <div style={{ fontSize: 12, marginTop: 3, color: 'var(--danger-color)' }}>Lý do từ chối: {l.rejectReason}</div>
+                            )}
                           </div>
                           {l.status === 'PENDING' && (
                             <Space size={4} style={{ flex: '0 0 auto' }}>
@@ -819,6 +839,14 @@ const AttendanceLogs = () => {
             />
             <Form.Item name="status" label="Trạng thái">
               <Select options={[{ value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }]} />
+            </Form.Item>
+            <Form.Item noStyle dependencies={['status']}>
+              {({ getFieldValue }) => getFieldValue('status') === 'REJECTED' && getFieldValue('status') !== editingRecord?.status && (
+                <Form.Item name="rejectReason" label="Lý do từ chối (nhân sự thấy trên app)"
+                           rules={[{ required: true, whitespace: true, message: 'Nhập lý do để nhân sự biết vì sao bị từ chối.' }]}>
+                  <Input.TextArea rows={2} maxLength={500} showCount />
+                </Form.Item>
+              )}
             </Form.Item>
           </Form>
         ) : (

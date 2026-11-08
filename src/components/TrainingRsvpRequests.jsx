@@ -71,6 +71,10 @@ export const TrainingRsvpRequests = () => {
   };
 
   const guiQuyetDinh = async () => {
+    if (!chapNhan && !ghiChu.trim()) {
+      message.error('Nhập lý do từ chối để nhân sự biết vì sao bị từ chối.');
+      return;
+    }
     setDangGui(true);
     try {
       const q = new URLSearchParams({ approve: String(chapNhan) });
@@ -263,7 +267,9 @@ export const TrainingRsvpRequests = () => {
               maxLength={300}
               value={ghiChu}
               onChange={(e) => setGhiChu(e.target.value)}
-              placeholder="Ghi chú gửi kèm cho nhân sự (không bắt buộc)"
+              placeholder={chapNhan
+                ? 'Ghi chú gửi kèm cho nhân sự (không bắt buộc)'
+                : 'Lý do từ chối (bắt buộc) — nhân sự thấy trên app'}
             />
           </div>
         )}

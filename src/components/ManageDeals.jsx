@@ -11,6 +11,7 @@ import { doiKhoang } from '../utils/locBang';
 import { rowClick } from '../utils/tableRow';
 import confetti from 'canvas-confetti';
 import { DaiSoLieu } from './ui/DaiSoLieu';
+import { useHopLyDoTuChoi, DongLyDoTuChoi } from './ui/HopLyDoTuChoi';
 
 const { Search } = Input;
 
@@ -35,6 +36,7 @@ export const ManageDeals = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
+  const [hoiLyDo, hopLyDo] = useHopLyDoTuChoi();
   const [form] = Form.useForm();
 
   const getUserById = (id) => users.find(u => u.id === id);
@@ -130,15 +132,14 @@ export const ManageDeals = () => {
     }
   };
 
-  const handleReject = async (id) => {
-    try {
-      await rejectDeal(id, currentUser.name);
+  const handleReject = (id) => hoiLyDo({
+    tieuDe: 'Bác bỏ giao dịch chốt căn',
+    guiDi: async (lyDo) => {
+      await rejectDeal(id, lyDo);
       message.warning('Đã bác bỏ giao dịch.');
       setDrawerOpen(false);
-    } catch (e) {
-      message.error(e.message || 'Lỗi hệ thống');
-    }
-  };
+    },
+  });
 
   const columns = [
     {
@@ -233,7 +234,7 @@ export const ManageDeals = () => {
           <Button size="small" type="text" icon={<EditOutlined style={{ color: 'var(--primary-color)' }} />} onClick={() => openEdit(record)}>Sửa</Button>
           {record.status === 'PENDING' && (
             <>
-              <Button size="small" danger ghost icon={<CloseCircleOutlined />} onClick={() => { rejectDeal(record.id, currentUser.name); message.warning('Đã bác bỏ.'); }} />
+              <Button size="small" danger ghost icon={<CloseCircleOutlined />} onClick={() => handleReject(record.id)} />
               <Button size="small" type="primary" icon={<CheckCircleOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={() => handleApprove(record.id)} />
             </>
           )}
@@ -249,6 +250,7 @@ export const ManageDeals = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {hopLyDo}
       <DaiSoLieu items={[
         { nhan: 'Tổng giao dịch', giaTri: stats.total },
         { nhan: 'Chờ duyệt', giaTri: stats.pending, ton: 'cho' },
@@ -385,6 +387,7 @@ export const ManageDeals = () => {
                 </div>
               </div>
 
+              {detailRecord.status === 'REJECTED' && <DongLyDoTuChoi lyDo={detailRecord.rejectReason} />}
               {detailRecord.status === 'PENDING' && (
                 <Space style={{ width: '100%' }}>
                   <Button danger ghost icon={<CloseCircleOutlined />} style={{ flex: 1 }} onClick={() => handleReject(detailRecord.id)}>Bác bỏ</Button>

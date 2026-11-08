@@ -9,6 +9,7 @@ import { AppContext } from '../context/AppContext';
 import { doiKhoang } from '../utils/locBang';
 import { rowClick } from '../utils/tableRow';
 import { DaiSoLieu } from './ui/DaiSoLieu';
+import { useHopLyDoTuChoi, DongLyDoTuChoi } from './ui/HopLyDoTuChoi';
 import { timNopTrung } from '../utils/nopTrung';
 
 const { Search } = Input;
@@ -29,6 +30,7 @@ export const ManageMeetings = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
+  const [hoiLyDo, hopLyDo] = useHopLyDoTuChoi();
   const [form] = Form.useForm();
 
   const getUserById = (id) => users.find(u => u.id === id);
@@ -122,15 +124,15 @@ export const ManageMeetings = () => {
     }
   };
 
-  const handleReject = async (id) => {
-    try {
-      await rejectMeeting(id, currentUser.name);
+  const handleReject = (id) => hoiLyDo({
+    tieuDe: 'Từ chối báo cáo thực chiến',
+    moTa: 'Báo cáo đã duyệt thì điểm Thực chiến đã cộng sẽ được thu lại.',
+    guiDi: async (lyDo) => {
+      await rejectMeeting(id, lyDo);
       message.warning('Đã từ chối.');
       setDrawerOpen(false);
-    } catch (e) {
-      message.error(e.message || 'Lỗi hệ thống');
-    }
-  };
+    },
+  });
 
   const columns = [
     {
@@ -225,6 +227,7 @@ export const ManageMeetings = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {hopLyDo}
       <DaiSoLieu items={[
         { nhan: 'Tổng báo cáo', giaTri: stats.total },
         { nhan: 'Chờ duyệt', giaTri: stats.pending, ton: 'cho' },
@@ -333,6 +336,7 @@ export const ManageMeetings = () => {
                 </div>
               )}
 
+              {detailRecord.status === 'REJECTED' && <DongLyDoTuChoi lyDo={detailRecord.rejectReason} />}
               {detailRecord.status === 'PENDING' && (
                 <Space style={{ width: '100%' }}>
                   <Button danger ghost icon={<CloseCircleOutlined />} style={{ flex: 1 }} onClick={() => handleReject(detailRecord.id)}>Từ chối</Button>

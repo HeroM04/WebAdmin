@@ -6,6 +6,7 @@ import { apiClient } from '../utils/apiClient';
 import { exportToCSV } from '../utils/exportCsv';
 import { khopTen } from '../utils/locBang';
 import { timNopTrung } from '../utils/nopTrung';
+import { useHopLyDoTuChoi } from './ui/HopLyDoTuChoi';
 
 /*
  * DUYỆT BÁO CÁO ĐÀO TẠO 1-1
@@ -30,6 +31,7 @@ export const DaoTao1Kem1 = () => {
   const [locTrangThai, setLocTrangThai] = useState('PENDING');
   const [tuKhoa, setTuKhoa] = useState('');
   const [dangXuLy, setDangXuLy] = useState(null);   // id đang duyệt/từ chối
+  const [hoiLyDo, hopLyDo] = useHopLyDoTuChoi();
 
   const nguoi = (id) => users.find(u => u.id === id);
   const soCho = oneOnOneTrainings.filter(o => o.status === 'PENDING').length;
@@ -83,16 +85,18 @@ export const DaoTao1Kem1 = () => {
     }
   };
 
-  const xuLy = async (o, hanhDong) => {
+  /** [lyDo]: khi từ chối — lỗi thì ném ra để hộp nhập lý do hiện ngay, không đóng hộp. */
+  const xuLy = async (o, hanhDong, lyDo) => {
     setDangXuLy(o.id);
     try {
-      await apiClient.put(`/training/1-on-1/${o.id}/${hanhDong}`, {});
+      await apiClient.put(`/training/1-on-1/${o.id}/${hanhDong}`, lyDo ? { reason: lyDo } : {});
       const ten = nguoi(o.userId)?.name || o.userName;
       message.success(hanhDong === 'approve'
         ? `Đã duyệt, cộng 5đ Thực chiến cho ${ten}.`
         : (o.status === 'APPROVED' ? `Đã từ chối và thu hồi 5đ của ${ten}.` : `Đã từ chối báo cáo của ${ten}.`));
       await refresh('oneOnOne', 'kpi');
     } catch (e) {
+      if (lyDo) throw e;
       message.error(e?.message || 'Không xử lý được báo cáo');
     } finally {
       setDangXuLy(null);
@@ -138,6 +142,11 @@ export const DaoTao1Kem1 = () => {
           <Space size={4} wrap>
             <Tag color={tt.mau} icon={tt.icon}>{tt.chu}</Tag>
             {idNopTrung.has(r.id) && <Tag color="purple" icon={<CopyOutlined />}>Nộp trùng</Tag>}
+            {r.status === 'REJECTED' && r.rejectReason && (
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', whiteSpace: 'normal', maxWidth: 220 }}>
+                Lý do: {r.rejectReason}
+              </div>
+            )}
           </Space>
         );
       },
@@ -157,16 +166,16 @@ export const DaoTao1Kem1 = () => {
             </Button>
           )}
           {r.status !== 'REJECTED' && (
-            <Popconfirm
-              title="Từ chối báo cáo này?"
-              description={r.status === 'APPROVED'
-                ? 'Báo cáo đã được duyệt — từ chối sẽ thu hồi 5đ đã cộng.'
-                : 'Nhân sự sẽ nhận thông báo báo cáo không được duyệt.'}
-              okText="Từ chối" cancelText="Hủy" okButtonProps={{ danger: true }}
-              onConfirm={() => xuLy(r, 'reject')}
-            >
-              <Button size="small" danger icon={<CloseCircleOutlined />} loading={dangXuLy === r.id}>Từ chối</Button>
-            </Popconfirm>
+            <Button size="small" danger icon={<CloseCircleOutlined />} loading={dangXuLy === r.id}
+                    onClick={() => hoiLyDo({
+                      tieuDe: 'Từ chối báo cáo đào tạo 1-1',
+                      moTa: r.status === 'APPROVED'
+                        ? 'Báo cáo đã được duyệt — từ chối sẽ thu hồi 5đ đã cộng.'
+                        : 'Nhân sự sẽ nhận thông báo báo cáo không được duyệt.',
+                      guiDi: (lyDo) => xuLy(r, 'reject', lyDo),
+                    })}>
+              Từ chối
+            </Button>
           )}
           <Popconfirm
             title="Xóa hẳn báo cáo này?"
@@ -199,6 +208,7 @@ export const DaoTao1Kem1 = () => {
 
   return (
     <div className="premium-card" style={{ padding: 0, overflow: 'hidden' }}>
+      {hopLyDo}
       <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)' }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <TeamOutlined style={{ fontSize: 20, color: '#ec4899' }} />

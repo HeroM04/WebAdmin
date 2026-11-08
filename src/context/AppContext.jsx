@@ -621,8 +621,9 @@ export const AppProvider = ({ children }) => {
     try { await apiClient.put(`/deals/${dealId}/approve`, {}); await refresh('deals', 'kpi'); } catch (e) { throw e; }
   };
 
-  const rejectDeal = async (dealId, approvedBy) => {
-    try { await apiClient.put(`/deals/${dealId}/reject`, {}); await refresh('deals', 'kpi'); } catch (e) { throw e; }
+  // Từ chối phải kèm lý do — nhân sự xem trong Lịch sử trên app (máy chủ chặn nếu thiếu)
+  const rejectDeal = async (dealId, lyDo) => {
+    try { await apiClient.put(`/deals/${dealId}/reject`, { reason: lyDo }); await refresh('deals', 'kpi'); } catch (e) { throw e; }
   };
 
   const deleteDeal = async (dealId) => {
@@ -643,8 +644,8 @@ export const AppProvider = ({ children }) => {
     try { await apiClient.put(`/attendance/${attId}/status?status=APPROVED`); await refresh('attendance', 'kpi'); } catch (e) { throw e; }
   };
 
-  const rejectAttendance = async (attId, approvedBy) => {
-    try { await apiClient.put(`/attendance/${attId}/status?status=REJECTED`); await refresh('attendance', 'kpi'); } catch (e) { throw e; }
+  const rejectAttendance = async (attId, lyDo) => {
+    try { await apiClient.put(`/attendance/${attId}/status?status=REJECTED&reason=${encodeURIComponent(lyDo || '')}`); await refresh('attendance', 'kpi'); } catch (e) { throw e; }
   };
 
   const deleteAttendance = async (attId) => {
@@ -652,7 +653,8 @@ export const AppProvider = ({ children }) => {
   };
 
   const updateAttendance = async (updatedAtt) => {
-    try { await apiClient.put(`/attendance/${updatedAtt.id}/status?status=${updatedAtt.status}`); await refresh('attendance', 'kpi'); } catch (e) { throw e; }
+    const lyDo = updatedAtt.status === 'REJECTED' ? `&reason=${encodeURIComponent(updatedAtt.rejectReason || '')}` : '';
+    try { await apiClient.put(`/attendance/${updatedAtt.id}/status?status=${updatedAtt.status}${lyDo}`); await refresh('attendance', 'kpi'); } catch (e) { throw e; }
   };
 
 
@@ -661,8 +663,8 @@ export const AppProvider = ({ children }) => {
     try { await apiClient.put(`/social-posts/${postId}/approve`, {}); await refresh('posts', 'kpi'); } catch (e) { throw e; }
   };
 
-  const rejectPost = async (postId, approvedBy) => {
-    try { await apiClient.put(`/social-posts/${postId}/reject`, {}); await refresh('posts', 'kpi'); } catch (e) { throw e; }
+  const rejectPost = async (postId, lyDo) => {
+    try { await apiClient.put(`/social-posts/${postId}/reject`, { reason: lyDo }); await refresh('posts', 'kpi'); } catch (e) { throw e; }
   };
 
   const deletePost = async (postId) => {
@@ -679,8 +681,8 @@ export const AppProvider = ({ children }) => {
     try { await apiClient.put(`/field-battle/${meetId}/approve`, {}); await refresh('meetings', 'kpi'); } catch (e) { throw e; }
   };
 
-  const rejectMeeting = async (meetId, approvedBy) => {
-    try { await apiClient.put(`/field-battle/${meetId}/reject`, {}); await refresh('meetings', 'kpi'); } catch (e) { throw e; }
+  const rejectMeeting = async (meetId, lyDo) => {
+    try { await apiClient.put(`/field-battle/${meetId}/reject`, { reason: lyDo }); await refresh('meetings', 'kpi'); } catch (e) { throw e; }
   };
 
   const deleteMeeting = async (meetId) => {

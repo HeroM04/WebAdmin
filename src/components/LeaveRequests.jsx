@@ -84,6 +84,11 @@ const TabDonXinVang = ({ onDaXuLy }) => {
   useEffect(() => { load(); }, [load]);
 
   const doReview = async (record, action, reviewNote) => {
+    // Từ chối bắt buộc có lý do — nhân sự xem trong Lịch sử trên app
+    if (action === 'reject' && !String(reviewNote || '').trim()) {
+      message.error('Nhập lý do từ chối để nhân sự biết vì sao bị từ chối.');
+      return;
+    }
     try {
       await apiClient.put(`/leave-requests/${record.id}/${action}`, { note: reviewNote || null });
       message.success(action === 'approve' ? 'Đã duyệt vắng có phép.' : 'Đã từ chối đơn xin vắng.');
@@ -194,7 +199,10 @@ const TabDonXinVang = ({ onDaXuLy }) => {
             <div style={{ padding: '10px 14px', background: 'var(--bg-secondary)', borderRadius: 8, borderLeft: '3px solid var(--primary-color)', fontSize: 13 }}>
               {noteModal.record.reason}
             </div>
-            <Input.TextArea rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder="Ghi chú của Admin (tùy chọn)" />
+            <Input.TextArea rows={3} maxLength={500} showCount value={note} onChange={e => setNote(e.target.value)}
+                            placeholder={noteModal.action === 'approve'
+                              ? 'Ghi chú của Admin (tùy chọn)'
+                              : 'Lý do từ chối (bắt buộc) — nhân sự thấy trên app'} />
           </div>
         )}
       </Modal>
