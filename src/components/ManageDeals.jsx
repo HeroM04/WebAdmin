@@ -82,12 +82,14 @@ export const ManageDeals = () => {
     form.setFieldsValue({
       userId: record.userId,
       projectName: record.projectName,
+      unit: record.unit,   // ô bắt buộc — thiếu thì bấm Lưu bị chặn "Mã căn/lô"
       price: record.price,
       commission: record.commission,
       customerName: record.customerName,
       customerPhone: record.customerPhone,
       kpiTriggered: record.kpiTriggered,
       status: record.status,
+      rejectReason: record.rejectReason || '',
     });
     setModalOpen(true);
   };
@@ -403,8 +405,9 @@ export const ManageDeals = () => {
       {/* Add/Edit Modal */}
       <Modal title={editingRecord ? 'Chỉnh sửa Giao dịch' : 'Thêm Giao dịch Chốt căn Mới'} open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)} okText={editingRecord ? 'Lưu' : 'Thêm'} cancelText="Hủy" okButtonProps={{ style: { backgroundColor: '#ec4899', borderColor: '#ec4899' } }} width={560}>
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
+          {/* Sửa thì không đổi được người nộp: "đạt 100% nhờ chốt căn" xét theo đúng người nộp */}
           <Form.Item name="userId" label="Nhân sự thực hiện" rules={[{ required: true }]}>
-            <Select options={users.map(u => ({ value: u.id, label: `${u.name} (${u.role})` }))} />
+            <Select disabled={!!editingRecord} options={users.map(u => ({ value: u.id, label: `${u.name} (${u.role})` }))} />
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
@@ -456,6 +459,16 @@ export const ManageDeals = () => {
               </Col>
             )}
           </Row>
+          {editingRecord && (
+            <Form.Item noStyle dependencies={['status']}>
+              {({ getFieldValue }) => getFieldValue('status') === 'REJECTED' && (
+                <Form.Item name="rejectReason" label="Lý do từ chối (nhân sự thấy trên app)"
+                           rules={[{ required: true, whitespace: true, message: 'Nhập lý do để nhân sự biết vì sao bị từ chối.' }]}>
+                  <Input.TextArea rows={2} maxLength={500} showCount />
+                </Form.Item>
+              )}
+            </Form.Item>
+          )}
         </Form>
       </Modal>
     </div>

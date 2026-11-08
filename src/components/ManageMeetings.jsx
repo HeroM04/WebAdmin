@@ -80,7 +80,7 @@ export const ManageMeetings = () => {
 
   const openEdit = (record) => {
     setEditingRecord(record);
-    form.setFieldsValue({ userId: record.userId, submittedAt: record.submittedAt?.slice(0, 16), project: record.project, content: record.content, status: record.status });
+    form.setFieldsValue({ userId: record.userId, submittedAt: record.submittedAt?.slice(0, 16), project: record.project, content: record.content, status: record.status, rejectReason: record.rejectReason || '' });
     setModalOpen(true);
   };
 
@@ -352,14 +352,15 @@ export const ManageMeetings = () => {
       {/* Add/Edit Modal */}
       <Modal title={editingRecord ? 'Chỉnh sửa Báo cáo Thực chiến' : 'Thêm Báo cáo Thực chiến Mới'} open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)} okText={editingRecord ? 'Lưu' : 'Thêm'} cancelText="Hủy" okButtonProps={{ style: { backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' } }} width={540}>
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
+          {/* Sửa thì không đổi được người nộp và giờ nộp: điểm neo vào đúng người, đúng tuần nộp */}
           <Form.Item name="userId" label="Nhân sự thực hiện" rules={[{ required: true }]}>
-            <Select options={users.map(u => ({ value: u.id, label: `${u.name} (${u.role})` }))} />
+            <Select disabled={!!editingRecord} options={users.map(u => ({ value: u.id, label: `${u.name} (${u.role})` }))} />
           </Form.Item>
 
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="submittedAt" label="Thời gian cuộc gặp" rules={[{ required: true }]}>
-                <Input type="datetime-local" />
+                <Input type="datetime-local" disabled={!!editingRecord} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -374,6 +375,16 @@ export const ManageMeetings = () => {
           {editingRecord && (
             <Form.Item name="status" label="Trạng thái">
               <Select options={[{ value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }]} />
+            </Form.Item>
+          )}
+          {editingRecord && (
+            <Form.Item noStyle dependencies={['status']}>
+              {({ getFieldValue }) => getFieldValue('status') === 'REJECTED' && (
+                <Form.Item name="rejectReason" label="Lý do từ chối (nhân sự thấy trên app)"
+                           rules={[{ required: true, whitespace: true, message: 'Nhập lý do để nhân sự biết vì sao bị từ chối.' }]}>
+                  <Input.TextArea rows={2} maxLength={500} showCount />
+                </Form.Item>
+              )}
             </Form.Item>
           )}
         </Form>
