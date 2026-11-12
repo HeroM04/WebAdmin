@@ -18,6 +18,8 @@ import { LeaveRequests } from './LeaveRequests';
 import { BangCongThang } from './BangCongThang';
 import { DaiSoLieu } from './ui/DaiSoLieu';
 import { useHopLyDoTuChoi } from './ui/HopLyDoTuChoi';
+import { useHopChiTinhCong } from './ui/HopChiTinhCong';
+import { coTheChiTinhCong, duongChiTinhCong, nhanChiTinhCong } from '../utils/chiTinhCong';
 
 const { Search } = Input;
 
@@ -61,6 +63,7 @@ const AttendanceLogs = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const [hoiLyDo, hopLyDo] = useHopLyDoTuChoi();
+  const [hoiChiTinhCong, hopChiTinhCong] = useHopChiTinhCong();
   const [form] = Form.useForm();
 
   // ── Dữ liệu lấy theo trang từ máy chủ ───────────────────────────────────
@@ -378,6 +381,34 @@ const AttendanceLogs = () => {
     }
   };
 
+  /**
+   * "Chỉ tính công" một lượt vào (cheDo null = bỏ): giữ ngày công, không cho
+   * điểm đúng giờ — người làm KPI chấm ở cửa lúc 08:45, lên tới nơi đã muộn.
+   * Lượt đang chờ duyệt thì máy chủ duyệt luôn theo mức đã chọn.
+   */
+  const datChiTinhCong = async (luot, cheDo, lyDo) => {
+    const kq = await apiClient.put(duongChiTinhCong(luot.id, cheDo, lyDo));
+    message.success(kq?.moTa || 'Đã lưu.', 5);
+    const moi = await taiDuLieu();
+    const ngay = Array.isArray(moi) ? gopNgayCong(moi).find((d) => d.id === detailRecord?.id) : null;
+    if (ngay) setDetailRecord(ngay); else setDrawerOpen(false);
+    refresh('attendance', 'kpi');
+  };
+  const moChiTinhCong = (luot) => hoiChiTinhCong({
+    tieuDe: luot.status === 'PENDING' ? 'Duyệt chỉ tính công' : 'Chỉ tính công lượt vào này',
+    duyet: luot.status === 'PENDING',
+    cheDoCu: luot.chiTinhCong,
+    lyDoCu: luot.chiTinhCongLyDo,
+    guiDi: (cheDo, lyDo) => datChiTinhCong(luot, cheDo, lyDo),
+  });
+  const boChiTinhCong = async (luot) => {
+    try {
+      await datChiTinhCong(luot, null);
+    } catch (e) {
+      message.error(e?.message || 'Lỗi hệ thống');
+    }
+  };
+
   const columns = [
     {
       title: 'Nhân sự',
@@ -405,6 +436,11 @@ const AttendanceLogs = () => {
             <div style={{ color: 'var(--success-color)', fontSize: 13, fontWeight: 600 }}>
               {new Date(cIn.checkinTime).toLocaleString('vi-VN')}
             </div>
+            {nhanChiTinhCong(cIn) && (
+              <Tag color="orange" style={{ marginTop: 3, marginInlineEnd: 0 }} title={cIn.chiTinhCongLyDo || undefined}>
+                {nhanChiTinhCong(cIn)}
+              </Tag>
+            )}
             <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
               <EnvironmentOutlined style={{ color: '#ef4444', marginRight: 4 }} />{cIn.gpsLocation || cIn.address || 'Không xác định'}
             </div>
@@ -504,6 +540,7 @@ const AttendanceLogs = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {hopLyDo}
+      {hopChiTinhCong}
       <DaiSoLieu items={[
         { nhan: 'Tổng bản ghi', giaTri: stats.total },
         { nhan: 'Chờ duyệt', giaTri: stats.pending, ton: 'cho' },
@@ -664,6 +701,29 @@ const AttendanceLogs = () => {
                           {detailRecord.checkinRecord.note}
                         </div>
                       )}
+                      {coTheChiTinhCong(detailUser, detailRecord.checkinRecord) && (() => {
+                        const l = detailRecord.checkinRecord;
+                        const nhan = nhanChiTinhCong(l);
+                        if (!nhan) {
+                          return (
+                            <Button icon={<ClockCircleOutlined />} onClick={() => moChiTinhCong(l)} style={{ alignSelf: 'flex-start' }}>
+                              {l.status === 'PENDING' ? 'Duyệt chỉ tính công' : 'Chỉ tính công (không tính đúng giờ)'}
+                            </Button>
+                          );
+                        }
+                        return (
+                          <div style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid rgba(217,119,6,0.4)', background: 'rgba(217,119,6,0.06)' }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: '#b45309' }}>{nhan}</div>
+                            {l.chiTinhCongLyDo && <div style={{ fontSize: 13, marginTop: 4, color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>{l.chiTinhCongLyDo}</div>}
+                            <Space size={4} style={{ marginTop: 8 }}>
+                              <Button size="small" onClick={() => moChiTinhCong(l)}>Đổi</Button>
+                              <Popconfirm title="Bỏ chỉ tính công?" description="Điểm lượt vào này tính lại theo giờ chấm." okText="Bỏ" cancelText="Hủy" onConfirm={() => boChiTinhCong(l)}>
+                                <Button size="small" type="link">Bỏ chỉ tính công</Button>
+                              </Popconfirm>
+                            </Space>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
@@ -751,6 +811,11 @@ const AttendanceLogs = () => {
                             {l.note && <div style={{ fontSize: 12, marginTop: 3 }}>“{l.note}”</div>}
                             {l.status === 'REJECTED' && l.rejectReason && (
                               <div style={{ fontSize: 12, marginTop: 3, color: 'var(--danger-color)' }}>Lý do từ chối: {l.rejectReason}</div>
+                            )}
+                            {nhanChiTinhCong(l) && (
+                              <div style={{ fontSize: 12, marginTop: 3, color: '#b45309' }}>
+                                {nhanChiTinhCong(l)}{l.chiTinhCongLyDo ? `: ${l.chiTinhCongLyDo}` : ''}
+                              </div>
                             )}
                           </div>
                           {l.status === 'PENDING' && (
