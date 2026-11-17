@@ -172,6 +172,7 @@ export const AppProvider = ({ children }) => {
               POST:     ['posts'],
               DEAL:     ['deals'],
               FEEDBACK: ['feedbacks'],
+              MEETING:  ['meetings'], // Sale tự xóa báo cáo đang chờ → bỏ khỏi hàng chờ, khỏi duyệt nhầm
               LEAVE:    [],        // tab Đơn xin vắng tự tải danh sách riêng
               REFERRAL: [],        // tab Đơn giới thiệu cũng vậy
             };
