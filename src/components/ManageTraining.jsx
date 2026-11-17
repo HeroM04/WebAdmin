@@ -671,7 +671,7 @@ export const ManageTraining = () => {
           },
           {
             key: 'rsvp',
-            label: <><UserDeleteOutlined /> Đơn xin vắng đào tạo</>,
+            label: <><UserDeleteOutlined /> Ghi chú vắng đào tạo</>,
             children: <TrainingRsvpRequests />
           }
         ]}

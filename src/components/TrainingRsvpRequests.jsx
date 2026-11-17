@@ -8,12 +8,12 @@ import { khopTen, khopNgay, doiKhoang } from '../utils/locBang';
 import { rowClick } from '../utils/tableRow';
 
 /**
- * Duyệt đơn xin không tham gia buổi đào tạo dự án.
+ * Duyệt ghi chú vắng đào tạo (mọi loại buổi).
  *
- * Đào tạo dự án bắt buộc mọi người dự, trừ ai không bán dự án đó. Hệ thống
- * không biết ai bán dự án nào nên để nhân sự tự khai lý do, Admin xét ở đây.
- * Duyệt thì họ được tính có điểm danh và vẫn được điểm đào tạo; từ chối thì
- * coi như vắng buổi đó.
+ * Nhân sự không dự được một buổi (đã học nội dung đó rồi, bận đi gặp khách,
+ * hay không bán dự án với đào tạo dự án) thì gửi ghi chú trên app, gửi được cả
+ * khi lớp đã bắt đầu. Duyệt thì họ được tính có điểm danh và vẫn được điểm đào
+ * tạo; từ chối thì coi như vắng buổi đó.
  */
 
 const fmtLuc = (iso) => {
@@ -30,7 +30,7 @@ const TRANG_THAI = {
   PENDING: { chu: 'Chờ duyệt', mau: 'warning', rong: 'Không có đơn nào chờ duyệt' },
   APPROVED: { chu: 'Đã duyệt', mau: 'success', rong: 'Chưa có đơn nào được duyệt' },
   REJECTED: { chu: 'Từ chối', mau: 'error', rong: 'Chưa có đơn nào bị từ chối' },
-  ALL: { chu: 'Tất cả', mau: 'default', rong: 'Chưa có đơn xin vắng nào' },
+  ALL: { chu: 'Tất cả', mau: 'default', rong: 'Chưa có ghi chú vắng nào' },
 };
 
 export const TrainingRsvpRequests = () => {
@@ -55,7 +55,7 @@ export const TrainingRsvpRequests = () => {
     } catch (e) {
       setRows([]);
       message.error(trangThai === 'PENDING'
-        ? (e?.message || 'Không tải được danh sách đơn xin vắng')
+        ? (e?.message || 'Không tải được danh sách ghi chú vắng')
         : 'Không tải được đơn đã xử lý — máy chủ cần deploy bản mới (Render → Manual Deploy).');
     } finally {
       setLoading(false);
@@ -122,13 +122,19 @@ export const TrainingRsvpRequests = () => {
             {r.sessionTitle || `#${r.sessionId}`}
           </div>
           <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+            {r.trainingType && (
+              <Tag color={r.trainingType === 'PROJECT' ? 'orange' : 'blue'}
+                   style={{ fontSize: 10, lineHeight: '16px', marginInlineEnd: 6 }}>
+                {r.trainingType === 'PROJECT' ? 'Dự án' : 'Kỹ năng'}
+              </Tag>
+            )}
             {fmtLuc(r.sessionStartTime)}
           </div>
         </div>
       )
     },
     {
-      title: 'Lý do xin vắng',
+      title: 'Ghi chú của nhân sự',
       dataIndex: 'reason',
       key: 'reason',
       render: (t) => (
@@ -188,8 +194,9 @@ export const TrainingRsvpRequests = () => {
       <Row gutter={16} align="middle">
         <Col flex="auto">
           <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-            Đào tạo dự án bắt buộc mọi người tham gia. Ai không bán dự án đó thì gửi lý do ở
-            ứng dụng và chờ duyệt tại đây. <strong style={{ color: 'var(--text-primary)' }}>Duyệt</strong> thì
+            Nhân sự không dự được buổi đào tạo (đã học nội dung này rồi, bận việc, không bán dự án…)
+            thì gửi ghi chú trên ứng dụng, kể cả khi lớp đã bắt đầu.{' '}
+            <strong style={{ color: 'var(--text-primary)' }}>Duyệt</strong> thì
             nhân sự được tính có điểm danh và vẫn được điểm đào tạo;{' '}
             <strong style={{ color: 'var(--text-primary)' }}>Từ chối</strong> thì họ vẫn phải dự và quét mã.
           </div>
@@ -237,7 +244,7 @@ export const TrainingRsvpRequests = () => {
       </div>
 
       <Modal
-        title={chapNhan ? 'Duyệt đơn xin vắng' : 'Từ chối đơn xin vắng'}
+        title={chapNhan ? 'Duyệt ghi chú vắng' : 'Từ chối ghi chú vắng'}
         open={!!dangXet}
         onCancel={() => setDangXet(null)}
         onOk={guiQuyetDinh}
@@ -251,7 +258,7 @@ export const TrainingRsvpRequests = () => {
         {dangXet && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
             <div style={{ fontSize: 13 }}>
-              <strong>{dangXet.userFullName || `#${dangXet.userId}`}</strong> xin không tham gia
+              <strong>{dangXet.userFullName || `#${dangXet.userId}`}</strong> ghi chú vắng
               buổi <strong>{dangXet.sessionTitle || `#${dangXet.sessionId}`}</strong>.
             </div>
             <div style={{ padding: '10px 12px', background: 'var(--bg-subtle, rgba(0,0,0,0.03))', borderRadius: 8, fontSize: 13 }}>
