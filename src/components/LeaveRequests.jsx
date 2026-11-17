@@ -44,6 +44,12 @@ const fmtDateTime = (t) => (t ? new Date(t).toLocaleString('vi-VN') : '—');
 
 const VAI_TRO = { SALE: 'Chuyên viên', TRUONG_PHONG: 'Trưởng phòng', VAN_PHONG: 'Văn phòng', ADMIN: 'Quản trị' };
 
+/* Duyệt đơn này có bị trừ điểm không — cùng luật với máy chủ (LeaveRequestService.approve):
+   xin từ hôm trước ngày nghỉ hoặc nghỉ thứ Bảy thì không trừ, gửi ngay trong ngày nghỉ thì −10đ.
+   `xinTruoc` do máy chủ tính theo giờ VN; máy chủ cũ chưa có cờ này thì không đoán. */
+const laThuBay = (d) => dayjs(d).day() === 6;
+const duyetKhongTru = (r) => r.xinTruoc === true || laThuBay(r.leaveDate);
+
 /* ───────────────────────── Tab 1: Đơn xin vắng ───────────────────────── */
 const TabDonXinVang = ({ onDaXuLy }) => {
   const [rows, setRows] = useState([]);
@@ -91,7 +97,8 @@ const TabDonXinVang = ({ onDaXuLy }) => {
     }
     try {
       await apiClient.put(`/leave-requests/${record.id}/${action}`, { note: reviewNote || null });
-      message.success(action === 'approve' ? 'Đã duyệt vắng có phép.' : 'Đã từ chối đơn xin vắng.');
+      message.success(action === 'reject' ? 'Đã từ chối đơn xin vắng.'
+        : duyetKhongTru(record) ? 'Đã duyệt vắng có phép, không trừ điểm.' : 'Đã duyệt vắng có phép (−10đ KPI).');
       setNoteModal(null);
       setNote('');
       load();
@@ -113,7 +120,17 @@ const TabDonXinVang = ({ onDaXuLy }) => {
     },
     { title: 'Ngày vắng', dataIndex: 'leaveDate', width: 110, render: (d) => <span style={{ fontWeight: 600 }}>{fmtDate(d)}</span> },
     { title: 'Lý do', dataIndex: 'reason', ellipsis: true, render: (t) => <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{t || '—'}</span> },
-    { title: 'Gửi lúc', dataIndex: 'submittedAt', width: 150, render: (t) => <span style={{ fontSize: 12 }}>{fmtDateTime(t)}</span> },
+    {
+      title: 'Gửi lúc', dataIndex: 'submittedAt', width: 160,
+      render: (t, r) => (
+        <div>
+          <span style={{ fontSize: 12 }}>{fmtDateTime(t)}</span>
+          {/* Xin trước = nghỉ có kế hoạch, duyệt không trừ điểm; gửi ngay trong ngày nghỉ thì −10đ */}
+          {r.xinTruoc === true && <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>Xin trước ngày nghỉ</div>}
+          {r.xinTruoc === false && <div style={{ fontSize: 11, color: '#b45309', marginTop: 2 }}>Xin trong ngày nghỉ</div>}
+        </div>
+      )
+    },
     {
       title: 'Trạng thái', key: 'status', width: 190,
       render: (_, r) => (
@@ -136,7 +153,11 @@ const TabDonXinVang = ({ onDaXuLy }) => {
             <Space size={4}>
               <Button size="small" danger ghost icon={<CloseCircleOutlined />}
                       onClick={() => { setNoteModal({ record: r, action: 'reject' }); setNote(''); }}>Từ chối</Button>
-              <Popconfirm title="Duyệt vắng có phép?" description="Ngày này được tính là vắng có phép."
+              <Popconfirm title="Duyệt vắng có phép?"
+                          description={r.xinTruoc === true ? 'Đơn xin trước ngày nghỉ — không trừ điểm KPI.'
+                            : laThuBay(r.leaveDate) ? 'Nghỉ thứ Bảy — không trừ điểm KPI.'
+                            : r.xinTruoc === false ? 'Đơn gửi trong ngày nghỉ — trừ 10đ KPI.'
+                            : 'Ngày này được tính là vắng có phép.'}
                           okText="Duyệt" cancelText="Hủy" onConfirm={() => doReview(r, 'approve')}>
                 <Button size="small" type="primary" icon={<CheckCircleOutlined />}
                         style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }}>Duyệt</Button>
@@ -329,13 +350,13 @@ export const LeaveRequests = () => {
         <Col flex="auto">
           <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
             <strong style={{ color: 'var(--text-primary)' }}>Đơn xin vắng</strong> là việc Admin phải duyệt.{' '}
-            <strong style={{ color: 'var(--text-primary)' }}>Bảng vắng mặt</strong> là kết quả hệ thống tự chốt lúc 23:30 mỗi ngày (trừ Chủ nhật), gộp theo người để nhìn cả tháng một lượt.
+            <strong style={{ color: 'var(--text-primary)' }}>Bảng vắng mặt</strong> là kết quả hệ thống tự chốt lúc 23:59 mỗi ngày (trừ Chủ nhật), gộp theo người để nhìn cả tháng một lượt.
           </div>
         </Col>
         <Col>
           <Popconfirm
             title="Chốt chấm công hôm nay?"
-            description="Ai không chấm công và không có đơn được duyệt sẽ bị ghi vắng không phép. Hệ thống vẫn tự chạy lúc 23:30 mỗi ngày."
+            description="Ai không chấm công và không có đơn được duyệt sẽ bị ghi vắng không phép. Hệ thống vẫn tự chạy lúc 23:59 mỗi ngày."
             okText="Chốt ngay" cancelText="Hủy" onConfirm={closeDay}>
             <Button icon={<CalendarOutlined />}>Chốt vắng mặt hôm nay</Button>
           </Popconfirm>
