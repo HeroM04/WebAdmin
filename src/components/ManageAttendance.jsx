@@ -20,6 +20,15 @@ import { DaiSoLieu } from './ui/DaiSoLieu';
 import { useHopLyDoTuChoi } from './ui/HopLyDoTuChoi';
 import { useHopChiTinhCong } from './ui/HopChiTinhCong';
 import { coTheChiTinhCong, duongChiTinhCong, nhanChiTinhCong } from '../utils/chiTinhCong';
+import { nhanGuiCham, goiYGuiCham } from '../utils/guiCham';
+
+/** Nhãn "Gửi chậm X phút" cho lượt app gửi chậm do mạng — giờ trên bảng là giờ bấm. */
+const NhanGuiCham = ({ luot }) => {
+  const nhan = nhanGuiCham(luot);
+  return nhan ? (
+    <Tag color="gold" style={{ marginTop: 3, marginInlineEnd: 0 }} title={goiYGuiCham}>{nhan}</Tag>
+  ) : null;
+};
 
 const { Search } = Input;
 
@@ -441,6 +450,7 @@ const AttendanceLogs = () => {
                 {nhanChiTinhCong(cIn)}
               </Tag>
             )}
+            <NhanGuiCham luot={cIn} />
             <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
               <EnvironmentOutlined style={{ color: '#ef4444', marginRight: 4 }} />{cIn.gpsLocation || cIn.address || 'Không xác định'}
             </div>
@@ -459,6 +469,7 @@ const AttendanceLogs = () => {
             <div style={{ color: 'var(--info-color)', fontSize: 13, fontWeight: 600 }}>
               {new Date(cOut.checkinTime).toLocaleString('vi-VN')}
             </div>
+            <NhanGuiCham luot={cOut} />
             <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
               <EnvironmentOutlined style={{ color: '#ef4444', marginRight: 4 }} />{cOut.gpsLocation || cOut.address || 'Không xác định'}
             </div>
@@ -803,6 +814,7 @@ const AttendanceLogs = () => {
                               </Tag>
                               <b style={{ fontSize: 13 }}>{new Date(l.checkinTime).toLocaleString('vi-VN')}</b>
                               <StatusTag status={l.status} />
+                              <NhanGuiCham luot={l} />
                             </div>
                             <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 3 }}>
                               <EnvironmentOutlined style={{ marginRight: 4 }} />{l.gpsLocation || l.address || 'Không xác định'}
