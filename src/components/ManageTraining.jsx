@@ -16,6 +16,7 @@ import { DaoTao1Kem1 } from './DaoTao1Kem1';
 import { rowClick } from '../utils/tableRow';
 import { exportToCSV } from '../utils/exportCsv';
 import { khopTen } from '../utils/locBang';
+import { buoiDaKetThuc } from '../utils/buoiDaoTao';
 import { DaiSoLieu } from './ui/DaiSoLieu';
 
 const { Search } = Input;
@@ -138,7 +139,7 @@ const STATUS_CONFIG = {
 export const ManageTraining = () => {
   const {
     trainingSessions, oneOnOneTrainings, users,
-    addTrainingSession, updateTrainingSession, deleteTrainingSession,
+    addTrainingSession, nhapBuBuoiDaoTao, updateTrainingSession, deleteTrainingSession,
     addAttendeeToSession, removeAttendeeFromSession
   } = useContext(AppContext);
 
@@ -157,6 +158,16 @@ export const ManageTraining = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [addForm] = Form.useForm();
   const [editForm] = Form.useForm();
+
+  // Buổi đang thêm đã diễn ra chưa (lớp học xong mới lên lịch). Đã diễn ra thì
+  // phải chọn luôn người đã dự và lưu một lần — xem nhapBuBuoiDaoTao.
+  const ngayThem = Form.useWatch('date', addForm);
+  const gioThem = Form.useWatch('startTime', addForm);
+  const phutThem = Form.useWatch('durationMinutes', addForm);
+  const nguoiDaDuThem = Form.useWatch('nguoiDaDu', addForm) || [];
+  const buoiDaDienRa = buoiDaKetThuc(ngayThem, gioThem, phutThem);
+  const nhanSuKinhDoanh = users.filter(u => (u.role === 'SALE' || u.role === 'TRUONG_PHONG')
+    && (!u.status || u.status === 'ACTIVE'));
   const timerRef = useRef(null);
   // Chiếu QR lên máy chiếu: cả phòng quét cùng lúc nên mã phải thật to.
   const [toanManHinh, setToanManHinh] = useState(false);
@@ -266,6 +277,12 @@ export const ManageTraining = () => {
 
   const handleAddSession = () => {
     addForm.validateFields().then(async values => {
+      // Ngày đã qua mà chưa chọn giờ: không biết buổi đã xong chưa, và tạo trơn
+      // thì cả công ty bị thu hồi điểm tuần đó. Bắt chọn giờ để vào luồng nhập bù.
+      if (values.date && !values.startTime && dayjs(values.date).isBefore(dayjs(), 'day')) {
+        message.error('Buổi ngày đã qua: chọn giờ bắt đầu, rồi chọn những người đã dự.');
+        return;
+      }
       try {
         // Ghép ngày + giờ thành 1 mốc theo múi giờ địa phương, gửi kèm offset (vd +07:00)
         // — KHÔNG gắn cứng "Z" (UTC) để tránh lệch +7h khiến buổi tối nhảy sang hôm sau.
@@ -292,6 +309,40 @@ export const ManageTraining = () => {
           photoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80',
           videoUrl: values.videoUrl || null
         };
+
+        if (buoiDaKetThuc(values.date, values.startTime, values.durationMinutes)) {
+          const nguoiDaDu = values.nguoiDaDu || [];
+          const batDau = dayjs(combinedStartTime);
+          const thuHai = batDau.subtract((batDau.day() + 6) % 7, 'day');
+          const conLai = Math.max(0, nhanSuKinhDoanh.length - nguoiDaDu.length);
+          Modal.confirm({
+            title: 'Lưu buổi đào tạo đã diễn ra?',
+            width: 520,
+            content: (
+              <div style={{ lineHeight: 1.6 }}>
+                <p>Buổi <b>{values.title}</b> lúc {batDau.format('HH:mm DD/MM/YYYY')} — tuần {thuHai.format('DD/MM')}–{thuHai.add(6, 'day').format('DD/MM')}.</p>
+                <p><b>{nguoiDaDu.length}</b> người đã dự: giữ nguyên điểm đào tạo tuần đó.</p>
+                <p>Khoảng <b>{conLai}</b> nhân sự kinh doanh còn lại sẽ bị <b>thu hồi điểm đào tạo của tuần đó</b> (trừ đúng số đã cộng) và nhận thông báo trên app. Máy chủ làm việc này trong vài phút sau khi lưu.</p>
+              </div>
+            ),
+            okText: 'Lưu và chấm lại điểm',
+            cancelText: 'Xem lại',
+            onOk: async () => {
+              try {
+                await nhapBuBuoiDaoTao(dto, nguoiDaDu);
+                message.success({
+                  content: `Đã lưu buổi với ${nguoiDaDu.length} người dự. Điểm đào tạo tuần đó đang được chấm lại, vài phút nữa bảng KPI sẽ cập nhật.`,
+                  duration: 8,
+                });
+                setIsAddModalOpen(false);
+                addForm.resetFields();
+              } catch (e) {
+                message.error(e?.message || 'Không lưu được buổi nhập bù');
+              }
+            },
+          });
+          return;
+        }
 
         await addTrainingSession(dto);
         message.success('Đã thêm buổi đào tạo mới!');
@@ -796,7 +847,7 @@ export const ManageTraining = () => {
       </Drawer>
 
       {/* Add Modal */}
-      <Modal title="Thêm Buổi Đào tạo Mới" open={isAddModalOpen} onOk={handleAddSession} onCancel={() => { setIsAddModalOpen(false); addForm.resetFields(); }} okText="Thêm mới" cancelText="Hủy" okButtonProps={{ style: { backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' } }} width={540}>
+      <Modal title={buoiDaDienRa ? 'Nhập bù buổi đào tạo đã diễn ra' : 'Thêm Buổi Đào tạo Mới'} open={isAddModalOpen} onOk={handleAddSession} onCancel={() => { setIsAddModalOpen(false); addForm.resetFields(); }} okText={buoiDaDienRa ? 'Lưu buổi đã diễn ra' : 'Thêm mới'} cancelText="Hủy" okButtonProps={{ style: { backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' } }} width={540}>
         <Form form={addForm} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item name="title" label="Tên buổi đào tạo" rules={[{ required: true }]}>
             <Input placeholder="Ví dụ: Kỹ năng Chốt deal Cao cấp" />
@@ -841,6 +892,25 @@ export const ManageTraining = () => {
               </Form.Item>
             </Col>
           </Row>
+          {buoiDaDienRa && (
+            <div style={{ border: '1px solid #fed7aa', background: '#fff7ed', borderRadius: 8, padding: '12px 14px' }}>
+              <div style={{ color: '#9a3412', fontWeight: 600, marginBottom: 4 }}>Buổi này đã diễn ra</div>
+              <div style={{ color: '#9a3412', fontSize: 13, lineHeight: 1.5, marginBottom: 10 }}>
+                Chọn những người đã dự. Lưu xong, ai không có trong danh sách sẽ bị thu hồi điểm đào tạo của tuần đó
+                (trừ đúng số đã cộng). Không gửi thông báo "buổi mới" cho nhân sự.
+              </div>
+              <Form.Item name="nguoiDaDu" label={`Người đã dự (${nguoiDaDuThem.length}/${nhanSuKinhDoanh.length} nhân sự kinh doanh)`} style={{ marginBottom: 0 }}>
+                <Select
+                  mode="multiple"
+                  allowClear
+                  placeholder="Gõ tên để tìm, chọn nhiều người"
+                  showSearch={{ filterOption: (nhap, o) => khopTen(nhap, o?.label) }}
+                  maxTagCount="responsive"
+                  options={nhanSuKinhDoanh.map(u => ({ value: u.id, label: u.department?.name ? `${u.name} — ${u.department.name}` : u.name }))}
+                />
+              </Form.Item>
+            </div>
+          )}
         </Form>
       </Modal>
 

@@ -700,6 +700,16 @@ export const AppProvider = ({ children }) => {
     try { await apiClient.post('/training-sessions', sessionData); await refresh('training', 'kpi'); } catch (e) { throw e; }
   };
 
+  // Nhập bù buổi ĐÃ DIỄN RA kèm danh sách người dự, gửi một lần. Máy chủ chấm lại
+  // điểm đào tạo của tuần đó cho cả công ty ở chế độ chạy nền (vài phút): người
+  // dự giữ nguyên, người vắng bị thu hồi đúng số đã cộng. Bảng KPI tải lại sau.
+  const nhapBuBuoiDaoTao = async (sessionData, nguoiDaDu) => {
+    const buoi = await apiClient.post('/training-sessions/nhap-bu', { ...sessionData, nguoiDaDu });
+    await refresh('training');
+    setTimeout(() => { refresh('kpi').catch(() => {}); }, 120000);
+    return buoi;
+  };
+
   const updateTrainingSession = async (sessionId, updates) => {
     try { await apiClient.put(`/training-sessions/${sessionId}`, updates); await refresh('training', 'kpi'); } catch (e) { throw e; }
   };
@@ -813,6 +823,7 @@ export const AppProvider = ({ children }) => {
         deleteMeeting,
         updateMeeting,
         addTrainingSession,
+        nhapBuBuoiDaoTao,
         updateTrainingSession,
         deleteTrainingSession,
         addAttendeeToSession,
