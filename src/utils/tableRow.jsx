@@ -12,8 +12,9 @@ export const rowClick = (onOpen) => (record) => ({
   className: 'clickable-row',
   tabIndex: 0,
   onClick: (event) => {
-    // Bỏ qua khi bấm trúng ô thao tác, liên kết, ô nhập hay ô tick chọn
-    if (event.target.closest('.no-row-click, a, input, button, .ant-checkbox-wrapper')) return;
+    // Bỏ qua khi bấm trúng ô thao tác, liên kết, ô nhập hay ô tick chọn (cả ô chứa ô
+    // tick của bảng chọn nhiều — bấm hụt cạnh ô tick không mở luôn chi tiết)
+    if (event.target.closest('.no-row-click, a, input, button, .ant-checkbox-wrapper, .ant-table-selection-column')) return;
     onOpen(record);
   },
   onKeyDown: (event) => {

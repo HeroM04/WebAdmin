@@ -7,6 +7,7 @@ import { exportToCSV } from '../utils/exportCsv';
 import { khopTen } from '../utils/locBang';
 import { timNopTrung } from '../utils/nopTrung';
 import { useHopLyDoTuChoi } from './ui/HopLyDoTuChoi';
+import { useDuyetHangLoat } from './ui/DuyetHangLoat';
 
 /*
  * DUYỆT BÁO CÁO ĐÀO TẠO 1-1
@@ -69,6 +70,15 @@ export const DaoTao1Kem1 = () => {
    * cho cả nhóm để Admin thấy ngay trên cả hai trang, tự chọn giữ cái nào.
    */
   const idNopTrung = useMemo(() => timNopTrung(oneOnOneTrainings), [oneOnOneTrainings]);
+
+  // Nộp trùng không cho duyệt hàng loạt — duyệt cả nhóm là cộng 5đ hai lần
+  const hangLoat = useDuyetHangLoat({
+    rows: hienThi,
+    tenMuc: 'báo cáo đào tạo 1-1',
+    duyetMot: (id) => apiClient.put(`/training/1-on-1/${id}/approve`, {}),
+    taiLai: () => refresh('oneOnOne', 'kpi'),
+    lyDoKhongChon: (r) => (idNopTrung.has(r.id) ? 'Nộp trùng — xem và duyệt riêng' : null),
+  });
 
   const xoa = async (o) => {
     setDangXuLy(o.id);
@@ -246,10 +256,12 @@ export const DaoTao1Kem1 = () => {
           }
         />
       )}
+      {hangLoat.thanh}
       <Table
         columns={cot}
         dataSource={hienThi}
         rowKey="id"
+        rowSelection={hangLoat.rowSelection}
         pagination={{ defaultPageSize: 10, showSizeChanger: true, pageSizeOptions: [10, 30, 50, 100] }}
         scroll={{ x: 'max-content' }}
         locale={{ emptyText: locTrangThai === 'PENDING' && oneOnOneTrainings.length > 0

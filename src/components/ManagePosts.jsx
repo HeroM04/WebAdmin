@@ -12,6 +12,8 @@ import { rowClick } from '../utils/tableRow';
 import { scanPostContent } from '../utils/aiScanner';
 import { DaiSoLieu } from './ui/DaiSoLieu';
 import { useHopLyDoTuChoi, DongLyDoTuChoi } from './ui/HopLyDoTuChoi';
+import { useDuyetHangLoat } from './ui/DuyetHangLoat';
+import { apiClient } from '../utils/apiClient';
 
 const { Search } = Input;
 
@@ -50,7 +52,7 @@ const ContentTypeTag = ({ record }) => {
 };
 
 export const ManagePosts = () => {
-  const { posts, users, departments, currentUser, approvePost, rejectPost, deletePost, updatePost, addPost } = useContext(AppContext);
+  const { posts, users, departments, currentUser, approvePost, rejectPost, deletePost, updatePost, addPost, refresh } = useContext(AppContext);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [platformFilter, setPlatformFilter] = useState('ALL');
@@ -151,6 +153,13 @@ export const ManagePosts = () => {
       message.error(e.message || 'Lỗi hệ thống');
     }
   };
+
+  const hangLoat = useDuyetHangLoat({
+    rows: filtered,
+    tenMuc: 'bài đăng',
+    duyetMot: (id) => apiClient.put(`/social-posts/${id}/approve`, {}),
+    taiLai: () => refresh('posts', 'kpi'),
+  });
 
   const handleApprove = async (id) => {
     try {
@@ -315,7 +324,8 @@ export const ManagePosts = () => {
           <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Danh sách Bài đăng Lan tỏa BĐS</h3>
           <Tag color="blue" style={{ marginLeft: 8, fontSize: 11 }}><ScanOutlined /> AI Scanner</Tag>
         </div>
-        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ defaultPageSize: 15, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }} scroll={{ x: 800 }} style={{ padding: '8px' }} />
+        {hangLoat.thanh}
+        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" rowSelection={hangLoat.rowSelection} onRow={rowClick(openDetail)} pagination={{ defaultPageSize: 15, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }} scroll={{ x: 800 }} style={{ padding: '8px' }} />
       </div>
 
       {/* Detail Drawer */}

@@ -11,6 +11,8 @@ import { rowClick } from '../utils/tableRow';
 import { DaiSoLieu } from './ui/DaiSoLieu';
 import { useHopLyDoTuChoi, DongLyDoTuChoi } from './ui/HopLyDoTuChoi';
 import { timNopTrung } from '../utils/nopTrung';
+import { useDuyetHangLoat } from './ui/DuyetHangLoat';
+import { apiClient } from '../utils/apiClient';
 
 const { Search } = Input;
 
@@ -21,7 +23,7 @@ const StatusTag = ({ status }) => {
 };
 
 export const ManageMeetings = () => {
-  const { meetings, users, departments, currentUser, approveMeeting, rejectMeeting, deleteMeeting, updateMeeting, addMeeting } = useContext(AppContext);
+  const { meetings, users, departments, currentUser, approveMeeting, rejectMeeting, deleteMeeting, updateMeeting, addMeeting, refresh } = useContext(AppContext);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [dateRange, setDateRange] = useState(null);
@@ -113,6 +115,15 @@ export const ManageMeetings = () => {
       message.error(e.message || 'Lỗi hệ thống');
     }
   };
+
+  // Nộp trùng không cho duyệt hàng loạt — duyệt cả nhóm là cộng điểm hai lần
+  const hangLoat = useDuyetHangLoat({
+    rows: filtered,
+    tenMuc: 'báo cáo thực chiến',
+    duyetMot: (id) => apiClient.put(`/field-battle/${id}/approve`, {}),
+    taiLai: () => refresh('meetings', 'kpi'),
+    lyDoKhongChon: (r) => (idNopTrung.has(r.id) ? 'Nộp trùng — xem và duyệt riêng' : null),
+  });
 
   const handleApprove = async (id) => {
     try {
@@ -252,7 +263,8 @@ export const ManageMeetings = () => {
           <SolutionOutlined style={{ color: 'var(--primary-color)', fontSize: 16 }} />
           <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Danh sách Báo cáo Thực chiến</h3>
         </div>
-        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" onRow={rowClick(openDetail)} pagination={{ defaultPageSize: 15, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }} scroll={{ x: 'max-content' }} style={{ padding: '8px' }} />
+        {hangLoat.thanh}
+        <Table dataSource={filtered} columns={columns} rowKey="id" size="small" rowSelection={hangLoat.rowSelection} onRow={rowClick(openDetail)} pagination={{ defaultPageSize: 15, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }} scroll={{ x: 'max-content' }} style={{ padding: '8px' }} />
       </div>
 
       {/* Detail Drawer */}
