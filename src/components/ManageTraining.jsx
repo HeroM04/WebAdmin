@@ -338,7 +338,7 @@ export const ManageTraining = () => {
         if (dto.status && dto.status !== editingSession.status) {
           try {
             const token = localStorage.getItem('kpi_access_token');
-            const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://kpi-backend-4xex.onrender.com/api/v1';
+            const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.trilongland.vn/api/v1';
             await fetch(`${apiUrl}/training-sessions/${editingSession.id}/status?status=${dto.status}`, {
               method: 'PUT',
               headers: {

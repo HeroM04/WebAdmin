@@ -39,7 +39,7 @@ export const ManageKPI = () => {
   const downloadReport = async (path, fallbackName, key) => {
     setExporting(key);
     try {
-      const base = import.meta.env.VITE_API_BASE_URL || 'https://kpi-backend-4xex.onrender.com/api/v1';
+      const base = import.meta.env.VITE_API_BASE_URL || 'https://api.trilongland.vn/api/v1';
       const token = localStorage.getItem('kpi_access_token');
       const res = await fetch(`${base}${path}`, { headers: { Authorization: `Bearer ${token}` } });
 

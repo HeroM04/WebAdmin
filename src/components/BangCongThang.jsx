@@ -70,7 +70,7 @@ export const BangCongThang = () => {
   const xuatExcel = async () => {
     setDangXuat(true);
     try {
-      const base = (import.meta.env.VITE_API_BASE_URL || 'https://kpi-backend-4xex.onrender.com/api/v1').replace(/\/v1\/?$/, '');
+      const base = (import.meta.env.VITE_API_BASE_URL || 'https://api.trilongland.vn/api/v1').replace(/\/v1\/?$/, '');
       const token = localStorage.getItem('kpi_access_token');
       const res = await fetch(`${base}/reports/attendance?year=${thang.year()}&month=${thang.month() + 1}`,
         { headers: { Authorization: `Bearer ${token}` } });

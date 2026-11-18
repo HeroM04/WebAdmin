@@ -144,9 +144,9 @@ export const AppProvider = ({ children }) => {
       const token = localStorage.getItem('kpi_access_token');
       
       // Lấy URL WS từ biến môi trường Vite
-      // .env.production → wss://kpi-backend-4xex.onrender.com/ws
+      // .env.production → wss://api.trilongland.vn/ws
       // .env.development → http://localhost:8088/ws
-      let wsUrl = import.meta.env.VITE_WS_URL || 'https://kpi-backend-4xex.onrender.com/ws';
+      let wsUrl = import.meta.env.VITE_WS_URL || 'https://api.trilongland.vn/ws';
 
       // Nếu cấu hình dạng tương đối (vd "/ws" khi chạy sau nginx/Docker)
       // → ghép với origin hiện tại để SockJS có URL tuyệt đối hợp lệ

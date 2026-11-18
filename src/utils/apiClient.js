@@ -1,7 +1,7 @@
 // Luôn dùng biến môi trường từ Vite (.env.production / .env.development)
 // Khi build production: VITE_API_BASE_URL sẽ là URL của Render
 // Khi chạy dev local: VITE_API_BASE_URL sẽ là localhost
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://kpi-backend-4xex.onrender.com/api/v1';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.trilongland.vn/api/v1';
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('kpi_access_token');

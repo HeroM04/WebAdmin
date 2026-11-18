@@ -254,7 +254,7 @@ const AttendanceLogs = () => {
   const handleExportExcel = async () => {
     try {
       const token = localStorage.getItem('kpi_access_token');
-      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'https://kpi-backend-4xex.onrender.com/api/v1').replace('/api/v1', '/api');
+      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'https://api.trilongland.vn/api/v1').replace('/api/v1', '/api');
       
       // Xuất đúng tháng đang xem (trước luôn là tháng hiện tại)
       const currentYear = thang.year();
