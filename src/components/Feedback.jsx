@@ -28,10 +28,15 @@ export const Feedback = () => {
   const [search, setSearch] = useState('');
   const [dateRange, setDateRange] = useState(null);   // lọc theo ngày gửi góp ý
 
+  // Máy chủ lưu góp ý mới là UNREAD (bản cũ là PENDING), xong là RESOLVED. Trước
+  // đây ô thống kê đếm cả UNREAD nhưng bộ lọc "Chờ xử lý" chỉ tìm PENDING → thẻ
+  // ghi 16 chờ xử lý mà lọc ra 0. Một hàm chung cho cả hai để không lệch nhau nữa.
+  const laChoXuLy = (f) => f.status !== 'RESOLVED';
+
   // Stats
   const stats = {
     total: feedbacks.length,
-    pending: feedbacks.filter(f => f.status === 'PENDING' || f.status === 'UNREAD').length,
+    pending: feedbacks.filter(laChoXuLy).length,
     resolved: feedbacks.filter(f => f.status === 'RESOLVED').length,
     avgRating: feedbacks.length > 0
       ? (feedbacks.reduce((sum, f) => sum + (f.rating || 0), 0) / feedbacks.length).toFixed(1)
@@ -65,7 +70,8 @@ export const Feedback = () => {
   // Filter feedbacks
   const filteredFeedbacks = feedbacks.filter(f => {
     const matchCategory = categoryFilter === 'ALL' || f.category === categoryFilter;
-    const matchStatus = statusFilter === 'ALL' || f.status === statusFilter;
+    const matchStatus = statusFilter === 'ALL'
+      || (statusFilter === 'PENDING' ? laChoXuLy(f) : f.status === statusFilter);
     return matchCategory && matchStatus
       && khopTen(search, f.senderFullName, f.senderName, f.content, f.message)
       && khopNgay(dateRange, f.createdAt);
@@ -78,7 +84,7 @@ export const Feedback = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h2 style={{ margin: 0, color: 'var(--text-primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 12 }}>
             Ý kiến & Góp ý Nhân sự
-            <Tag color="orange" style={{ borderRadius: 12 }}>{stats.pending} chờ duyệt</Tag>
+            <Tag color="orange" style={{ borderRadius: 12 }}>{stats.pending} chờ xử lý</Tag>
           </h2>
         </div>
 
