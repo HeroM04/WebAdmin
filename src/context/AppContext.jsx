@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { apiClient } from '../utils/apiClient';
+import { useKiemTraPhien } from '../utils/useKiemTraPhien';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { notification } from 'antd';
@@ -252,6 +253,10 @@ export const AppProvider = ({ children }) => {
       }
     };
   }, [isAuthenticated]);
+
+  // Máy này bị đăng xuất từ xa (đổi mật khẩu, "đăng xuất mọi thiết bị", khóa tài
+  // khoản) thì về trang đăng nhập trong vòng một phút, không đợi bấm gì.
+  useKiemTraPhien(isAuthenticated);
 
   /**
    * Số ngày công của tháng này và tháng trước, để bảng điều khiển vẽ xu hướng.
