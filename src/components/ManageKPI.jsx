@@ -14,6 +14,7 @@ import dayjs from 'dayjs';
 import { DaiSoLieu } from './ui/DaiSoLieu';
 import { thangKpi, khoangThangKpi } from '../utils/thangKpi';
 import { useDiemKpiThang, useThangKpiTuDong } from '../utils/useDiemKpiThang';
+import { fetchCoToken } from '../utils/apiClient';
 
 const { Search } = Input;
 
@@ -40,8 +41,7 @@ export const ManageKPI = () => {
     setExporting(key);
     try {
       const base = import.meta.env.VITE_API_BASE_URL || 'https://api.trilongland.vn/api/v1';
-      const token = localStorage.getItem('kpi_access_token');
-      const res = await fetch(`${base}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetchCoToken(`${base}${path}`);
 
       if (!res.ok) {
         let msg = `Lỗi ${res.status}`;

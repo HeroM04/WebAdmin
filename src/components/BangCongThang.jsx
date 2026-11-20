@@ -3,7 +3,7 @@ import { Button, DatePicker, Input, Select, Space, Spin, Tag, Tooltip, message, 
 import { ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { AppContext } from '../context/AppContext';
-import { apiClient } from '../utils/apiClient';
+import { apiClient, fetchCoToken } from '../utils/apiClient';
 import { khopTen } from '../utils/locBang';
 
 /*
@@ -71,9 +71,7 @@ export const BangCongThang = () => {
     setDangXuat(true);
     try {
       const base = (import.meta.env.VITE_API_BASE_URL || 'https://api.trilongland.vn/api/v1').replace(/\/v1\/?$/, '');
-      const token = localStorage.getItem('kpi_access_token');
-      const res = await fetch(`${base}/reports/attendance?year=${thang.year()}&month=${thang.month() + 1}`,
-        { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetchCoToken(`${base}/reports/attendance?year=${thang.year()}&month=${thang.month() + 1}`);
       if (!res.ok) throw new Error(`Máy chủ trả lỗi ${res.status}`);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

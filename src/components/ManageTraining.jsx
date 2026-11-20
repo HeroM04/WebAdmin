@@ -17,6 +17,7 @@ import { rowClick } from '../utils/tableRow';
 import { exportToCSV } from '../utils/exportCsv';
 import { khopTen } from '../utils/locBang';
 import { buoiDaKetThuc } from '../utils/buoiDaoTao';
+import { fetchCoToken } from '../utils/apiClient';
 import { DaiSoLieu } from './ui/DaiSoLieu';
 
 const { Search } = Input;
@@ -388,14 +389,10 @@ export const ManageTraining = () => {
         // (Do backend trên Render chưa update code mới nhất có chứa status trong DTO)
         if (dto.status && dto.status !== editingSession.status) {
           try {
-            const token = localStorage.getItem('kpi_access_token');
             const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.trilongland.vn/api/v1';
-            await fetch(`${apiUrl}/training-sessions/${editingSession.id}/status?status=${dto.status}`, {
+            await fetchCoToken(`${apiUrl}/training-sessions/${editingSession.id}/status?status=${dto.status}`, {
               method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              }
+              headers: { 'Content-Type': 'application/json' },
             });
           } catch (err) {
             console.error("Lỗi update status", err);

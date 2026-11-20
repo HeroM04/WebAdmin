@@ -11,7 +11,7 @@ import { AppContext } from '../context/AppContext';
 import { khopTen } from '../utils/locBang';
 import { docKhoangCach, laXa, NGUONG_XA_MET } from '../utils/khoangCach';
 import { gopNgayCong, luotChoDuyet } from '../utils/ngayCong';
-import { apiClient } from '../utils/apiClient';
+import { apiClient, fetchCoToken } from '../utils/apiClient';
 import { exportToCSV } from '../utils/exportCsv';
 import { rowClick } from '../utils/tableRow';
 import { LeaveRequests } from './LeaveRequests';
@@ -263,8 +263,7 @@ const AttendanceLogs = () => {
 
   const handleExportExcel = async () => {
     try {
-      const token = localStorage.getItem('kpi_access_token');
-      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'https://api.trilongland.vn/api/v1').replace('/api/v1', '/api');
+      const baseUrl =(import.meta.env.VITE_API_BASE_URL || 'https://api.trilongland.vn/api/v1').replace('/api/v1', '/api');
       
       // Xuất đúng tháng đang xem (trước luôn là tháng hiện tại)
       const currentYear = thang.year();
@@ -272,12 +271,7 @@ const AttendanceLogs = () => {
 
       message.loading({ content: 'Đang tạo báo cáo Excel...', key: 'export_excel' });
 
-      const response = await fetch(`${baseUrl}/reports/attendance?year=${currentYear}&month=${currentMonth}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetchCoToken(`${baseUrl}/reports/attendance?year=${currentYear}&month=${currentMonth}`);
 
       if (!response.ok) {
         throw new Error('Không thể tải báo cáo từ máy chủ');

@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { apiClient } from '../utils/apiClient';
 import { useKiemTraPhien } from '../utils/useKiemTraPhien';
+import { layRefreshToken, layToken, luuPhien, xoaPhien } from '../utils/phienDangNhap';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { notification } from 'antd';
@@ -163,6 +164,12 @@ export const AppProvider = ({ children }) => {
       client = new Client({
         webSocketFactory: () => new SockJS(wsUrl),
         connectHeaders: { Authorization: `Bearer ${token}` },
+        // Mỗi lần nối lại lấy token mới nhất — token tự gia hạn mỗi giờ, máy chủ
+        // từ chối nối kênh khi phiên đã bị đăng xuất mọi thiết bị.
+        beforeConnect: (c) => {
+          const moi = layToken();
+          if (moi) c.connectHeaders = { Authorization: `Bearer ${moi}` };
+        },
         reconnectDelay: 5000,
         onConnect: (frame) => {
           console.log('✅ [STOMP] Connected to WebSocket successfully:', frame);
@@ -447,7 +454,7 @@ export const AppProvider = ({ children }) => {
   const loginPublic = async (username, password) => {
     try {
       const res = await apiClient.post('/auth/login', { phoneNumber: username, password });
-      localStorage.setItem('kpi_access_token', res.accessToken);
+      luuPhien(res);
       localStorage.setItem('kpi_is_auth', 'true');
 
       const userRes = await apiClient.get('/auth/me').catch(() => null);
@@ -473,16 +480,16 @@ export const AppProvider = ({ children }) => {
   const login = async (username, password) => {
     try {
       const res = await apiClient.post('/auth/login', { phoneNumber: username, password });
-      localStorage.setItem('kpi_access_token', res.accessToken);
+      luuPhien(res);
       localStorage.setItem('kpi_is_auth', 'true');
-      
+
       const userRes = await apiClient.get('/auth/me').catch(() => null);
       const userProfile = userRes || { id: username, name: username, role: username === 'admin' ? 'ADMIN' : 'VAN_PHONG', avatar: '' };
       
       // Chỉ cho phép ADMIN và VAN_PHONG truy cập WebAdmin
       if (userProfile.role !== 'ADMIN' && userProfile.role !== 'VAN_PHONG') {
-        localStorage.removeItem('kpi_access_token');
-        localStorage.removeItem('kpi_is_auth');
+        apiClient.post('/auth/logout', { refreshToken: res.refreshToken }).catch(() => {});
+        xoaPhien();
         throw new Error('Bạn không có quyền truy cập vào trang Quản trị này!');
       }
 
@@ -499,11 +506,12 @@ export const AppProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // Thu hồi phiên trên máy chủ (refresh token 7 ngày), không chỉ xóa ở trình duyệt
+    const refreshToken = layRefreshToken();
+    if (refreshToken) apiClient.post('/auth/logout', { refreshToken }).catch(() => {});
     setIsAuthenticated(false);
     setCurrentUser(null);
-    localStorage.removeItem('kpi_is_auth');
-    localStorage.removeItem('kpi_access_token');
-    localStorage.removeItem('kpi_current_user');
+    xoaPhien();
   };
 
   // --- KPI Management ---

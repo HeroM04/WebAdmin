@@ -1,5 +1,9 @@
 import { useEffect } from 'react';
 import { apiClient } from './apiClient';
+import { ghiNhanDung, layToken } from './phienDangNhap';
+
+/** Thao tác thật của người dùng — để biết "còn dùng web không" (xem phienDangNhap.js). */
+const SU_KIEN_DUNG = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
 
 /**
  * Web tự hỏi máy chủ xem phiên đăng nhập còn dùng được không.
@@ -11,8 +15,9 @@ import { apiClient } from './apiClient';
  * đăng xuất".
  *
  * Nay: tab đang hiện thì cứ mỗi phút hỏi một lần, và hỏi ngay khi người dùng quay
- * lại tab. Máy chủ trả 401 thì apiClient xóa token và đưa về trang đăng nhập như
- * mọi lần hết phiên khác. Tab ẩn thì không hỏi (khỏi tốn yêu cầu), quay lại là hỏi.
+ * lại tab. Máy chủ trả 401 thì apiClient thử gia hạn token; máy chủ đã thu hồi phiên
+ * thì gia hạn bị từ chối → về trang đăng nhập. Tab ẩn thì không hỏi (khỏi tốn yêu
+ * cầu), quay lại là hỏi.
  */
 
 /** Mỗi phút một lần — trùng nhịp máy chủ ghi "hoạt động cuối" của phiên, không tốn thêm lệnh ghi DB. */
@@ -53,7 +58,10 @@ export function taoKiemTraPhien({ hoi, dangHien, coToken, bayGio = () => Date.no
   };
 }
 
-/** Bật khi đã đăng nhập; tắt (gỡ hẹn giờ, gỡ lắng nghe) khi đăng xuất. */
+/**
+ * Bật khi đã đăng nhập; tắt (gỡ hẹn giờ, gỡ lắng nghe) khi đăng xuất.
+ * Kèm ghi lại lúc người dùng thao tác lần cuối — token tự gia hạn chỉ khi còn dùng.
+ */
 export function useKiemTraPhien(batDau) {
   useEffect(() => {
     if (!batDau) return undefined;
@@ -61,16 +69,19 @@ export function useKiemTraPhien(batDau) {
     const kiemTra = taoKiemTraPhien({
       hoi: () => apiClient.get('/auth/me'),
       dangHien: () => document.visibilityState === 'visible',
-      coToken: () => !!localStorage.getItem('kpi_access_token'),
+      coToken: () => !!layToken(),
     });
+    const dung = () => ghiNhanDung();
 
     const id = setInterval(kiemTra, NHIP_KIEM_TRA_MS);
     document.addEventListener('visibilitychange', kiemTra);
     window.addEventListener('focus', kiemTra);
+    SU_KIEN_DUNG.forEach((e) => window.addEventListener(e, dung, { passive: true }));
     return () => {
       clearInterval(id);
       document.removeEventListener('visibilitychange', kiemTra);
       window.removeEventListener('focus', kiemTra);
+      SU_KIEN_DUNG.forEach((e) => window.removeEventListener(e, dung));
     };
   }, [batDau]);
 }
