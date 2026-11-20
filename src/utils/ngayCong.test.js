@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { gopNgayCong, ngayVN, trangThaiNgay } from './ngayCong';
+import { gopNgayCong, luotChoDuyet, ngayVN, trangThaiNgay } from './ngayCong';
 
 const luot = (id, userId, actionType, checkinTime, status, extra = {}) =>
   ({ id, userId, actionType, checkinTime, status, ...extra });
@@ -64,6 +64,23 @@ describe('gộp lượt chấm công thành ngày công', () => {
       luot(2, 1, 'CHECK_OUT', '2026-09-25T10:00:00Z', 'PENDING', { note: 'gặp khách Vista' }),
     ]);
     expect(ngay.note).toBe('gặp khách Vista');
+  });
+});
+
+describe('lượt cần duyệt khi duyệt cả ngày công (tick chọn nhiều ngày)', () => {
+  it('chỉ lấy lượt đang chờ, theo giờ bấm: vào trước, ra sau — kể cả lượt "khác" không hiện trên dòng', () => {
+    const [ngay] = gopNgayCong([
+      luot(3, 7, 'CHECK_OUT', '2026-11-19T11:05:00Z', 'PENDING'),   // 18:05 VN
+      luot(2, 7, 'CHECK_IN', '2026-11-19T06:00:00Z', 'PENDING'),    // 13:00 VN, lượt vào lại
+      luot(1, 7, 'CHECK_IN', '2026-11-19T01:40:00Z', 'APPROVED'),   // 08:40 VN, đã duyệt
+    ]);
+    expect(luotChoDuyet(ngay).map((r) => r.id)).toEqual([2, 3]);
+  });
+
+  it('ngày đã xử lý hết hoặc không có dữ liệu → không có gì để duyệt', () => {
+    const [ngay] = gopNgayCong([luot(1, 7, 'CHECK_IN', '2026-11-19T01:40:00Z', 'APPROVED')]);
+    expect(luotChoDuyet(ngay)).toEqual([]);
+    expect(luotChoDuyet(undefined)).toEqual([]);
   });
 });
 

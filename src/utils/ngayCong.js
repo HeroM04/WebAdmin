@@ -31,6 +31,13 @@ export const trangThaiNgay = (records) => {
   return 'APPROVED';
 };
 
+/**
+ * Các lượt còn chờ duyệt của một ngày công, theo giờ bấm (vào trước, ra sau) —
+ * duyệt đúng thứ tự này thì điểm đúng giờ của lượt vào tính trước tăng ca của lượt ra.
+ */
+export const luotChoDuyet = (ngay) =>
+  [...(ngay?.records || [])].filter((r) => r.status === 'PENDING').sort((a, b) => luc(a) - luc(b));
+
 export const gopNgayCong = (rows) => {
   const theoNgay = {};
   for (const r of rows || []) {

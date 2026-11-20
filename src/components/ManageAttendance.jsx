@@ -10,7 +10,7 @@ import {
 import { AppContext } from '../context/AppContext';
 import { khopTen } from '../utils/locBang';
 import { docKhoangCach, laXa, NGUONG_XA_MET } from '../utils/khoangCach';
-import { gopNgayCong } from '../utils/ngayCong';
+import { gopNgayCong, luotChoDuyet } from '../utils/ngayCong';
 import { apiClient } from '../utils/apiClient';
 import { exportToCSV } from '../utils/exportCsv';
 import { rowClick } from '../utils/tableRow';
@@ -18,6 +18,7 @@ import { LeaveRequests } from './LeaveRequests';
 import { BangCongThang } from './BangCongThang';
 import { DaiSoLieu } from './ui/DaiSoLieu';
 import { useHopLyDoTuChoi } from './ui/HopLyDoTuChoi';
+import { useDuyetHangLoat } from './ui/DuyetHangLoat';
 import { useHopChiTinhCong } from './ui/HopChiTinhCong';
 import { coTheChiTinhCong, duongChiTinhCong, nhanChiTinhCong } from '../utils/chiTinhCong';
 import { nhanGuiCham, goiYGuiCham } from '../utils/guiCham';
@@ -312,7 +313,7 @@ const AttendanceLogs = () => {
 
   const handleApprove = async (record) => {
     try {
-      for (const r of (record.records || []).filter((x) => x.status === 'PENDING')) {
+      for (const r of luotChoDuyet(record)) {
         await approveAttendance(r.id, currentUser.name);
       }
       message.success('Đã duyệt.');
@@ -361,6 +362,26 @@ const AttendanceLogs = () => {
       setDangDuyetTatCa(false);
     }
   };
+
+  /*
+   * Tick chọn nhiều ngày công rồi duyệt một lần (như Bài đăng / Thực chiến / 1-1).
+   * Duyệt một ngày = duyệt lần lượt mọi lượt đang chờ của ngày đó, đúng API như
+   * bấm duyệt tay; không bao giờ duyệt chen hai ngày của cùng một người. Bảng chia
+   * trang ở máy chủ nên chỉ chọn được trong trang đang xem — mọi trang thì dùng
+   * "Duyệt tất cả".
+   */
+  const hangLoat = useDuyetHangLoat({
+    rows: filtered,
+    tenMuc: 'ngày công',
+    phamVi: 'ở trang này',
+    duyetMot: async (id) => {
+      const ngay = filtered.find((d) => d.id === id);
+      for (const r of luotChoDuyet(ngay)) {
+        await apiClient.put(`/attendance/${r.id}/status?status=APPROVED`);
+      }
+    },
+    taiLai: () => Promise.all([taiDuLieu(), refresh('attendance', 'kpi')]),
+  });
 
   /** Duyệt / từ chối riêng một lượt (trong khung chi tiết). */
   const xuLyMotLuot = async (luot, duyet) => {
@@ -627,6 +648,7 @@ const AttendanceLogs = () => {
                 type="primary"
                 icon={<CheckCircleOutlined />}
                 loading={dangDuyetTatCa}
+                disabled={hangLoat.dangChay}
                 style={{ marginLeft: 'auto', backgroundColor: '#059669', borderColor: '#059669' }}
               >
                 Duyệt tất cả ({stats.pending})
@@ -634,12 +656,14 @@ const AttendanceLogs = () => {
             </Popconfirm>
           )}
         </div>
+        {hangLoat.thanh}
         <Table
           dataSource={filtered}
           columns={columns}
           rowKey="id"
           size="small"
           loading={loading}
+          rowSelection={hangLoat.rowSelection}
           onRow={rowClick(openDetail)}
           /* Bảng trống vì đang lọc "Chờ duyệt" trong khi ô thống kê vẫn đếm bản
              ghi đã duyệt — người xem tưởng chấm công không vào. Nói rõ ngay tại chỗ. */

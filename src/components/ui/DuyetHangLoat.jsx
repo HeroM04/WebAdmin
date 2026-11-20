@@ -20,9 +20,11 @@ import { chayLanLuot } from '../../utils/duyetHangLoat';
  * @param {(id) => Promise} p.duyetMot   gọi API duyệt một mục
  * @param {() => Promise}   p.taiLai     tải lại danh sách + KPI khi xong
  * @param {(row) => string|null} [p.lyDoKhongChon]  có lý do thì không cho tick (vd. nộp trùng)
+ * @param {string} [p.phamVi]      chữ sau nút "Chọn cả N mục chờ duyệt …" — bảng chia trang ở
+ *                                 máy chủ (chấm công) chỉ chọn được trong trang đang xem
  * @returns {{ rowSelection: object, thanh: React.ReactNode, dangChay: boolean }}
  */
-export function useDuyetHangLoat({ rows, tenMuc, duyetMot, taiLai, lyDoKhongChon }) {
+export function useDuyetHangLoat({ rows, tenMuc, duyetMot, taiLai, lyDoKhongChon, phamVi = 'đang lọc' }) {
   const [daChon, setChon] = useState([]);
   const [chay, setChay] = useState(null); // { xong, tong } khi đang duyệt
   const dungRef = useRef(false);
@@ -122,7 +124,7 @@ export function useDuyetHangLoat({ rows, tenMuc, duyetMot, taiLai, lyDoKhongChon
           </span>
           {chon.length < duocChon.length && (
             <Button size="small" onClick={() => setChon(duocChon.map((r) => r.id))}>
-              Chọn cả {duocChon.length} mục chờ duyệt đang lọc
+              Chọn cả {duocChon.length} mục chờ duyệt {phamVi}
             </Button>
           )}
           {chon.length > 0 && <Button size="small" onClick={() => setChon([])}>Bỏ chọn</Button>}
