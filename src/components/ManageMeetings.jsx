@@ -13,6 +13,7 @@ import { useHopLyDoTuChoi, DongLyDoTuChoi } from './ui/HopLyDoTuChoi';
 import { timNopTrung } from '../utils/nopTrung';
 import { useDuyetHangLoat } from './ui/DuyetHangLoat';
 import { apiClient } from '../utils/apiClient';
+import { NutNhomZalo } from './NhomZalo';
 
 const { Search } = Input;
 
@@ -254,7 +255,10 @@ export const ManageMeetings = () => {
             <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 140 }} options={[{ value: 'ALL', label: 'Tất cả trạng thái' }, { value: 'PENDING', label: 'Chờ duyệt' }, { value: 'APPROVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }, { value: 'TRUNG', label: `Nộp trùng (${idNopTrung.size})` }]} />
             <DatePicker.RangePicker placeholder={['Từ ngày', 'Đến ngày']} format="DD/MM/YYYY" onChange={(dates) => setDateRange(doiKhoang(dates))} style={{ width: 240 }} />
           </div>
-          <Button type="primary" icon={<PlusOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={openAdd}>Thêm Báo cáo</Button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <NutNhomZalo />
+            <Button type="primary" icon={<PlusOutlined />} style={{ backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' }} onClick={openAdd}>Thêm Báo cáo</Button>
+          </div>
         </div>
       </div>
 

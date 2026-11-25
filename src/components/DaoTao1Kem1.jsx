@@ -8,6 +8,7 @@ import { khopTen } from '../utils/locBang';
 import { timNopTrung } from '../utils/nopTrung';
 import { useHopLyDoTuChoi } from './ui/HopLyDoTuChoi';
 import { useDuyetHangLoat } from './ui/DuyetHangLoat';
+import { NutNhomZalo } from './NhomZalo';
 
 /*
  * DUYỆT BÁO CÁO ĐÀO TẠO 1-1
@@ -234,6 +235,7 @@ export const DaoTao1Kem1 = () => {
             { value: 'REJECTED', label: 'Từ chối' },
             { value: 'ALL', label: 'Tất cả trạng thái' },
           ]} />
+          <NutNhomZalo />
           <Button type="primary" danger icon={<DownloadOutlined />} onClick={xuatBaoCao}>Xuất báo cáo</Button>
         </Space>
       </div>
