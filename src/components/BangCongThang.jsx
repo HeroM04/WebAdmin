@@ -3,6 +3,7 @@ import { Button, DatePicker, Input, Select, Space, Spin, Tag, Tooltip, message, 
 import { ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { AppContext } from '../context/AppContext';
+import { NutNgayNghiLe } from './NgayNghiLe';
 import { apiClient, fetchCoToken } from '../utils/apiClient';
 import { khopTen } from '../utils/locBang';
 
@@ -24,6 +25,7 @@ const KY_HIEU = {
   R:  { chu: 'R', mau: '#9ca3af', nen: 'rgba(156,163,175,.16)', ten: 'Chấm công bị từ chối' },
   P:  { chu: 'P', mau: '#0891b2', nen: 'rgba(8,145,178,.12)',  ten: 'Vắng có phép' },
   X:  { chu: '✗', mau: '#dc2626', nen: 'rgba(220,38,38,.14)',  ten: 'Vắng không phép' },
+  L:  { chu: 'L', mau: '#7c3aed', nen: 'rgba(124,58,237,.10)', ten: 'Nghỉ lễ' },
   '-': { chu: '·', mau: '#cbd5e1', nen: 'transparent',          ten: 'Chủ nhật' },
   '':  { chu: '',  mau: 'transparent', nen: 'transparent',      ten: '' },
 };
@@ -111,10 +113,11 @@ export const BangCongThang = () => {
         <Input.Search placeholder="Tìm tên..." allowClear style={{ width: 200 }} onChange={e => setSearch(e.target.value)} />
         <Button icon={<ReloadOutlined />} onClick={load}>Tải lại</Button>
         <Button icon={<DownloadOutlined />} loading={dangXuat} onClick={xuatExcel}>Xuất Excel</Button>
+        <NutNgayNghiLe onDoi={load} />
       </Space>
 
       <Space wrap size={[14, 6]} style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-        {['V', 'M', '?', 'P', 'X', 'R', '-'].map(k => (
+        {['V', 'M', '?', 'P', 'X', 'R', 'L', '-'].map(k => (
           <span key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <O cell={{ k }} /> {KY_HIEU[k].ten}
           </span>
@@ -138,9 +141,10 @@ export const BangCongThang = () => {
                 <tr>
                   <th className="bc-ten" style={{ zIndex: 3 }}>Nhân sự</th>
                   {ngay.map(n => (
-                    <th key={n.ngay} style={{ textAlign: 'center', padding: '4px 2px', color: n.cn ? '#cbd5e1' : 'var(--text-secondary)', fontWeight: 600, minWidth: 30 }}>
+                    <th key={n.ngay} title={n.le || undefined}
+                        style={{ textAlign: 'center', padding: '4px 2px', color: n.le ? '#7c3aed' : n.cn ? '#cbd5e1' : 'var(--text-secondary)', fontWeight: 600, minWidth: 30 }}>
                       <div>{n.ngay}</div>
-                      <div style={{ fontSize: 9, fontWeight: 500 }}>{thuNgan[n.thu]}</div>
+                      <div style={{ fontSize: 9, fontWeight: 500 }}>{n.le ? 'Lễ' : thuNgan[n.thu]}</div>
                     </th>
                   ))}
                   <th className="bc-tong" title="Số ngày có chấm công được duyệt">Công</th>
