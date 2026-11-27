@@ -2,6 +2,14 @@
 <html lang="vi" data-theme="light">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // 27/11/2026: Web Admin chuyển sang https://kpi.trilongland.vn (bản build ở tài
+      // khoản Cloudflare Marketing). Ai còn mở địa chỉ workers.dev cũ thì tự sang đúng
+      // trang đó ở địa chỉ mới, trước khi kịp tải ứng dụng. Chỉ chạy ở đúng địa chỉ cũ.
+      if (location.hostname === 'trilongland.web-admin-ttl.workers.dev') {
+        location.replace('https://kpi.trilongland.vn' + location.pathname + location.search + location.hash);
+      }
+    </script>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Trí Long Land KPI — hệ thống quản trị nhân sự và KPI của Trí Long Land: chấm công định vị, duyệt thực chiến và bài lan tỏa, quản lý đào tạo, chấm điểm KPI và xuất báo cáo." />
